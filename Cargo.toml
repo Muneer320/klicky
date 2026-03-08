@@ -1,0 +1,19 @@
+[package]
+name = "klicky"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rdev = "0.5"
+rodio = "0.19"
+symphonia = { version = "0.5", features = ["ogg", "vorbis"] }
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+anyhow = "1"
+dirs = "5"
+serde_json = "1"
+libc = "0.2"
+cocoa = "0.26"
+objc = "0.2"
+block = "0.1"
