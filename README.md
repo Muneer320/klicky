@@ -22,19 +22,13 @@ git clone https://github.com/Sauhard74/klicky.git
 cd klicky
 cargo build --release
 cp target/release/klicky /usr/local/bin/  # or ~/.local/bin/
+
+# Install sound packs (included in repo)
+mkdir -p ~/Library/Application\ Support/klicky/sounds
+cp -r sounds/* ~/Library/Application\ Support/klicky/sounds/
 ```
 
-### Sound packs
-
-klicky needs sound packs to work. Download them from the [releases page](https://github.com/Sauhard74/klicky/releases) or extract from the repo:
-
-```bash
-# Create sounds directory
-mkdir -p "$(klicky status 2>/dev/null | grep -q 'Library' && echo ~/Library/Application\ Support/klicky/sounds || echo ~/.config/klicky/sounds)"
-
-# On macOS, the sounds directory is:
-# ~/Library/Application Support/klicky/sounds/
-```
+11 sound packs are included in the `sounds/` directory. They get copied to `~/Library/Application Support/klicky/sounds/` where klicky reads them at startup.
 
 Each sound pack is a directory containing `sound.ogg` + `config.json`:
 
