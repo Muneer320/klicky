@@ -52,11 +52,23 @@ impl Player {
         })
     }
 
-    pub fn play(&self, samples: &Arc<Vec<i16>>, channels: u16, sample_rate: u32) {
+    fn reconnect(&mut self) -> bool {
+        match OutputStream::try_default() {
+            Ok((stream, handle)) => {
+                self._stream = stream;
+                self.handle = handle;
+                eprintln!("[klicky] audio stream reconnected");
+                true
+            }
+            Err(_) => false,
+        }
+    }
+
+    pub fn play(&mut self, samples: &Arc<Vec<i16>>, channels: u16, sample_rate: u32) {
         self.play_with_volume(samples, channels, sample_rate, self.volume);
     }
 
-    pub fn play_with_volume(&self, samples: &Arc<Vec<i16>>, channels: u16, sample_rate: u32, volume: f32) {
+    pub fn play_with_volume(&mut self, samples: &Arc<Vec<i16>>, channels: u16, sample_rate: u32, volume: f32) {
         let source = PcmSource {
             samples: Arc::clone(samples),
             channels,
@@ -64,10 +76,27 @@ impl Player {
             pos: 0,
         };
 
-        if let Ok(sink) = Sink::try_new(&self.handle) {
-            sink.set_volume(volume);
-            sink.append(source);
-            sink.detach();
+        match Sink::try_new(&self.handle) {
+            Ok(sink) => {
+                sink.set_volume(volume);
+                sink.append(source);
+                sink.detach();
+            }
+            Err(_) => {
+                if self.reconnect() {
+                    let source = PcmSource {
+                        samples: Arc::clone(samples),
+                        channels,
+                        sample_rate,
+                        pos: 0,
+                    };
+                    if let Ok(sink) = Sink::try_new(&self.handle) {
+                        sink.set_volume(volume);
+                        sink.append(source);
+                        sink.detach();
+                    }
+                }
+            }
         }
     }
 
