@@ -1,0 +1,16 @@
+[Unit]
+Description=Low-latency mechanical keyboard sounds
+After=pipewire.service wireplumber.service graphical-session.target
+Wants=pipewire.service wireplumber.service
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/klicky start
+ExecStop=%h/.local/bin/klicky stop
+Restart=on-failure
+RestartSec=1
+TimeoutStopSec=5
+
+[Install]
+WantedBy=graphical-session.target
