@@ -1,7 +1,17 @@
 [package]
 name = "klicky"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
+rust-version = "1.87"
+authors = ["Muneer Alam", "Sauhard Gupta"]
+description = "Low-latency mechanical keyboard sounds for Linux and macOS"
+license = "MIT"
+repository = "https://github.com/Muneer320/klicky"
+homepage = "https://github.com/Muneer320/klicky"
+readme = "README.md"
+keywords = ["keyboard", "audio", "evdev", "wayland", "mechanical"]
+categories = ["command-line-utilities", "multimedia::audio"]
+publish = false
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("cargo-clippy"))'] }
@@ -24,3 +34,27 @@ rdev = "0.5"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 evdev = "0.13"
+
+[package.metadata.deb]
+maintainer = "Muneer Alam <muneer.alam320@gmail.com>"
+copyright = "2026, Muneer Alam and Sauhard Gupta"
+license-file = ["LICENSE", "0"]
+depends = "$auto, systemd, udev"
+section = "sound"
+priority = "optional"
+extended-description = """\
+Klicky is a small Rust daemon that plays mechanical keyboard sounds for global keypresses. \
+On Linux it reads keyboard events directly through evdev, independently of Wayland or X11, \
+and sends predecoded samples to one persistent low-latency audio mixer. \
+It includes a systemd user service, keyboard-only udev access rule, and ten sound packs."""
+maintainer-scripts = "packaging/debian"
+changelog = "packaging/debian/changelog"
+assets = [
+  ["target/release/klicky", "usr/bin/", "755"],
+  ["packaging/systemd/klicky-packaged.service", "usr/lib/systemd/user/klicky.service", "644"],
+  ["packaging/udev/70-klicky.rules", "usr/lib/udev/rules.d/70-klicky.rules", "644"],
+  ["sounds/**/*", "usr/share/klicky/sounds/", "644"],
+  ["sounds/LICENSE.md", "usr/share/licenses/klicky/SOUND_RECORDINGS.md", "644"],
+  ["README.md", "usr/share/doc/klicky/README.md", "644"],
+  ["docs/klicky.1", "usr/share/man/man1/klicky.1", "644"],
+]

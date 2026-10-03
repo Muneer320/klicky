@@ -1,0 +1,17 @@
+pkgbase = klicky
+	pkgdesc = Low-latency mechanical keyboard sounds for Linux
+	pkgver = 0.3.0
+	pkgrel = 1
+	url = https://github.com/Muneer320/klicky
+	arch = x86_64
+	license = MIT
+	makedepends = cargo
+	makedepends = git
+	depends = alsa-lib
+	depends = gcc-libs
+	depends = glibc
+	depends = systemd
+	source = klicky::git+https://github.com/Muneer320/klicky.git#tag=v0.3.0
+	b2sums = SKIP
+
+pkgname = klicky
