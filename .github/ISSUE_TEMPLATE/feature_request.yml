@@ -1,0 +1,51 @@
+name: Feature request
+description: Propose a focused improvement to Klicky
+title: "feat: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What concrete limitation or workflow problem are you trying to solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the smallest useful solution.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What simpler approaches or existing tools did you consider?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Linux input
+        - macOS input
+        - Audio and latency
+        - Sound packs
+        - CLI and IPC
+        - Packaging and installation
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This does not require keyboard remapping, macros, telemetry, networking, or a GUI.
+          required: true
+        - label: I searched existing issues and documentation.
+          required: true

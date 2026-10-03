@@ -1,0 +1,63 @@
+name: Bug report
+description: Report reproducible input, audio, CLI, or packaging behavior
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Remove passwords, key sequences, device serials, and other sensitive data from logs.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened, and what did you expect instead?
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Linux Wayland
+        - Linux X11
+        - macOS
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Distribution or macOS version, desktop or compositor, audio server, and Klicky commit or version
+      placeholder: Arch Linux, Hyprland, PipeWire 1.6.8, commit 7c8bd9a
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Start Klicky with...
+        2. Press...
+        3. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Use `journalctl --user -u klicky.service`. Do not paste benchmark key logs from sensitive sessions.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues.
+          required: true
+        - label: I removed sensitive key data and credentials.
+          required: true
+        - label: I can reproduce this on the latest default branch or release.
+          required: true
