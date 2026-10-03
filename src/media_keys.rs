@@ -77,7 +77,7 @@ extern "C" fn tap_callback(
             return event;
         }
 
-        // NX_SYSDEFINED = 14 — media key events
+        // NX_SYSDEFINED = 14 - media key events
         if event_type == 14 {
             let ns_event: *mut c_void = msg_send![class!(NSEvent), eventWithCGEvent: event];
             if !ns_event.is_null() {
