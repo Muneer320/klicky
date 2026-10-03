@@ -22,6 +22,22 @@ Configuration and user sound packs remain outside package management:
 
 User packs override system packs with the same name.
 
+## Migrate from the source installer
+
+A source installation places its binary and service unit under the user's home directory. The user unit overrides a package unit until it is removed.
+
+From the existing checkout, run:
+
+```bash
+./scripts/uninstall-linux.sh
+```
+
+Do not use `--purge`. The command preserves `~/.config/klicky`, including the selected pack, volume, and user sound packs. Install the distribution package afterward and enable its user service:
+
+```bash
+systemctl --user enable --now klicky.service
+```
+
 ## Arch package
 
 The Arch package definition lives in `packaging/arch/`.
