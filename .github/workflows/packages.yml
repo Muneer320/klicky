@@ -71,7 +71,10 @@ jobs:
           from pathlib import Path
           import sys
           path = Path("packaging/arch/PKGBUILD")
-          path.write_text(path.read_text().replace("#tag=v0.3.0", f"#commit={sys.argv[1]}"))
+          text = path.read_text()
+          marker = "#tag=v$pkgver"
+          assert marker in text
+          path.write_text(text.replace(marker, f"#commit={sys.argv[1]}"))
           ' "$GITHUB_SHA"
           runuser -u builder -- bash -lc '
             cd "$GITHUB_WORKSPACE/packaging/arch"
