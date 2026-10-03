@@ -79,10 +79,13 @@ fn decode_ogg_fully(path: &Path) -> Result<(Vec<i16>, u16, u32)> {
     let codec_params = track.codec_params.clone();
 
     let sample_rate = codec_params.sample_rate.context("no sample rate")?;
-    let channels = codec_params.channels.map(|c| c.count() as u16).context("no channels")?;
+    let channels = codec_params
+        .channels
+        .map(|c| c.count() as u16)
+        .context("no channels")?;
 
-    let mut decoder = symphonia::default::get_codecs()
-        .make(&codec_params, &DecoderOptions::default())?;
+    let mut decoder =
+        symphonia::default::get_codecs().make(&codec_params, &DecoderOptions::default())?;
 
     let mut all_samples = Vec::new();
 
