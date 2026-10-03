@@ -1,135 +1,19 @@
 use std::sync::mpsc::Sender;
 use std::time::Instant;
 
-use rdev::{listen, Event, EventType, Key};
+#[cfg(target_os = "linux")]
+mod linux;
+#[cfg(target_os = "macos")]
+mod macos;
+
+#[cfg(target_os = "linux")]
+pub use linux::start_listening;
+#[cfg(target_os = "macos")]
+pub use macos::start_listening;
 
 pub struct KeyEvent {
-    pub key_name: String,
+    pub key_name: &'static str,
     pub timestamp: Instant,
 }
 
-pub fn start_listening(sender: Sender<KeyEvent>) {
-    listen(move |event: Event| {
-        if let EventType::KeyPress(key) = event.event_type {
-            if let Some(name) = key_to_name(key) {
-                let _ = sender.send(KeyEvent {
-                    key_name: name,
-                    timestamp: Instant::now(),
-                });
-            }
-        }
-    })
-    .expect("Failed to start key listener. Grant Accessibility permission in System Settings.");
-}
-
-fn key_to_name(key: Key) -> Option<String> {
-    let name = match key {
-        Key::Alt => "Alt",
-        Key::AltGr => "AltGr",
-        Key::Backspace => "Backspace",
-        Key::CapsLock => "CapsLock",
-        Key::ControlLeft => "ControlLeft",
-        Key::ControlRight => "ControlRight",
-        Key::Delete => "Delete",
-        Key::DownArrow => "DownArrow",
-        Key::End => "End",
-        Key::Escape => "Escape",
-        Key::F1 => "F1",
-        Key::F2 => "F2",
-        Key::F3 => "F3",
-        Key::F4 => "F4",
-        Key::F5 => "F5",
-        Key::F6 => "F6",
-        Key::F7 => "F7",
-        Key::F8 => "F8",
-        Key::F9 => "F9",
-        Key::F10 => "F10",
-        Key::F11 => "F11",
-        Key::F12 => "F12",
-        Key::Home => "Home",
-        Key::LeftArrow => "LeftArrow",
-        Key::MetaLeft => "MetaLeft",
-        Key::MetaRight => "MetaRight",
-        Key::PageDown => "PageDown",
-        Key::PageUp => "PageUp",
-        Key::Return => "Return",
-        Key::RightArrow => "RightArrow",
-        Key::ShiftLeft => "ShiftLeft",
-        Key::ShiftRight => "ShiftRight",
-        Key::Space => "Space",
-        Key::Tab => "Tab",
-        Key::UpArrow => "UpArrow",
-        Key::PrintScreen => "PrintScreen",
-        Key::ScrollLock => "ScrollLock",
-        Key::Pause => "Pause",
-        Key::NumLock => "NumLock",
-        Key::BackQuote => "BackQuote",
-        Key::Num1 => "Num1",
-        Key::Num2 => "Num2",
-        Key::Num3 => "Num3",
-        Key::Num4 => "Num4",
-        Key::Num5 => "Num5",
-        Key::Num6 => "Num6",
-        Key::Num7 => "Num7",
-        Key::Num8 => "Num8",
-        Key::Num9 => "Num9",
-        Key::Num0 => "Num0",
-        Key::Minus => "Minus",
-        Key::Equal => "Equal",
-        Key::KeyQ => "KeyQ",
-        Key::KeyW => "KeyW",
-        Key::KeyE => "KeyE",
-        Key::KeyR => "KeyR",
-        Key::KeyT => "KeyT",
-        Key::KeyY => "KeyY",
-        Key::KeyU => "KeyU",
-        Key::KeyI => "KeyI",
-        Key::KeyO => "KeyO",
-        Key::KeyP => "KeyP",
-        Key::LeftBracket => "LeftBracket",
-        Key::RightBracket => "RightBracket",
-        Key::KeyA => "KeyA",
-        Key::KeyS => "KeyS",
-        Key::KeyD => "KeyD",
-        Key::KeyF => "KeyF",
-        Key::KeyG => "KeyG",
-        Key::KeyH => "KeyH",
-        Key::KeyJ => "KeyJ",
-        Key::KeyK => "KeyK",
-        Key::KeyL => "KeyL",
-        Key::SemiColon => "SemiColon",
-        Key::Quote => "Quote",
-        Key::BackSlash => "BackSlash",
-        Key::KeyZ => "KeyZ",
-        Key::KeyX => "KeyX",
-        Key::KeyC => "KeyC",
-        Key::KeyV => "KeyV",
-        Key::KeyB => "KeyB",
-        Key::KeyN => "KeyN",
-        Key::KeyM => "KeyM",
-        Key::Comma => "Comma",
-        Key::Dot => "Dot",
-        Key::Slash => "Slash",
-        Key::Insert => "Insert",
-        Key::KpReturn => "KpReturn",
-        Key::KpMinus => "KpMinus",
-        Key::KpPlus => "KpPlus",
-        Key::KpMultiply => "KpMultiply",
-        Key::KpDivide => "KpDivide",
-        Key::Kp0 => "Kp0",
-        Key::Kp1 => "Kp1",
-        Key::Kp2 => "Kp2",
-        Key::Kp3 => "Kp3",
-        Key::Kp4 => "Kp4",
-        Key::Kp5 => "Kp5",
-        Key::Kp6 => "Kp6",
-        Key::Kp7 => "Kp7",
-        Key::Kp8 => "Kp8",
-        Key::Kp9 => "Kp9",
-        Key::KpDelete => "KpDelete",
-        Key::Function => "Function",
-        Key::Unknown(_) => return None,
-        _ => return None,
-    };
-    Some(name.to_string())
-}
+pub type KeySender = Sender<KeyEvent>;
