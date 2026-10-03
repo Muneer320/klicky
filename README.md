@@ -100,7 +100,33 @@ More detail lives in [Architecture](docs/ARCHITECTURE.md).
 
 ## Linux quick start
 
-### 1. Install build prerequisites
+### Distribution packages
+
+Release packages include the binary, ten sound packs, the user service, the udev rule, licenses, and the manual page.
+
+Arch Linux and Omarchy:
+
+```bash
+gh release download v0.3.0 --pattern 'klicky-*.pkg.tar.zst'
+sudo pacman -U klicky-*.pkg.tar.zst
+systemctl --user enable --now klicky.service
+```
+
+Ubuntu and Debian:
+
+```bash
+gh release download v0.3.0 --pattern 'klicky_*_amd64.deb'
+sudo apt install ./klicky_*_amd64.deb
+systemctl --user enable --now klicky.service
+```
+
+Packages are also available from the [v0.3.0 release](https://github.com/Muneer320/klicky/releases/tag/v0.3.0) without GitHub CLI. See [Linux packaging](docs/PACKAGING.md) for package contents and maintainer instructions.
+
+If Klicky was previously installed with `scripts/install-linux.sh`, run `./scripts/uninstall-linux.sh` without `--purge` before installing a package. This removes the user-local binary and service while preserving configuration and custom sound packs.
+
+### Build from source
+
+#### 1. Install build prerequisites
 
 Arch Linux and Omarchy:
 
@@ -124,7 +150,7 @@ Klicky requires Rust 1.87 or newer.
 
 The automated installer requires systemd user services and udev. The runtime itself is not tied to a desktop environment, but non-systemd distributions need the manual installation and process-management steps.
 
-### 2. Clone and install
+#### 2. Clone and install
 
 ```bash
 git clone https://github.com/Muneer320/klicky.git
@@ -265,9 +291,12 @@ On Linux:
 ```text
 ~/.config/klicky/config.toml
 ~/.config/klicky/sounds/
+/usr/share/klicky/sounds/
 $XDG_RUNTIME_DIR/klicky/klicky.pid
 $XDG_RUNTIME_DIR/klicky/klicky.sock
 ```
+
+User sound packs override package-managed system packs with the same name.
 
 Typical configuration:
 
@@ -301,7 +330,7 @@ cargo clippy --all-targets --all-features -- -D warnings
 cargo build --release
 ```
 
-CI runs the same quality gates on Ubuntu and macOS.
+CI runs the same quality gates on Ubuntu and macOS. Separate package jobs build, inspect, install, and exercise the Arch and Debian packages.
 
 The test suite is deliberately focused. It protects Linux key mapping, key-down filtering, ignored button events, owner-only IPC permissions, and clipping-safe sample normalization. Hardware-specific input and audio behavior is validated on real devices rather than replaced with a wall of mocks.
 
@@ -312,12 +341,25 @@ The test suite is deliberately focused. It protects Linux key mapping, key-down 
 | [Architecture](docs/ARCHITECTURE.md) | Modules, data flow, concurrency, and platform boundaries |
 | [Benchmarks](docs/BENCHMARKS.md) | Measurement method, results, and limitations |
 | [Sound packs](docs/SOUND_PACKS.md) | Format, supported keys, and authoring guidance |
+| [Linux packaging](docs/PACKAGING.md) | Installed layout, package builds, release assets, and AUR workflow |
 | [Omarchy](docs/OMARCHY.md) | Native bar toggle installation and removal |
 | [macOS function keys](docs/function-keys-sound.md) | Event-tap investigation and implementation |
 | [Contributing](CONTRIBUTING.md) | Setup, scope, tests, and pull-request expectations |
 | [Changelog](CHANGELOG.md) | Release history and current unreleased work |
 
 ## Uninstall
+
+Package installation:
+
+```bash
+# Arch Linux
+sudo pacman -R klicky
+
+# Ubuntu or Debian
+sudo apt remove klicky
+```
+
+Source installation:
 
 ```bash
 ./scripts/uninstall-linux.sh

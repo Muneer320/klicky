@@ -6,6 +6,22 @@ The project follows [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+## 0.3.0 - 2026-10-03
+
+### Added
+
+- User-overridable system sound packs under `/usr/share/klicky/sounds`
+- Explicit MIT ownership notice for bundled sound assets
+- Arch Linux `PKGBUILD` and generated `.SRCINFO`
+- Debian package metadata, maintainer scripts, changelog, and manual page
+- Clean-environment Arch and Debian package CI
+- Tag-driven package release assets and SHA-256 checksums
+
+### Changed
+
+- Completed Cargo metadata for native distribution packages
+- Distribution services run the package-managed `/usr/bin/klicky` binary
+
 ## 0.2.0 - 2026-10-03
 
 ### Added

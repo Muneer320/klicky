@@ -39,4 +39,6 @@ The current repository adds and maintains:
 
 ## Sound recordings
 
-The bundled sound packs were inherited from the original repository. The repository-level MIT license is preserved, but individual recording provenance is not separately documented upstream. Contributors adding or replacing sounds must provide a clear source and redistribution permission.
+The bundled recordings and timing maps are owned by Muneer Alam and Sauhard Gupta and distributed under the repository MIT License. See [`sounds/LICENSE.md`](sounds/LICENSE.md).
+
+Contributors adding or replacing sounds must provide a clear source and redistribution permission.

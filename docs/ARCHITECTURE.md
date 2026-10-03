@@ -119,9 +119,12 @@ Linux typically resolves to:
 ```text
 ~/.config/klicky/config.toml
 ~/.config/klicky/sounds/
+/usr/share/klicky/sounds/
 $XDG_RUNTIME_DIR/klicky/klicky.pid
 $XDG_RUNTIME_DIR/klicky/klicky.sock
 ```
+
+User sound packs are searched before system packs. Duplicate names resolve to the user copy, while `klicky list` merges both locations into one sorted list.
 
 The runtime directory uses mode `0700`. The PID and socket use mode `0600`. When an operating system does not expose a runtime directory, Klicky falls back to a private `run` directory under its application config directory.
 

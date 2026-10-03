@@ -1,0 +1,68 @@
+.TH KLICKY 1 "October 2026" "Klicky 0.3.0" "User Commands"
+.SH NAME
+klicky \- low-latency mechanical keyboard sounds
+.SH SYNOPSIS
+.B klicky
+.I COMMAND
+.RI [ OPTIONS ]
+.SH DESCRIPTION
+Klicky is a small daemon that plays mechanical keyboard sounds for global keypresses.
+On Linux it reads keyboard events through evdev and works independently of Wayland or X11.
+.SH COMMANDS
+.TP
+.B start
+Start the daemon in the foreground.
+.TP
+.B start --benchmark
+Start the daemon and print mapped key names with input-to-dispatch timing.
+Do not use benchmark mode while entering sensitive information.
+.TP
+.B stop
+Stop a running daemon through its Unix socket.
+.TP
+.B status
+Show daemon state, selected sound pack, and volume.
+.TP
+.B list
+List user and system sound packs.
+.TP
+.BI switch " NAME"
+Select a sound pack immediately, or save it for the next start when the daemon is stopped.
+.TP
+.BI volume " LEVEL"
+Set playback volume between 0.0 and 1.0.
+.SH OPTIONS
+.TP
+.BR -h , " --help"
+Show command help.
+.TP
+.BR -V , " --version"
+Show the Klicky version.
+.SH FILES
+.TP
+.I ~/.config/klicky/config.toml
+Per-user configuration.
+.TP
+.I ~/.config/klicky/sounds/
+Per-user sound packs. These override system packs with the same name.
+.TP
+.I /usr/share/klicky/sounds/
+Package-managed system sound packs.
+.TP
+.I $XDG_RUNTIME_DIR/klicky/
+Owner-only PID file and Unix socket.
+.SH SERVICE
+The distribution package installs a systemd user unit.
+Enable it for the current user with:
+.PP
+.nf
+systemctl --user enable --now klicky.service
+.fi
+.SH SECURITY
+Klicky receives raw global key-down events, including events generated while entering sensitive text.
+Normal mode does not store, transmit, or log typed input.
+.SH SEE ALSO
+.BR systemctl (1),
+.BR udev (7)
+.SH AUTHORS
+Muneer Alam and Sauhard Gupta.
