@@ -15,11 +15,9 @@ use symphonia::core::probe::Hint;
 #[derive(Debug, Deserialize)]
 struct SoundConfig {
     defines: HashMap<String, [u64; 2]>,
-    name: String,
 }
 
 pub struct SoundPack {
-    pub name: String,
     pub samples: HashMap<String, Arc<Vec<i16>>>,
     pub channels: u16,
     pub sample_rate: u32,
@@ -52,7 +50,6 @@ impl SoundPack {
         }
 
         Ok(SoundPack {
-            name: config.name,
             samples: key_samples,
             channels,
             sample_rate,
