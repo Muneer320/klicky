@@ -35,6 +35,7 @@ fi
 systemctl --user daemon-reload
 systemctl --user reenable klicky.service
 systemctl --user restart klicky.service
+rm -f "$config_dir/klicky.pid" "$config_dir/klicky.sock"
 
 printf '\nKlicky installed successfully.\n'
 printf 'Binary: %s\n' "$bin_dir/klicky"
