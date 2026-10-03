@@ -81,6 +81,14 @@ The script creates:
 
 The setup script refuses to replace an existing key directory.
 
+If setup stops after key generation or only some GitHub secrets are written, resume safely with:
+
+```bash
+./scripts/setup-apt-signing-key.sh --resume
+```
+
+Resume mode verifies the existing signing subkey and all offline backup files before restoring GitHub secrets. It never generates or replaces key material.
+
 After the public repository is verified:
 
 1. Move `offline-backup/` to encrypted removable storage.
@@ -102,7 +110,8 @@ The workflow:
 4. Rebuilds the complete repository from published packages.
 5. Generates `InRelease`, `Release`, `Release.gpg`, and package indexes.
 6. Exports only public key material.
-7. Pushes public repository files to `gh-pages`.
+7. Uploads only public repository files as a Pages artifact.
+8. Deploys through GitHub's OIDC-backed Pages environment.
 
 Pull requests never receive signing secrets and cannot publish the repository.
 

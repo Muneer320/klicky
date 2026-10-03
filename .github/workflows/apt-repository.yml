@@ -10,22 +10,19 @@ on:
         required: true
         default: v0.3.0
 
-permissions:
-  contents: write
-
 concurrency:
   group: apt-repository
   cancel-in-progress: false
 
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       GNUPGHOME: /tmp/klicky-gnupg
       PUBLIC_URL: https://muneer320.github.io/klicky
-      APT_GPG_PRIVATE_KEY: ${{ secrets.APT_GPG_PRIVATE_KEY }}
-      APT_GPG_PASSPHRASE: ${{ secrets.APT_GPG_PASSPHRASE }}
-      APT_GPG_FINGERPRINT: ${{ secrets.APT_GPG_FINGERPRINT }}
+      EXPECTED_APT_GPG_FINGERPRINT: DBB67AE478D2FFCEC6637B559899E554D3580D8F
     steps:
       - name: Resolve release tag
         id: release
@@ -42,61 +39,70 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: master
-          path: source
-      - uses: actions/checkout@v5
-        with:
-          ref: gh-pages
-          path: site
-          fetch-depth: 0
       - name: Install repository tools
         run: |
           sudo apt-get update
           sudo apt-get install -y reprepro
-      - name: Download release package
+      - name: Download and verify release package
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
         run: |
-          mkdir incoming
+          mkdir download incoming
           gh release download "$RELEASE_TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --pattern 'klicky_*_amd64.deb' \
-            --dir incoming
-          test "$(find incoming -name 'klicky_*_amd64.deb' | wc -l)" -eq 1
+            --pattern SHA256SUMS \
+            --dir download
+          test "$(find download -name 'klicky_*_amd64.deb' | wc -l)" -eq 1
+          test -f download/SHA256SUMS
+          (cd download && sha256sum --check SHA256SUMS --ignore-missing)
+          package=$(find download -name 'klicky_*_amd64.deb' -print -quit)
+          version=$(dpkg-deb --field "$package" Version)
+          test "$version" = "${RELEASE_TAG#v}-1"
+          cp "$package" incoming/
       - name: Import signing key
+        env:
+          APT_GPG_PRIVATE_KEY: ${{ secrets.APT_GPG_PRIVATE_KEY }}
+          APT_GPG_PASSPHRASE: ${{ secrets.APT_GPG_PASSPHRASE }}
+          APT_GPG_FINGERPRINT: ${{ secrets.APT_GPG_FINGERPRINT }}
         run: |
           test -n "$APT_GPG_PRIVATE_KEY"
           test -n "$APT_GPG_PASSPHRASE"
-          test -n "$APT_GPG_FINGERPRINT"
+          test "$APT_GPG_FINGERPRINT" = "$EXPECTED_APT_GPG_FINGERPRINT"
           mkdir -m 700 "$GNUPGHOME"
           printf '%s' "$APT_GPG_PRIVATE_KEY" | gpg --batch --import
-          gpg --batch --list-secret-keys "$APT_GPG_FINGERPRINT"
+          gpg --batch --list-secret-keys "$EXPECTED_APT_GPG_FINGERPRINT"
           probe="$RUNNER_TEMP/klicky-signing-probe"
           printf 'Klicky repository signing probe\n' > "$probe"
           printf '%s' "$APT_GPG_PASSPHRASE" | \
             gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
-              --local-user "$APT_GPG_FINGERPRINT" \
+              --local-user "$EXPECTED_APT_GPG_FINGERPRINT" \
               --output "$probe.sig" --detach-sign "$probe"
           gpg --batch --verify "$probe.sig" "$probe"
       - name: Build signed repository
         run: |
           package=$(find incoming -name 'klicky_*_amd64.deb' -print -quit)
-          python3 source/scripts/build-apt-repository.py \
+          python3 scripts/build-apt-repository.py \
             --output site \
-            --existing-root site \
-            --fingerprint "$APT_GPG_FINGERPRINT" \
+            --fingerprint "$EXPECTED_APT_GPG_FINGERPRINT" \
             --public-url "$PUBLIC_URL" \
             "$package"
-      - name: Publish repository branch
-        env:
-          RELEASE_TAG: ${{ steps.release.outputs.tag }}
-        run: |
-          git -C site config user.name "Muneer Alam"
-          git -C site config user.email "muneer.alam320@gmail.com"
-          git -C site add --all
-          if git -C site diff --cached --quiet; then
-            printf 'APT repository already contains %s\n' "$RELEASE_TAG"
-            exit 0
-          fi
-          git -C site commit -m "repo: publish Klicky $RELEASE_TAG"
-          git -C site push origin gh-pages
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
