@@ -1,42 +1,50 @@
+use std::num::{NonZeroU16, NonZeroU32};
 use std::sync::Arc;
 use std::time::Duration;
 
-use anyhow::Result;
-use rodio::{OutputStream, OutputStreamHandle, Sink, Source};
+use anyhow::{Context, Result};
+use rodio::cpal::traits::HostTrait;
+use rodio::cpal::BufferSize;
+use rodio::{DeviceSinkBuilder, MixerDeviceSink, Source};
+
+const BUFFER_SIZES: [u32; 3] = [256, 512, 1024];
 
 pub struct Player {
-    _stream: OutputStream,
-    handle: OutputStreamHandle,
+    sink: MixerDeviceSink,
     volume: f32,
 }
 
 #[derive(Clone)]
 struct PcmSource {
     samples: Arc<Vec<i16>>,
-    channels: u16,
-    sample_rate: u32,
+    channels: NonZeroU16,
+    sample_rate: NonZeroU32,
     pos: usize,
 }
 
 impl Iterator for PcmSource {
-    type Item = i16;
-    fn next(&mut self) -> Option<i16> {
-        let s = self.samples.get(self.pos)?;
+    type Item = f32;
+
+    fn next(&mut self) -> Option<f32> {
+        let sample = self.samples.get(self.pos)?;
         self.pos += 1;
-        Some(*s)
+        Some(*sample as f32 / i16::MAX as f32)
     }
 }
 
 impl Source for PcmSource {
-    fn channels(&self) -> u16 {
+    fn channels(&self) -> NonZeroU16 {
         self.channels
     }
-    fn sample_rate(&self) -> u32 {
+
+    fn sample_rate(&self) -> NonZeroU32 {
         self.sample_rate
     }
-    fn current_frame_len(&self) -> Option<usize> {
-        Some(self.samples.len() - self.pos)
+
+    fn current_span_len(&self) -> Option<usize> {
+        Some(self.samples.len())
     }
+
     fn total_duration(&self) -> Option<Duration> {
         None
     }
@@ -44,24 +52,9 @@ impl Source for PcmSource {
 
 impl Player {
     pub fn new() -> Result<Self> {
-        let (stream, handle) = OutputStream::try_default()?;
-        Ok(Player {
-            _stream: stream,
-            handle,
-            volume: 0.8,
-        })
-    }
-
-    fn reconnect(&mut self) -> bool {
-        match OutputStream::try_default() {
-            Ok((stream, handle)) => {
-                self._stream = stream;
-                self.handle = handle;
-                eprintln!("[klicky] audio stream reconnected");
-                true
-            }
-            Err(_) => false,
-        }
+        let sink = open_low_latency_sink()?;
+        eprintln!("[klicky] audio output: {:?}", sink.config());
+        Ok(Self { sink, volume: 0.8 })
     }
 
     pub fn play(&mut self, samples: &Arc<Vec<i16>>, channels: u16, sample_rate: u32) {
@@ -75,35 +68,22 @@ impl Player {
         sample_rate: u32,
         volume: f32,
     ) {
-        let source = PcmSource {
-            samples: Arc::clone(samples),
-            channels,
-            sample_rate,
-            pos: 0,
+        let Some(channels) = NonZeroU16::new(channels) else {
+            return;
+        };
+        let Some(sample_rate) = NonZeroU32::new(sample_rate) else {
+            return;
         };
 
-        match Sink::try_new(&self.handle) {
-            Ok(sink) => {
-                sink.set_volume(volume);
-                sink.append(source);
-                sink.detach();
+        self.sink.mixer().add(
+            PcmSource {
+                samples: Arc::clone(samples),
+                channels,
+                sample_rate,
+                pos: 0,
             }
-            Err(_) => {
-                if self.reconnect() {
-                    let source = PcmSource {
-                        samples: Arc::clone(samples),
-                        channels,
-                        sample_rate,
-                        pos: 0,
-                    };
-                    if let Ok(sink) = Sink::try_new(&self.handle) {
-                        sink.set_volume(volume);
-                        sink.append(source);
-                        sink.detach();
-                    }
-                }
-            }
-        }
+            .amplify(volume),
+        );
     }
 
     pub fn set_volume(&mut self, volume: f32) {
@@ -113,4 +93,20 @@ impl Player {
     pub fn volume(&self) -> f32 {
         self.volume
     }
+}
+
+fn open_low_latency_sink() -> Result<MixerDeviceSink> {
+    let device = rodio::cpal::default_host()
+        .default_output_device()
+        .context("no default audio output device")?;
+
+    for buffer_size in BUFFER_SIZES {
+        let builder = DeviceSinkBuilder::from_device(device.clone())?
+            .with_buffer_size(BufferSize::Fixed(buffer_size));
+        if let Ok(sink) = builder.open_stream() {
+            return Ok(sink);
+        }
+    }
+
+    Ok(DeviceSinkBuilder::from_device(device)?.open_sink_or_fallback()?)
 }
