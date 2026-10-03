@@ -7,7 +7,7 @@ edition = "2021"
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("cargo-clippy"))'] }
 
 [dependencies]
-rodio = "0.19"
+rodio = { version = "0.22", default-features = false, features = ["playback"] }
 symphonia = { version = "0.5", features = ["ogg", "vorbis"] }
 clap = { version = "4", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
