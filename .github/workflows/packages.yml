@@ -47,6 +47,8 @@ jobs:
       - name: Install dependencies
         run: pacman -Syu --noconfirm base-devel git rust alsa-lib systemd namcap python
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - name: Prepare unprivileged builder
         run: |
           useradd -m builder
