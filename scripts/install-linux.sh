@@ -33,7 +33,8 @@ if [[ ${KLICKY_SKIP_UDEV:-0} != 1 ]]; then
 fi
 
 systemctl --user daemon-reload
-systemctl --user enable --now klicky.service
+systemctl --user reenable klicky.service
+systemctl --user restart klicky.service
 
 printf '\nKlicky installed successfully.\n'
 printf 'Binary: %s\n' "$bin_dir/klicky"
