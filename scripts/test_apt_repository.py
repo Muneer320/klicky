@@ -57,6 +57,22 @@ class AptRepositoryTests(unittest.TestCase):
             "Signed-By: /etc/apt/keyrings/klicky-archive-keyring.gpg", source
         )
 
+    def test_repository_index_is_static_accessible_and_complete(self):
+        page = apt_repository.render_index(
+            "https://muneer320.github.io/klicky",
+            ["0.3.0-1"],
+            "DBB67AE478D2FFCEC6637B559899E554D3580D8F",
+        )
+
+        self.assertIn("Klicky APT Repository", page)
+        self.assertIn("0.3.0-1", page)
+        self.assertIn("sudo apt install klicky", page)
+        self.assertIn("DBB6 7AE4 78D2 FFCE C663 7B55 9899 E554 D358 0D8F", page)
+        self.assertIn("prefers-color-scheme: dark", page)
+        self.assertIn('href="#main"', page)
+        self.assertNotIn("<script", page)
+        self.assertNotIn("https://fonts.", page)
+
 
 if __name__ == "__main__":
     unittest.main()
