@@ -16,7 +16,11 @@ use anyhow::{bail, Context, Result};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "klicky", about = "Low-latency mechanical keyboard sounds")]
+#[command(
+    name = "klicky",
+    version,
+    about = "Low-latency mechanical keyboard sounds"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
