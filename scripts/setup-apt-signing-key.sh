@@ -28,6 +28,8 @@ fi
 mkdir -p "$gnupg_home" "$backup_dir"
 chmod 700 "$key_home" "$gnupg_home" "$backup_dir"
 export GNUPGHOME="$gnupg_home"
+export GPG_TTY
+GPG_TTY=$(tty)
 
 printf 'GnuPG will request a new passphrase for the offline key.\n'
 gpg --quick-generate-key "$identity" rsa4096 cert 2y
