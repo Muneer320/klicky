@@ -59,8 +59,25 @@ pub fn sounds_dir() -> PathBuf {
     app_config_dir().join("sounds")
 }
 
+fn system_runtime_dir() -> Option<PathBuf> {
+    if let Some(path) = dirs::runtime_dir() {
+        return Some(path);
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        // geteuid has no preconditions and only reads process identity.
+        let path = PathBuf::from("/run/user").join(unsafe { libc::geteuid() }.to_string());
+        if path.is_dir() {
+            return Some(path);
+        }
+    }
+
+    None
+}
+
 pub fn runtime_dir() -> PathBuf {
-    dirs::runtime_dir()
+    system_runtime_dir()
         .map(|path| path.join("klicky"))
         .unwrap_or_else(|| app_config_dir().join("run"))
 }
