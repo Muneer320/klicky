@@ -1,8 +1,7 @@
 [Unit]
 Description=Low-latency mechanical keyboard sounds
-After=pipewire.service wireplumber.service graphical-session.target
+After=pipewire.service wireplumber.service
 Wants=pipewire.service wireplumber.service
-PartOf=graphical-session.target
 
 [Service]
 Type=simple
@@ -13,4 +12,4 @@ RestartSec=1
 TimeoutStopSec=5
 
 [Install]
-WantedBy=graphical-session.target
+WantedBy=default.target

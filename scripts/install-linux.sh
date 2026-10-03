@@ -39,4 +39,4 @@ printf '\nKlicky installed successfully.\n'
 printf 'Binary: %s\n' "$bin_dir/klicky"
 printf 'Config: %s\n' "$config_dir"
 printf 'Service: %s\n' "$user_unit_dir/klicky.service"
-printf '\nRun `%s status` to inspect the daemon.\n' "$bin_dir/klicky"
+printf '\nRun %s status to inspect the daemon.\n' "$bin_dir/klicky"
