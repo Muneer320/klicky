@@ -6,13 +6,15 @@ The project follows [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+## 0.2.0 - 2026-10-03
+
 ### Added
 
 - Native Linux input through `evdev`
 - Wayland and X11 support through one display-server-independent backend
 - Linux modifier, navigation, numpad, and media-key mapping
 - Keyboard-only udev access rule
-- Graphical-session systemd user service
+- Default-target systemd user service
 - Optional Omarchy center-bar toggle
 - Linux and macOS CI
 - Focused tests for key mapping, key-down filtering, ignored buttons, and audio normalization
