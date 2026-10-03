@@ -122,6 +122,8 @@ systemctl --user enable --now klicky.service
 
 Packages are also available from the [v0.3.0 release](https://github.com/Muneer320/klicky/releases/tag/v0.3.0) without GitHub CLI. See [Linux packaging](docs/PACKAGING.md) for package contents and maintainer instructions.
 
+Debian and Ubuntu users can also configure the signed [Klicky APT repository](docs/APT_REPOSITORY.md) and install future updates with `sudo apt install klicky`.
+
 If Klicky was previously installed with `scripts/install-linux.sh`, run `./scripts/uninstall-linux.sh` without `--purge` before installing a package. This removes the user-local binary and service while preserving configuration and custom sound packs.
 
 ### Build from source
@@ -342,6 +344,7 @@ The test suite is deliberately focused. It protects Linux key mapping, key-down 
 | [Benchmarks](docs/BENCHMARKS.md) | Measurement method, results, and limitations |
 | [Sound packs](docs/SOUND_PACKS.md) | Format, supported keys, and authoring guidance |
 | [Linux packaging](docs/PACKAGING.md) | Installed layout, package builds, release assets, and AUR workflow |
+| [APT repository](docs/APT_REPOSITORY.md) | Signed repository installation, publication, and key rotation |
 | [Omarchy](docs/OMARCHY.md) | Native bar toggle installation and removal |
 | [macOS function keys](docs/function-keys-sound.md) | Event-tap investigation and implementation |
 | [Contributing](CONTRIBUTING.md) | Setup, scope, tests, and pull-request expectations |

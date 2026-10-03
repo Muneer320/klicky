@@ -25,7 +25,7 @@ gpg --show-keys --with-fingerprint /tmp/klicky-archive-keyring.gpg
 The fingerprint must exactly match:
 
 ```text
-APT_SIGNING_FINGERPRINT_PENDING
+DBB6 7AE4 78D2 FFCE C663 7B55 9899 E554 D358 0D8F
 ```
 
 Do not install the key if the fingerprint differs.

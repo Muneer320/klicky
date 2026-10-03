@@ -6,6 +6,12 @@ The project follows [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+### Added
+
+- Signed amd64 APT repository publication through GitHub Pages
+- Deb822 source configuration with a repository-specific `Signed-By` key
+- End-to-end APT index, signature, and package-discovery validation
+
 ## 0.3.0 - 2026-10-03
 
 ### Added
