@@ -102,19 +102,35 @@ def compare_packages(left: tuple[Path, str], right: tuple[Path, str]) -> int:
     return 0
 
 
-def write_index(path: Path, public_url: str, versions: list[str]) -> None:
-    items = "".join(f"<li>Klicky {html.escape(version)}</li>" for version in versions)
-    path.write_text(
-        "<!doctype html>\n"
-        '<html lang="en"><meta charset="utf-8">\n'
-        "<title>Klicky APT repository</title>\n"
-        "<h1>Klicky APT repository</h1>\n"
-        "<p>Signed stable packages for Debian-compatible amd64 systems.</p>\n"
-        f"<p>Repository: <code>{html.escape(public_url)}</code></p>\n"
-        f"<ul>{items}</ul>\n"
-        '<p><a href="klicky.sources">Deb822 source</a> | '
-        '<a href="klicky-archive-keyring.gpg">Signing key</a></p>\n'
+def render_index(public_url: str, versions: list[str], fingerprint: str) -> str:
+    public_url = validate_public_url(public_url)
+    fingerprint = validate_fingerprint(fingerprint)
+    if not versions:
+        raise ValueError("at least one package version is required")
+
+    template_path = Path(__file__).resolve().parent.parent / "packaging/apt/index.html"
+    template = template_path.read_text()
+    items = "".join(
+        f"<li>klicky {html.escape(version)}</li>" for version in versions
     )
+    grouped_fingerprint = " ".join(
+        fingerprint[index : index + 4] for index in range(0, len(fingerprint), 4)
+    )
+    replacements = {
+        "{{PUBLIC_URL}}": html.escape(public_url, quote=True),
+        "{{VERSIONS}}": items,
+        "{{LATEST_VERSION}}": html.escape(versions[-1]),
+        "{{FINGERPRINT}}": grouped_fingerprint,
+    }
+    for marker, value in replacements.items():
+        template = template.replace(marker, value)
+    return template
+
+
+def write_index(
+    path: Path, public_url: str, versions: list[str], fingerprint: str
+) -> None:
+    path.write_text(render_index(public_url, versions, fingerprint))
 
 
 def build_repository(
@@ -214,7 +230,7 @@ def build_repository(
         )
 
         versions = [version for _, version in packages_with_versions]
-        write_index(publish / "index.html", public_url, versions)
+        write_index(publish / "index.html", public_url, versions, fingerprint)
 
         output.mkdir(parents=True, exist_ok=True)
         for path in output.iterdir():
