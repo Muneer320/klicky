@@ -2,6 +2,12 @@
   <img src="assets/klicky-banner.svg" alt="Klicky, low-latency mechanical keyboard sounds" width="900">
 </p>
 
+<h1 align="center">Klicky</h1>
+
+<p align="center">
+  Low-latency mechanical keyboard sounds for Linux and macOS.
+</p>
+
 <p align="center">
   <a href="https://github.com/Muneer320/klicky/actions/workflows/ci.yml"><img src="https://github.com/Muneer320/klicky/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/Rust-1.87%2B-000000?logo=rust" alt="Rust 1.87 or newer">
