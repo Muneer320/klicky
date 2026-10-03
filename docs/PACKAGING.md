@@ -2,6 +2,8 @@
 
 Klicky publishes native packages for Arch Linux and Debian-compatible distributions.
 
+Current package automation targets x86_64 Arch Linux and amd64 Debian-compatible systems. Other architectures are not published until they have clean-environment package builds and hardware validation.
+
 ## Installed layout
 
 ```text
