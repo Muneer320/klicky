@@ -40,6 +40,26 @@ jobs:
           path: target/debian/klicky_*_amd64.deb
           if-no-files-found: error
 
+  apt-repository:
+    needs: debian-package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
+        with:
+          name: klicky-debian-amd64
+          path: dist
+      - name: Install repository tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y reprepro
+      - name: Test signed repository
+        run: |
+          python3 -m unittest scripts/test_apt_repository.py
+          package=$(find dist -name 'klicky_*_amd64.deb' -print -quit)
+          test -n "$package"
+          python3 scripts/test_apt_repository_integration.py "$package"
+
   arch-package:
     runs-on: ubuntu-latest
     container: archlinux:latest
