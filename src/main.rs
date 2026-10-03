@@ -78,26 +78,17 @@ fn cmd_start(benchmark: bool) -> Result<()> {
     }
 
     let mut cfg = config::Config::load()?;
-    let sounds_dir = config::sounds_dir();
-
-    if !sounds_dir.exists() {
-        bail!(
-            "No sound packs found. Copy sound packs to {}",
-            sounds_dir.display()
-        );
-    }
-
-    let pack_dir = sounds_dir.join(&cfg.sound_pack);
-    if !pack_dir.exists() {
+    let sound_roots = config::sound_roots();
+    if config::resolve_sound_pack(&cfg.sound_pack, &sound_roots).is_none() {
         eprintln!(
             "Sound pack '{}' not found, trying first available...",
             cfg.sound_pack
         );
-        let first = fs::read_dir(&sounds_dir)?
-            .filter_map(|e| e.ok())
-            .find(|e| e.path().is_dir())
+        let first = config::available_sound_packs(&sound_roots)?
+            .into_iter()
+            .next()
             .context("No sound packs found")?;
-        cfg.sound_pack = first.file_name().to_string_lossy().to_string();
+        cfg.sound_pack = first;
         cfg.save()?;
     }
 
@@ -115,10 +106,12 @@ fn cmd_start(benchmark: bool) -> Result<()> {
 }
 
 fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
-    let sounds_dir = config::sounds_dir();
+    let sound_roots = config::sound_roots();
 
     // Load sound pack
-    let mut pack = soundpack::SoundPack::load(&sounds_dir.join(&cfg.sound_pack))?;
+    let pack_path = config::resolve_sound_pack(&cfg.sound_pack, &sound_roots)
+        .with_context(|| format!("Sound pack '{}' not found", cfg.sound_pack))?;
+    let mut pack = soundpack::SoundPack::load(&pack_path)?;
     let mut player = player::Player::new()?;
     player.set_volume(cfg.volume);
 
@@ -156,8 +149,10 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
                     process::exit(0);
                 }
                 ipc::Command::Switch { pack: name } => {
-                    let pack_path = sounds_dir.join(&name);
-                    match soundpack::SoundPack::load(&pack_path) {
+                    let result = config::resolve_sound_pack(&name, &sound_roots)
+                        .context("sound pack not found")
+                        .and_then(|path| soundpack::SoundPack::load(&path));
+                    match result {
                         Ok(new_pack) => {
                             pack = new_pack;
                             cfg.sound_pack = name.clone();
@@ -246,31 +241,27 @@ fn cmd_stop() -> Result<()> {
 }
 
 fn cmd_list() -> Result<()> {
-    let sounds_dir = config::sounds_dir();
-    if !sounds_dir.exists() {
-        println!("No sound packs found at {}", sounds_dir.display());
+    let sound_roots = config::sound_roots();
+    let packs = config::available_sound_packs(&sound_roots)?;
+    if packs.is_empty() {
+        println!("No sound packs found");
         return Ok(());
     }
 
     let cfg = config::Config::load()?;
-    for entry in fs::read_dir(&sounds_dir)? {
-        let entry = entry?;
-        if entry.path().is_dir() {
-            let name = entry.file_name().to_string_lossy().to_string();
-            let marker = if name == cfg.sound_pack {
-                " (active)"
-            } else {
-                ""
-            };
-            println!("  {}{}", name, marker);
-        }
+    for name in packs {
+        let marker = if name == cfg.sound_pack {
+            " (active)"
+        } else {
+            ""
+        };
+        println!("  {}{}", name, marker);
     }
     Ok(())
 }
 
 fn cmd_switch(name: String) -> Result<()> {
-    let sounds_dir = config::sounds_dir();
-    if !sounds_dir.join(&name).exists() {
+    if config::resolve_sound_pack(&name, &config::sound_roots()).is_none() {
         bail!("Sound pack '{}' not found", name);
     }
 

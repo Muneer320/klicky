@@ -17,6 +17,8 @@ cp -R my-pack ~/.config/klicky/sounds/
 klicky switch my-pack
 ```
 
+Linux distribution packages can install shared packs under `/usr/share/klicky/sounds`. User packs take precedence over system packs with the same directory name. This allows local customization without modifying package-managed files.
+
 ## Configuration format
 
 ```json

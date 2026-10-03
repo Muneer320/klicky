@@ -265,9 +265,12 @@ On Linux:
 ```text
 ~/.config/klicky/config.toml
 ~/.config/klicky/sounds/
+/usr/share/klicky/sounds/
 $XDG_RUNTIME_DIR/klicky/klicky.pid
 $XDG_RUNTIME_DIR/klicky/klicky.sock
 ```
+
+User sound packs override package-managed system packs with the same name.
 
 Typical configuration:
 
