@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    url: https://github.com/Muneer320/klicky/security/advisories/new
+    about: Report keystroke exposure, permission, path, or command-execution vulnerabilities privately
