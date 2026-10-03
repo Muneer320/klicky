@@ -37,6 +37,18 @@ Results:
 
 The percentile calculation uses nearest-rank values over the collected samples.
 
+A real excerpt from that run:
+
+```text
+[ShiftLeft] 0.56ms  (avg: 0.56ms, min: 0.56ms, max: 0.56ms, n=1)
+[KeyH] 0.10ms  (avg: 0.33ms, min: 0.10ms, max: 0.56ms, n=2)
+[KeyE] 0.10ms  (avg: 0.25ms, min: 0.10ms, max: 0.56ms, n=3)
+[KeyL] 0.21ms  (avg: 0.24ms, min: 0.10ms, max: 0.56ms, n=4)
+[Space] 0.22ms  (avg: 0.25ms, min: 0.04ms, max: 0.57ms, n=21)
+[ControlLeft] 0.04ms  (avg: 0.24ms, min: 0.01ms, max: 0.57ms, n=44)
+[Return] 0.25ms  (avg: 0.24ms, min: 0.01ms, max: 0.57ms, n=55)
+```
+
 ## Audio buffering
 
 The original Linux prototype negotiated:

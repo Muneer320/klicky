@@ -12,7 +12,7 @@
   <a href="https://github.com/Muneer320/klicky/actions/workflows/ci.yml"><img src="https://github.com/Muneer320/klicky/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/Rust-1.87%2B-000000?logo=rust" alt="Rust 1.87 or newer">
   <img src="https://img.shields.io/badge/Linux-Wayland%20%7C%20X11-1793D1?logo=linux" alt="Linux Wayland and X11">
-  <img src="https://img.shields.io/badge/macOS-builds-000000?logo=apple" alt="macOS builds">
+  <img src="https://img.shields.io/badge/macOS-CI%20build-000000?logo=apple" alt="macOS CI build">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-6e56cf" alt="MIT license"></a>
 </p>
 
@@ -28,6 +28,14 @@
 Linux is the primary target. Direct `evdev` input works on both Wayland and X11 without compositor-specific hooks.
 
 > This project began as a Linux-focused evolution of [Sauhard Gupta's original Klicky](https://github.com/Sauhard74/klicky), a fast macOS keyboard-sound daemon. The original Git history and MIT license are preserved. See [Acknowledgements](ACKNOWLEDGEMENTS.md) for details.
+
+## What this repository adds
+
+- Native Linux `evdev` input that works below Wayland and X11
+- A persistent Rodio 0.22 mixer with verified 256-frame PipeWire output
+- Per-key loudness normalization with a clipping-safe gain ceiling
+- udev, systemd, and Omarchy integration that has been exercised on real hardware
+- Linux and macOS CI, focused tests, benchmarks, and release documentation
 
 ## Why Klicky feels immediate
 
@@ -68,6 +76,7 @@ flowchart LR
     MAC[macOS event tap]
     MAP[Platform key mapping]
     CH[Key event channel]
+    DAEMON[Daemon control loop]
     CACHE[Normalized PCM cache]
     MIX[Persistent Rodio mixer]
     OUT[PipeWire, ALSA, or CoreAudio]
@@ -78,10 +87,11 @@ flowchart LR
     LNX --> MAP
     MAC --> MAP
     MAP --> CH
-    CH --> CACHE
+    CH --> DAEMON
+    IPC -->|control commands| DAEMON
+    DAEMON --> CACHE
     CACHE --> MIX
     MIX --> OUT
-    IPC --> CH
 ```
 
 The platform boundary is intentionally narrow. Linux and macOS produce the same internal key names, while sound-pack loading, playback, configuration, IPC, and CLI behavior remain shared.
@@ -112,6 +122,8 @@ sudo dnf install cargo rust alsa-lib-devel pkgconf-pkg-config
 
 Klicky requires Rust 1.87 or newer.
 
+The automated installer requires systemd user services and udev. The runtime itself is not tied to a desktop environment, but non-systemd distributions need the manual installation and process-management steps.
+
 ### 2. Clone and install
 
 ```bash
@@ -126,7 +138,7 @@ The installer:
 2. Installs it to `~/.local/bin/klicky`.
 3. Copies sound packs to `~/.config/klicky/sounds`.
 4. Installs a keyboard-only udev rule.
-5. Enables `klicky.service` for the graphical user session.
+5. Enables `klicky.service` for the user's default systemd target.
 
 The udev rule grants the active desktop user access only to event devices tagged as keyboards. Klicky does not need to run as root.
 
@@ -253,8 +265,8 @@ On Linux:
 ```text
 ~/.config/klicky/config.toml
 ~/.config/klicky/sounds/
-~/.config/klicky/klicky.pid
-~/.config/klicky/klicky.sock
+$XDG_RUNTIME_DIR/klicky/klicky.pid
+$XDG_RUNTIME_DIR/klicky/klicky.sock
 ```
 
 Typical configuration:
@@ -268,6 +280,7 @@ volume = 0.8
 
 Global keyboard listeners deserve explicit scrutiny.
 
+- Klicky receives raw global key-down events, including events produced while entering sensitive data.
 - Klicky performs no network requests.
 - It does not store typed text.
 - It does not reconstruct characters or keyboard layouts.
@@ -290,7 +303,7 @@ cargo build --release
 
 CI runs the same quality gates on Ubuntu and macOS.
 
-The test suite is deliberately focused. It protects Linux key mapping, key-down filtering, ignored button events, and clipping-safe sample normalization. Hardware-specific input and audio behavior is validated on real devices rather than replaced with a wall of mocks.
+The test suite is deliberately focused. It protects Linux key mapping, key-down filtering, ignored button events, owner-only IPC permissions, and clipping-safe sample normalization. Hardware-specific input and audio behavior is validated on real devices rather than replaced with a wall of mocks.
 
 ## Documentation
 

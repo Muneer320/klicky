@@ -54,6 +54,8 @@ At startup, Klicky:
 
 Release events (`0`) and kernel repeats (`2`) are ignored.
 
+If any device reader ends or returns an error, the listener terminates the daemon with a failure status. The systemd unit restarts the process, which performs a fresh device scan instead of remaining alive without keyboard input.
+
 The included udev rule adds `uaccess` only to devices tagged with `ID_INPUT_KEYBOARD=1`. Klicky itself remains unprivileged.
 
 ### macOS
@@ -117,9 +119,11 @@ Linux typically resolves to:
 ```text
 ~/.config/klicky/config.toml
 ~/.config/klicky/sounds/
-~/.config/klicky/klicky.pid
-~/.config/klicky/klicky.sock
+$XDG_RUNTIME_DIR/klicky/klicky.pid
+$XDG_RUNTIME_DIR/klicky/klicky.sock
 ```
+
+The runtime directory uses mode `0700`. The PID and socket use mode `0600`. When an operating system does not expose a runtime directory, Klicky falls back to a private `run` directory under its application config directory.
 
 macOS typically resolves under:
 
@@ -129,7 +133,7 @@ macOS typically resolves under:
 
 ## Known constraints
 
-- Linux input devices are discovered at daemon startup. A keyboard connected later requires a daemon restart.
+- Linux input devices are discovered at daemon startup. A newly added keyboard requires a daemon restart, while a lost reader causes a systemd-managed process to restart and rediscover devices.
 - Physical audio-device replacement and suspend/resume need additional runtime testing after the Rodio 0.22 migration.
 - Benchmark mode measures input callback to mixer dispatch, not microphone-observed audible latency.
 - Windows has no input backend.

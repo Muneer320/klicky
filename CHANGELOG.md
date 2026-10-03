@@ -29,6 +29,8 @@ The project follows [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Runtime PID and socket files now live in a private runtime directory with owner-only permissions
+- Input-reader failure now terminates the daemon so systemd can restart and rediscover devices
 - Linux builds no longer attempt to link Apple frameworks
 - Quiet sound packs now remain audible without globally overdriving loud packs
 - Linux audio buffering no longer defaults to the previously observed 25 ms control delay

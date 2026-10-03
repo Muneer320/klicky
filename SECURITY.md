@@ -30,6 +30,8 @@ Reports will be acknowledged as soon as practical. Please allow time for a fix b
 
 Klicky listens for global physical key events, which is inherently sensitive.
 
+The daemon receives raw global key-down events, including events generated while passwords or other sensitive text are entered. Klicky discards those events after selecting a sound, but the permission itself carries keylogging capability and should be granted only to trusted software.
+
 ### Linux
 
 - The daemon runs as the logged-in user, never as root.
@@ -37,7 +39,8 @@ Klicky listens for global physical key events, which is inherently sensitive.
 - Normal mode does not log key names.
 - Benchmark mode logs mapped key names and timing.
 - No event data is stored or transmitted.
-- IPC uses a Unix socket inside the user's config directory.
+- IPC uses a Unix socket inside a mode `0700` runtime directory.
+- The socket and PID file use mode `0600`.
 
 ### macOS
 
