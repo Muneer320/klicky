@@ -99,7 +99,10 @@ fn cmd_start(benchmark: bool) -> Result<()> {
     fs::create_dir_all(pid_path.parent().unwrap())?;
     fs::write(&pid_path, process::id().to_string())?;
 
-    println!("klicky started with '{}' (volume: {})", cfg.sound_pack, cfg.volume);
+    println!(
+        "klicky started with '{}' (volume: {})",
+        cfg.sound_pack, cfg.volume
+    );
 
     run_daemon(cfg, benchmark)?;
 
@@ -172,7 +175,12 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
                     && key_event.key_name[1..].parse::<u32>().is_ok();
                 if is_fkey {
                     // Boost F-key volume since their samples are quieter
-                    player.play_with_volume(samples, pack.channels, pack.sample_rate, (cfg.volume + 0.2).min(1.0));
+                    player.play_with_volume(
+                        samples,
+                        pack.channels,
+                        pack.sample_rate,
+                        (cfg.volume + 0.2).min(1.0),
+                    );
                 } else {
                     player.play(samples, pack.channels, pack.sample_rate);
                 }
@@ -240,7 +248,11 @@ fn cmd_list() -> Result<()> {
         let entry = entry?;
         if entry.path().is_dir() {
             let name = entry.file_name().to_string_lossy().to_string();
-            let marker = if name == cfg.sound_pack { " (active)" } else { "" };
+            let marker = if name == cfg.sound_pack {
+                " (active)"
+            } else {
+                ""
+            };
             println!("  {}{}", name, marker);
         }
     }

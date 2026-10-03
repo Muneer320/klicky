@@ -68,7 +68,13 @@ impl Player {
         self.play_with_volume(samples, channels, sample_rate, self.volume);
     }
 
-    pub fn play_with_volume(&mut self, samples: &Arc<Vec<i16>>, channels: u16, sample_rate: u32, volume: f32) {
+    pub fn play_with_volume(
+        &mut self,
+        samples: &Arc<Vec<i16>>,
+        channels: u16,
+        sample_rate: u32,
+        volume: f32,
+    ) {
         let source = PcmSource {
             samples: Arc::clone(samples),
             channels,
