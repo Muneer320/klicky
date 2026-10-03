@@ -90,7 +90,7 @@ jobs:
           pacman -U --noconfirm "$package"
           test "$(klicky --version)" = "klicky 0.3.0"
           test "$(find /usr/share/klicky/sounds -name sound.ogg | wc -l)" -eq 10
-          systemd-analyze --user verify /usr/lib/systemd/user/klicky.service
+          systemd-analyze verify /usr/lib/systemd/user/klicky.service
           klicky list
       - uses: actions/upload-artifact@v4
         with:
