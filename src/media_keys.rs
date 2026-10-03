@@ -92,7 +92,7 @@ extern "C" fn tap_callback(
                         if let Some(name) = media_key_to_name(key_code) {
                             if let Some(ref sender) = MEDIA_SENDER {
                                 let _ = sender.send(KeyEvent {
-                                    key_name: name.to_string(),
+                                    key_name: name,
                                     timestamp: Instant::now(),
                                 });
                             }

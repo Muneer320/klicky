@@ -126,7 +126,9 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
     #[cfg(target_os = "macos")]
     let media_key_tx = key_tx.clone();
     thread::spawn(move || {
-        listener::start_listening(key_tx);
+        if let Err(error) = listener::start_listening(key_tx) {
+            eprintln!("[klicky] key listener stopped: {error:#}");
+        }
     });
 
     #[cfg(target_os = "macos")]
@@ -170,7 +172,7 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
 
         // Play sounds for key events (non-blocking, drain all pending)
         while let Ok(key_event) = key_rx.try_recv() {
-            if let Some(samples) = pack.samples.get(&key_event.key_name) {
+            if let Some(samples) = pack.samples.get(key_event.key_name) {
                 let is_fkey = key_event.key_name.starts_with('F')
                     && key_event.key_name.len() <= 3
                     && key_event.key_name[1..].parse::<u32>().is_ok();
