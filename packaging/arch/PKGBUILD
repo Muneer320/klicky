@@ -8,6 +8,7 @@ url="https://github.com/Muneer320/klicky"
 license=('MIT')
 depends=('alsa-lib' 'gcc-libs' 'glibc' 'systemd')
 makedepends=('cargo' 'git')
+options=('!debug')
 source=("$pkgname::git+$url.git#tag=v$pkgver")
 b2sums=('SKIP')
 

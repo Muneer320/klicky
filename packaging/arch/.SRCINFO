@@ -11,6 +11,7 @@ pkgbase = klicky
 	depends = gcc-libs
 	depends = glibc
 	depends = systemd
+	options = !debug
 	source = klicky::git+https://github.com/Muneer320/klicky.git#tag=v0.3.0
 	b2sums = SKIP
 
