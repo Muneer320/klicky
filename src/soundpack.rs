@@ -12,6 +12,9 @@ use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
 
+const TARGET_PEAK: f32 = i16::MAX as f32 * 0.85;
+const MAX_NORMALIZATION_GAIN: f32 = 6.0;
+
 #[derive(Debug, Deserialize)]
 struct SoundConfig {
     defines: HashMap<String, [u64; 2]>,
@@ -42,10 +45,9 @@ impl SoundPack {
             let end_idx = (start_idx + len).min(all_samples.len());
 
             if start_idx < all_samples.len() {
-                key_samples.insert(
-                    key_name.clone(),
-                    Arc::new(all_samples[start_idx..end_idx].to_vec()),
-                );
+                let mut samples = all_samples[start_idx..end_idx].to_vec();
+                normalize_samples(&mut samples);
+                key_samples.insert(key_name.clone(), Arc::new(samples));
             }
         }
 
@@ -54,6 +56,26 @@ impl SoundPack {
             channels,
             sample_rate,
         })
+    }
+}
+
+fn normalize_samples(samples: &mut [i16]) {
+    let peak = samples
+        .iter()
+        .map(|sample| i32::from(*sample).abs())
+        .max()
+        .unwrap_or(0) as f32;
+    if peak == 0.0 {
+        return;
+    }
+
+    let gain = (TARGET_PEAK / peak).clamp(1.0, MAX_NORMALIZATION_GAIN);
+    if gain == 1.0 {
+        return;
+    }
+
+    for sample in samples {
+        *sample = (f32::from(*sample) * gain).clamp(i16::MIN as f32, i16::MAX as f32) as i16;
     }
 }
 
@@ -100,4 +122,20 @@ fn decode_ogg_fully(path: &Path) -> Result<(Vec<i16>, u16, u32)> {
     }
 
     Ok((all_samples, channels, sample_rate))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalization_boosts_quiet_samples_without_clipping_loud_ones() {
+        let mut quiet = [1000, -1000, 0];
+        normalize_samples(&mut quiet);
+        assert_eq!(quiet, [6000, -6000, 0]);
+
+        let mut loud = [30000, -30000];
+        normalize_samples(&mut loud);
+        assert_eq!(loud, [30000, -30000]);
+    }
 }
