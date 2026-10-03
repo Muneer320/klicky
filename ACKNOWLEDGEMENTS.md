@@ -39,4 +39,8 @@ The current repository adds and maintains:
 
 ## Sound recordings
 
-The bundled sound packs were inherited from the original repository. The repository-level MIT license is preserved, but individual recording provenance is not separately documented upstream. Contributors adding or replacing sounds must provide a clear source and redistribution permission.
+The bundled sound packs were recorded specifically for the original Klicky project by Muneer Alam and Sauhard Gupta. Muneer performed the physical keypress recordings on a mechanical keyboard during their original development work.
+
+The recordings and timing maps are distributed under the repository MIT License. Their dedicated provenance and redistribution notice is in [`sounds/LICENSE.md`](sounds/LICENSE.md).
+
+Contributors adding or replacing sounds must provide a clear source and redistribution permission.
