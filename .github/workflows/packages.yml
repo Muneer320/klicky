@@ -40,26 +40,39 @@ jobs:
           path: target/debian/klicky_*_amd64.deb
           if-no-files-found: error
 
+  apt-repository:
+    needs: debian-package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
+        with:
+          name: klicky-debian-amd64
+          path: dist
+      - name: Install repository tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y reprepro
+      - name: Test signed repository
+        run: |
+          python3 -m unittest scripts/test_apt_repository.py
+          package=$(find dist -name 'klicky_*_amd64.deb' -print -quit)
+          test -n "$package"
+          python3 scripts/test_apt_repository_integration.py "$package"
+
   arch-package:
     runs-on: ubuntu-latest
     container: archlinux:latest
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - name: Install dependencies
         run: pacman -Syu --noconfirm base-devel git rust alsa-lib systemd namcap python
       - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
       - name: Prepare unprivileged builder
         run: |
           useradd -m builder
           chown -R builder:builder "$GITHUB_WORKSPACE"
-          runuser -u builder -- env HOME=/home/builder git config --global \
-            --add safe.directory "$GITHUB_WORKSPACE"
-          runuser -u builder -- env HOME=/home/builder git config --global \
-            protocol.file.allow always
-          runuser -u builder -- env HOME=/home/builder git config --global \
-            url."file://$GITHUB_WORKSPACE".insteadOf \
-            https://github.com/Muneer320/klicky.git
       - name: Verify metadata
         run: |
           runuser -u builder -- bash -lc '
@@ -77,7 +90,7 @@ jobs:
           marker = "#tag=v$pkgver"
           assert marker in text
           path.write_text(text.replace(marker, f"#commit={sys.argv[1]}"))
-          ' "$GITHUB_SHA"
+          ' "$SOURCE_SHA"
           runuser -u builder -- bash -lc '
             cd "$GITHUB_WORKSPACE/packaging/arch"
             makepkg --cleanbuild --noconfirm
