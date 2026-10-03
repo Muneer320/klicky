@@ -38,7 +38,7 @@ jobs:
           printf 'tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v5
         with:
-          ref: master
+          ref: ${{ github.sha }}
       - name: Install repository tools
         run: |
           sudo apt-get update
