@@ -16,13 +16,6 @@ pub enum Command {
     Status,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct StatusResponse {
-    pub sound_pack: String,
-    pub volume: f32,
-    pub running: bool,
-}
-
 pub fn start_server(sender: Sender<Command>) -> Result<()> {
     let sock_path = config::socket_path();
     if sock_path.exists() {
@@ -37,7 +30,7 @@ pub fn start_server(sender: Sender<Command>) -> Result<()> {
     thread::spawn(move || {
         for stream in listener.incoming().flatten() {
             let reader = BufReader::new(&stream);
-            for line in reader.lines().flatten() {
+            for line in reader.lines().map_while(Result::ok) {
                 if let Ok(cmd) = serde_json::from_str::<Command>(&line) {
                     let _ = sender.send(cmd);
                 }
@@ -54,15 +47,4 @@ pub fn send_command(cmd: &Command) -> Result<()> {
     let msg = serde_json::to_string(cmd)?;
     writeln!(stream, "{}", msg)?;
     Ok(())
-}
-
-pub fn send_command_with_response(cmd: &Command) -> Result<String> {
-    let sock_path = config::socket_path();
-    let mut stream = UnixStream::connect(&sock_path)?;
-    let msg = serde_json::to_string(cmd)?;
-    writeln!(stream, "{}", msg)?;
-    stream.shutdown(std::net::Shutdown::Write)?;
-    let mut response = String::new();
-    BufReader::new(&stream).read_line(&mut response)?;
-    Ok(response)
 }

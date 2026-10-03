@@ -1,6 +1,7 @@
 mod config;
 mod ipc;
 mod listener;
+#[cfg(target_os = "macos")]
 mod media_keys;
 mod player;
 mod soundpack;
@@ -9,13 +10,12 @@ use std::fs;
 use std::process;
 use std::sync::mpsc;
 use std::thread;
-use std::time::Instant;
 
 use anyhow::{bail, Context, Result};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "klicky", about = "Mechanical keyboard sounds for your Mac")]
+#[command(name = "klicky", about = "Low-latency mechanical keyboard sounds")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -123,12 +123,13 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
 
     // Key listener channel
     let (key_tx, key_rx) = mpsc::channel();
+    #[cfg(target_os = "macos")]
     let media_key_tx = key_tx.clone();
     thread::spawn(move || {
         listener::start_listening(key_tx);
     });
 
-    // Media/function key listener (F1-F12 without Fn on MacBooks)
+    #[cfg(target_os = "macos")]
     media_keys::start_media_key_listener(media_key_tx);
 
     // Latency tracking

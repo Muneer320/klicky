@@ -695,7 +695,6 @@ name = "klicky"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "block",
  "clap",
  "cocoa 0.26.1",
  "dirs",
