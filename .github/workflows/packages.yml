@@ -50,10 +50,13 @@ jobs:
       - name: Prepare unprivileged builder
         run: |
           useradd -m builder
-          git tag -f v0.3.0
           chown -R builder:builder "$GITHUB_WORKSPACE"
-          runuser -u builder -- git config --global protocol.file.allow always
-          runuser -u builder -- git config --global \
+          runuser -u builder -- env HOME=/home/builder git config --global \
+            --add safe.directory "$GITHUB_WORKSPACE"
+          runuser -u builder -- env HOME=/home/builder git tag -f v0.3.0
+          runuser -u builder -- env HOME=/home/builder git config --global \
+            protocol.file.allow always
+          runuser -u builder -- env HOME=/home/builder git config --global \
             url."file://$GITHUB_WORKSPACE".insteadOf \
             https://github.com/Muneer320/klicky.git
       - name: Verify metadata
