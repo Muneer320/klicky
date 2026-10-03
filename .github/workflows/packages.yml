@@ -1,0 +1,88 @@
+name: Packages
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  debian-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev lintian
+          cargo install cargo-deb --version 3.8.0 --locked
+      - name: Build package
+        run: cargo deb
+      - name: Inspect and lint package
+        run: |
+          deb=$(find target/debian -name 'klicky_*_amd64.deb' -print -quit)
+          test -n "$deb"
+          lintian --suppress-tags initial-upload-closes-no-bugs "$deb"
+          root=$(mktemp -d)
+          dpkg-deb -x "$deb" "$root"
+          test "$("$root/usr/bin/klicky" --version)" = "klicky 0.3.0"
+          test -f "$root/usr/lib/systemd/user/klicky.service"
+          test -f "$root/usr/lib/udev/rules.d/70-klicky.rules"
+          test -f "$root/usr/share/man/man1/klicky.1.gz"
+          test "$(find "$root/usr/share/klicky/sounds" -name sound.ogg | wc -l)" -eq 10
+          XDG_CONFIG_HOME="$root/config" \
+            KLICKY_SYSTEM_SOUNDS_DIR="$root/usr/share/klicky/sounds" \
+            "$root/usr/bin/klicky" list
+      - uses: actions/upload-artifact@v4
+        with:
+          name: klicky-debian-amd64
+          path: target/debian/klicky_*_amd64.deb
+          if-no-files-found: error
+
+  arch-package:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install dependencies
+        run: pacman -Syu --noconfirm base-devel git rust alsa-lib systemd namcap
+      - uses: actions/checkout@v5
+      - name: Prepare unprivileged builder
+        run: |
+          useradd -m builder
+          git tag -f v0.3.0
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+          runuser -u builder -- git config --global protocol.file.allow always
+          runuser -u builder -- git config --global \
+            url."file://$GITHUB_WORKSPACE".insteadOf \
+            https://github.com/Muneer320/klicky.git
+      - name: Verify metadata
+        run: |
+          runuser -u builder -- bash -lc '
+            cd "$GITHUB_WORKSPACE/packaging/arch"
+            makepkg --printsrcinfo > .SRCINFO.generated
+            diff -u .SRCINFO .SRCINFO.generated
+          '
+      - name: Build package
+        run: |
+          runuser -u builder -- bash -lc '
+            cd "$GITHUB_WORKSPACE/packaging/arch"
+            makepkg --cleanbuild --noconfirm
+          '
+      - name: Inspect and install package
+        run: |
+          cd packaging/arch
+          package=$(find . -maxdepth 1 -name 'klicky-*.pkg.tar.zst' -print -quit)
+          test -n "$package"
+          namcap PKGBUILD
+          namcap "$package"
+          pacman -U --noconfirm "$package"
+          test "$(klicky --version)" = "klicky 0.3.0"
+          test "$(find /usr/share/klicky/sounds -name sound.ogg | wc -l)" -eq 10
+          systemd-analyze --user verify /usr/lib/systemd/user/klicky.service
+          klicky list
+      - uses: actions/upload-artifact@v4
+        with:
+          name: klicky-arch-x86_64
+          path: packaging/arch/klicky-*.pkg.tar.zst
+          if-no-files-found: error
