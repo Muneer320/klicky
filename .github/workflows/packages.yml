@@ -45,7 +45,7 @@ jobs:
     container: archlinux:latest
     steps:
       - name: Install dependencies
-        run: pacman -Syu --noconfirm base-devel git rust alsa-lib systemd namcap
+        run: pacman -Syu --noconfirm base-devel git rust alsa-lib systemd namcap python
       - uses: actions/checkout@v5
       - name: Prepare unprivileged builder
         run: |
@@ -53,7 +53,6 @@ jobs:
           chown -R builder:builder "$GITHUB_WORKSPACE"
           runuser -u builder -- env HOME=/home/builder git config --global \
             --add safe.directory "$GITHUB_WORKSPACE"
-          runuser -u builder -- env HOME=/home/builder git tag -f v0.3.0
           runuser -u builder -- env HOME=/home/builder git config --global \
             protocol.file.allow always
           runuser -u builder -- env HOME=/home/builder git config --global \
@@ -68,6 +67,12 @@ jobs:
           '
       - name: Build package
         run: |
+          runuser -u builder -- env HOME=/home/builder python -c '
+          from pathlib import Path
+          import sys
+          path = Path("packaging/arch/PKGBUILD")
+          path.write_text(path.read_text().replace("#tag=v0.3.0", f"#commit={sys.argv[1]}"))
+          ' "$GITHUB_SHA"
           runuser -u builder -- bash -lc '
             cd "$GITHUB_WORKSPACE/packaging/arch"
             makepkg --cleanbuild --noconfirm
