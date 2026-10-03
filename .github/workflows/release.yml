@@ -1,0 +1,91 @@
+name: Release packages
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  debian:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify version
+        run: |
+          version=$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["version"])')
+          test "v$version" = "$GITHUB_REF_NAME"
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev lintian
+          cargo install cargo-deb --version 3.8.0 --locked
+      - name: Build and lint package
+        run: |
+          cargo deb
+          deb=$(find target/debian -name 'klicky_*_amd64.deb' -print -quit)
+          lintian --suppress-tags initial-upload-closes-no-bugs "$deb"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: debian-package
+          path: target/debian/klicky_*_amd64.deb
+          if-no-files-found: error
+
+  arch:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install dependencies
+        run: pacman -Syu --noconfirm base-devel git rust alsa-lib systemd namcap
+      - uses: actions/checkout@v5
+      - name: Prepare builder
+        run: |
+          useradd -m builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+      - name: Build and inspect package
+        run: |
+          runuser -u builder -- bash -lc '
+            cd "$GITHUB_WORKSPACE/packaging/arch"
+            makepkg --printsrcinfo > .SRCINFO.generated
+            diff -u .SRCINFO .SRCINFO.generated
+            makepkg --cleanbuild --noconfirm
+          '
+          cd packaging/arch
+          package=$(find . -maxdepth 1 -name 'klicky-*.pkg.tar.zst' -print -quit)
+          test -n "$package"
+          namcap PKGBUILD
+          namcap "$package"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arch-package
+          path: packaging/arch/klicky-*.pkg.tar.zst
+          if-no-files-found: error
+
+  publish:
+    needs: [debian, arch]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create checksums
+        working-directory: dist
+        run: sha256sum klicky_*.deb klicky-*.pkg.tar.zst > SHA256SUMS
+      - name: Publish assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$GITHUB_REF_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Klicky $GITHUB_REF_NAME" \
+              --generate-notes
+          fi
+          gh release upload "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
