@@ -1,6 +1,7 @@
 use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
+use std::sync::mpsc;
 use std::thread;
 use std::time::Instant;
 
@@ -15,21 +16,22 @@ pub fn start_listening(sender: KeySender) -> Result<()> {
         bail!("no compatible keyboard devices found in /dev/input");
     }
 
-    let mut readers = Vec::with_capacity(devices.len());
+    let (failure_tx, failure_rx) = mpsc::channel();
     for (path, device) in devices {
         let sender = sender.clone();
-        readers.push(thread::spawn(move || {
-            if let Err(error) = read_device(&path, device, sender) {
-                eprintln!("[klicky] {error:#}");
-            }
-        }));
+        let failure_tx = failure_tx.clone();
+        thread::spawn(move || {
+            let _ = failure_tx.send(read_device(&path, device, sender));
+        });
     }
     drop(sender);
+    drop(failure_tx);
 
-    for reader in readers {
-        let _ = reader.join();
+    match failure_rx.recv() {
+        Ok(Ok(())) => bail!("input reader stopped unexpectedly"),
+        Ok(Err(error)) => Err(error),
+        Err(_) => bail!("all input readers stopped unexpectedly"),
     }
-    Ok(())
 }
 
 fn discover_keyboards() -> Result<Vec<(PathBuf, Device)>> {

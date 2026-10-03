@@ -7,6 +7,7 @@ mod player;
 mod soundpack;
 
 use std::fs;
+use std::os::unix::fs::PermissionsExt;
 use std::process;
 use std::sync::mpsc;
 use std::thread;
@@ -57,6 +58,7 @@ fn main() -> Result<()> {
 }
 
 fn cmd_start(benchmark: bool) -> Result<()> {
+    config::ensure_runtime_dir()?;
     let pid_path = config::pid_path();
     if pid_path.exists() {
         let pid_str = fs::read_to_string(&pid_path).unwrap_or_default();
@@ -95,9 +97,8 @@ fn cmd_start(benchmark: bool) -> Result<()> {
         cfg.save()?;
     }
 
-    // Write PID
-    fs::create_dir_all(pid_path.parent().unwrap())?;
     fs::write(&pid_path, process::id().to_string())?;
+    fs::set_permissions(&pid_path, fs::Permissions::from_mode(0o600))?;
 
     println!(
         "klicky started with '{}' (volume: {})",
@@ -128,6 +129,7 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
     thread::spawn(move || {
         if let Err(error) = listener::start_listening(key_tx) {
             eprintln!("[klicky] key listener stopped: {error:#}");
+            process::exit(1);
         }
     });
 
