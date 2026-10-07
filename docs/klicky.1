@@ -31,6 +31,10 @@ Select a sound pack immediately, or save it for the next start when the daemon i
 .TP
 .BI volume " LEVEL"
 Set playback volume between 0.0 and 1.0.
+.TP
+.BI service " enable|disable|start|stop|status"
+Manage automatic startup and the background user service. Enable starts Klicky now
+and at future logins. Start and stop only affect the current session.
 .SH OPTIONS
 .TP
 .BR -h , " --help"
@@ -52,11 +56,11 @@ Package-managed system sound packs.
 .I $XDG_RUNTIME_DIR/klicky/
 Owner-only PID file and Unix socket.
 .SH SERVICE
-The distribution package installs a systemd user unit.
-Enable it for the current user with:
+Linux uses a systemd user unit. macOS uses a per-user LaunchAgent.
+Enable automatic startup for the current user with:
 .PP
 .nf
-systemctl --user enable --now klicky.service
+klicky service enable
 .fi
 .SH SECURITY
 Klicky receives raw global key-down events, including events generated while entering sensitive text.

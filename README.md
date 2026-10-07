@@ -23,7 +23,19 @@
  |_|\_\____|___\___|_|\_\  |_|
 ```
 
-**Klicky is a small Rust daemon that gives every keypress a mechanical keyboard sound.** It listens below the desktop layer, keeps audio decoded in memory, and uses one persistent low-latency output stream. There is no GUI, no telemetry, and no network connection.
+**Klicky is a small Rust daemon that gives every keypress a mechanical keyboard sound.** It listens below the desktop layer, keeps audio decoded in memory, and uses one persistent low-latency output stream. The sound engine has no GUI, telemetry, or network connection; optional desktop controls provide a toggle.
+
+## Find your way
+
+| I want to... | Go to |
+|---|---|
+| Install on macOS | [macOS installation](#macos-installation) |
+| Install on Arch, Omarchy, Ubuntu, or Debian | [Linux installation](#linux-installation) |
+| Start at login or turn Klicky on and off | [Startup and everyday controls](#startup-and-everyday-controls) |
+| Add a menu bar or Omarchy bar toggle | [Desktop controls](#desktop-controls) |
+| Build manually or change sound packs | [Manual installation](#manual-installation) and [CLI reference](#cli-reference) |
+
+**Installation** puts the binary and sound packs on your computer. **Enabling the service** makes Klicky start when you log in, including after a reboot. **Starting and stopping** only changes the current session; it does not change the login setting. The menu bar and Omarchy bar are optional controls for that service.
 
 Linux is the primary target. Direct `evdev` input works on both Wayland and X11 without compositor-specific hooks.
 
@@ -98,9 +110,38 @@ The platform boundary is intentionally narrow. Linux and macOS produce the same 
 
 More detail lives in [Architecture](docs/ARCHITECTURE.md).
 
-## Linux quick start
+## Installation
 
-### Distribution packages
+Choose your operating system below. Commands marked `bash` run in Terminal on macOS or a shell on Linux. Run commands from the cloned `klicky` directory when they start with `./scripts/`.
+
+### macOS installation
+
+1. Install [Rust](https://rustup.rs/) (version 1.87 or newer) and the Xcode Command Line Tools (`xcode-select --install`). Open a fresh Terminal after installing Rust.
+2. Clone the repository and run the installer:
+
+   ```bash
+   git clone https://github.com/Muneer320/klicky.git
+   cd klicky
+   ./scripts/install-macos.sh
+   ```
+
+   This builds Klicky, copies it to `~/.local/bin/klicky`, installs the sound packs, and enables a per-user LaunchAgent that starts at login. It does not need `sudo`.
+
+3. In **System Settings > Privacy & Security > Accessibility**, allow `~/.local/bin/klicky`. You may need to add the binary with the **+** button. Restart the service after granting permission:
+
+   ```bash
+   ~/.local/bin/klicky service stop
+   ~/.local/bin/klicky service start
+   ~/.local/bin/klicky service status
+   ```
+
+4. Optional: [add the macOS menu bar toggle](#desktop-controls).
+
+If `klicky` is not found by your shell, use `~/.local/bin/klicky` as shown above or add `~/.local/bin` to your `PATH`. The macOS media-key behavior is covered in [Function keys on macOS](docs/function-keys-sound.md).
+
+### Linux installation
+
+#### Distribution packages
 
 Release packages include the binary, ten sound packs, the user service, the udev rule, licenses, and the manual page.
 
@@ -109,7 +150,7 @@ Arch Linux and Omarchy:
 ```bash
 gh release download v0.3.0 --pattern 'klicky-*.pkg.tar.zst'
 sudo pacman -U klicky-*.pkg.tar.zst
-systemctl --user enable --now klicky.service
+klicky service enable
 ```
 
 Ubuntu and Debian:
@@ -117,7 +158,7 @@ Ubuntu and Debian:
 ```bash
 gh release download v0.3.0 --pattern 'klicky_*_amd64.deb'
 sudo apt install ./klicky_*_amd64.deb
-systemctl --user enable --now klicky.service
+klicky service enable
 ```
 
 Packages are also available from the [v0.3.0 release](https://github.com/Muneer320/klicky/releases/tag/v0.3.0) without GitHub CLI. See [Linux packaging](docs/PACKAGING.md) for package contents and maintainer instructions.
@@ -126,9 +167,9 @@ Debian and Ubuntu users can also configure the signed [Klicky APT repository](do
 
 If Klicky was previously installed with `scripts/install-linux.sh`, run `./scripts/uninstall-linux.sh` without `--purge` before installing a package. This removes the user-local binary and service while preserving configuration and custom sound packs.
 
-### Build from source
+#### Build from source
 
-#### 1. Install build prerequisites
+##### 1. Install build prerequisites
 
 Arch Linux and Omarchy:
 
@@ -152,7 +193,7 @@ Klicky requires Rust 1.87 or newer.
 
 The automated installer requires systemd user services and udev. The runtime itself is not tied to a desktop environment, but non-systemd distributions need the manual installation and process-management steps.
 
-#### 2. Clone and install
+##### 2. Clone and install
 
 ```bash
 git clone https://github.com/Muneer320/klicky.git
@@ -179,24 +220,47 @@ systemctl --user status klicky.service
 
 If `~/.local/bin` is not in your `PATH`, run `~/.local/bin/klicky` directly or add the directory to your shell profile.
 
-### Omarchy bar toggle
+## Startup and everyday controls
 
-Omarchy users can add a native center-bar control after installing Klicky:
+The same commands work on Linux (systemd user service) and macOS (LaunchAgent) after installation:
+
+| Command | What it does |
+|---|---|
+| `klicky service enable` | Start now and start automatically at each login |
+| `klicky service disable` | Stop now and turn off automatic startup |
+| `klicky service start` | Turn on for this session |
+| `klicky service stop` | Turn off for this session |
+| `klicky service status` | Show automatic startup and running state |
+
+On macOS, replace `klicky` with `~/.local/bin/klicky` if needed. Both installers enable automatic startup. These are **user** services: Klicky starts when you log in, not at the computer's boot screen.
+
+`klicky stop` also stops the daemon. `klicky start` runs in the foreground and occupies the terminal until stopped.
+
+## Desktop controls
+
+### macOS menu bar
+
+After the [macOS installer](#macos-installation), run:
+
+```bash
+./scripts/install-macos-menu-bar.sh
+```
+
+A keyboard icon appears in the menu bar. Its menu shows whether Klicky is on and has a **Turn Klicky On/Off** action. If automatic startup is disabled, the menu offers **Enable Klicky**. The menu bar helper also opens at login. It is optional; quitting the helper does not stop the sound service. The helper is built locally from the included Swift source and requires `swiftc` from the Xcode Command Line Tools.
+
+### Omarchy top bar
+
+After installing Klicky on Omarchy, run:
 
 ```bash
 ./scripts/install-omarchy-toggle.sh
 ```
 
-The keyboard icon follows Omarchy's indicator behavior:
+The keyboard icon shows when Klicky is running and appears dimmed on hover when stopped. Click it to toggle the service. See [Omarchy integration](docs/OMARCHY.md) for exact files and removal steps.
 
-- Visible at full opacity while Klicky is running
-- Hidden while stopped
-- Revealed at reduced opacity when the center bar is hovered
-- Clickable in either visible state
+## Manual installation
 
-See [Omarchy integration](docs/OMARCHY.md) for the exact files and removal steps.
-
-## Manual Linux installation
+### Linux
 
 If you prefer to inspect each step:
 
@@ -213,7 +277,21 @@ systemctl --user daemon-reload
 systemctl --user enable --now klicky.service
 ```
 
-## CLI
+### macOS
+
+If you prefer each build step to be explicit:
+
+```bash
+cargo build --release
+mkdir -p "$HOME/.local/bin" "$HOME/Library/Application Support/klicky/sounds"
+install -m755 target/release/klicky "$HOME/.local/bin/klicky"
+cp -R sounds/. "$HOME/Library/Application Support/klicky/sounds/"
+"$HOME/.local/bin/klicky" service enable
+```
+
+Grant Accessibility access to `~/.local/bin/klicky` as described above.
+
+## CLI reference
 
 ```text
 klicky start
@@ -223,6 +301,8 @@ klicky status
 klicky list
 klicky switch cherrymx-blue-pbt
 klicky volume 0.5
+klicky service enable
+klicky service stop
 ```
 
 | Command | Purpose |
@@ -234,6 +314,7 @@ klicky volume 0.5
 | `list` | List installed sound packs |
 | `switch <name>` | Change packs immediately or for the next start |
 | `volume <0.0-1.0>` | Change and persist playback volume |
+| `service <enable|disable|start|stop|status>` | Manage login startup and the background service |
 
 The systemd unit runs `klicky start` for you. The CLI remains useful for status, sound-pack switching, and volume changes.
 
@@ -268,23 +349,10 @@ See [Sound packs](docs/SOUND_PACKS.md) to create or validate a custom pack.
 |---|---|---|---|
 | Linux Wayland | `evdev` | PipeWire or ALSA through Rodio | Hardware verified |
 | Linux X11 | `evdev` | PipeWire or ALSA through Rodio | Backend independent of X11 |
-| macOS | `rdev` plus media-key event tap | CoreAudio through Rodio | Builds and tests in CI |
+| macOS | `rdev` plus media-key event tap | CoreAudio through Rodio | Build, user service, and menu bar helper verified on a Mac |
 | Windows | None | None | Not supported |
 
-Current release validation is Linux-first. macOS compilation and tests run in CI, but the Rodio 0.22 playback path still needs a fresh physical Mac runtime check before a release claims full macOS verification.
-
-## macOS build
-
-```bash
-git clone https://github.com/Muneer320/klicky.git
-cd klicky
-cargo build --release
-mkdir -p "$HOME/Library/Application Support/klicky/sounds"
-cp -R sounds/. "$HOME/Library/Application Support/klicky/sounds/"
-./target/release/klicky start
-```
-
-Grant Accessibility permission to the terminal or binary under **System Settings > Privacy & Security > Accessibility**. The macOS media-key implementation is documented in [Function keys on macOS](docs/function-keys-sound.md).
+Current release validation is Linux-first. macOS compilation, tests, LaunchAgent startup, and menu bar helper startup have been checked on a Mac. A physical key-to-speaker check of the Rodio 0.22 playback path is still needed before a release claims full macOS verification.
 
 ## Configuration and runtime files
 
@@ -299,6 +367,8 @@ $XDG_RUNTIME_DIR/klicky/klicky.sock
 ```
 
 User sound packs override package-managed system packs with the same name.
+
+On macOS, configuration and sound packs live in `~/Library/Application Support/klicky/`. The login service is `~/Library/LaunchAgents/dev.klicky.daemon.plist`; the optional menu bar helper uses `~/Library/LaunchAgents/dev.klicky.menu.plist`.
 
 Typical configuration:
 
@@ -367,6 +437,16 @@ Source installation:
 ```bash
 ./scripts/uninstall-linux.sh
 ```
+
+macOS installation:
+
+```bash
+~/.local/bin/klicky service disable
+launchctl bootout "gui/$(id -u)/dev.klicky.menu" 2>/dev/null || true
+rm -f "$HOME/Library/LaunchAgents/dev.klicky.menu.plist" "$HOME/.local/bin/klicky-menu" "$HOME/.local/bin/klicky"
+```
+
+The macOS commands keep your configuration and sound packs.
 
 Configuration and sound packs are kept by default. Remove them too with:
 

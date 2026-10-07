@@ -32,6 +32,9 @@ jobs:
         run: |
           bash -n scripts/*.sh
           shellcheck scripts/*.sh
+      - name: Check macOS menu bar helper
+        if: runner.os == 'macOS'
+        run: swiftc packaging/macos/KlickyMenu.swift -o /tmp/klicky-menu-check
       - name: Check GitHub Actions workflows
         if: runner.os == 'Linux'
         run: |

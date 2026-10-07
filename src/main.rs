@@ -4,6 +4,7 @@ mod listener;
 #[cfg(target_os = "macos")]
 mod media_keys;
 mod player;
+mod service;
 mod soundpack;
 
 use std::fs;
@@ -44,6 +45,25 @@ enum Commands {
     Volume { level: f32 },
     /// Show current status
     Status,
+    /// Manage automatic startup and the background service
+    Service {
+        #[command(subcommand)]
+        action: ServiceAction,
+    },
+}
+
+#[derive(Subcommand)]
+enum ServiceAction {
+    /// Start at login and start now
+    Enable,
+    /// Stop now and do not start at login
+    Disable,
+    /// Start the installed service for this session
+    Start,
+    /// Stop the service for this session
+    Stop,
+    /// Show whether automatic startup is enabled and the daemon is running
+    Status,
 }
 
 fn main() -> Result<()> {
@@ -56,6 +76,7 @@ fn main() -> Result<()> {
         Commands::Switch { name } => cmd_switch(name)?,
         Commands::Volume { level } => cmd_volume(level)?,
         Commands::Status => cmd_status()?,
+        Commands::Service { action } => service::run(action)?,
     }
 
     Ok(())
@@ -231,7 +252,7 @@ fn print_latency_summary(latencies: &[f64]) {
     eprintln!("  p99:  {:.2}ms", p99);
 }
 
-fn cmd_stop() -> Result<()> {
+pub(crate) fn cmd_stop() -> Result<()> {
     match ipc::send_command(&ipc::Command::Stop) {
         Ok(_) => println!("klicky stopped"),
         Err(_) => println!("klicky is not running"),
@@ -292,20 +313,22 @@ fn cmd_volume(level: f32) -> Result<()> {
     Ok(())
 }
 
+pub(crate) fn is_running() -> bool {
+    let pid_path = config::pid_path();
+    if !pid_path.exists() {
+        return false;
+    }
+    let pid_str = fs::read_to_string(pid_path).unwrap_or_default();
+    pid_str
+        .trim()
+        .parse::<i32>()
+        .map(|pid| unsafe { libc::kill(pid, 0) == 0 })
+        .unwrap_or(false)
+}
+
 fn cmd_status() -> Result<()> {
     let cfg = config::Config::load()?;
-    let pid_path = config::pid_path();
-
-    let running = if pid_path.exists() {
-        let pid_str = fs::read_to_string(&pid_path).unwrap_or_default();
-        pid_str
-            .trim()
-            .parse::<i32>()
-            .map(|pid| unsafe { libc::kill(pid, 0) == 0 })
-            .unwrap_or(false)
-    } else {
-        false
-    };
+    let running = is_running();
 
     println!("klicky status:");
     println!("  running:    {}", if running { "yes" } else { "no" });
