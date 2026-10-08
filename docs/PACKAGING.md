@@ -66,11 +66,13 @@ The AUR accepts only its `master` branch. Never publish `.SRCINFO` that differs 
 
 Debian metadata is stored in `Cargo.toml` under `[package.metadata.deb]`. Maintainer scripts are under `packaging/debian/`.
 
+### Build and validate
+
+Build on an amd64 Linux system with the [Linux build prerequisites](../README.md#build-from-source-on-linux):
+
 ```bash
 cargo install cargo-deb --version 3.8.0 --locked
 cargo deb
-sudo apt install ./target/debian/klicky_*_amd64.deb
-systemctl --user enable --now klicky.service
 ```
 
 Validate a package with:
@@ -81,6 +83,17 @@ lintian --suppress-tags initial-upload-closes-no-bugs \
 ```
 
 The suppressed tag requires a real Debian Intent-To-Package bug number and applies only when submitting to Debian itself. Do not fabricate one for GitHub release packages.
+
+### Install a local package
+
+Install the built package directly, without adding an APT repository:
+
+```bash
+sudo apt install ./target/debian/klicky_*_amd64.deb
+systemctl --user enable --now klicky.service
+```
+
+For a downloaded release asset, pass its local path instead. APT resolves dependencies from your configured repositories; the distribution must provide the package's required libraries.
 
 ## Release automation
 
@@ -99,14 +112,10 @@ The regular package workflow also builds both formats on pushes and pull request
 
 ## APT repository
 
-A downloadable `.deb` can be installed with `apt install ./file.deb`. Supporting `apt install klicky` requires a signed APT repository or acceptance into Debian and Ubuntu repositories.
+Klicky has a public, signed APT repository at [muneer320.github.io/klicky](https://muneer320.github.io/klicky/), using suite `stable`, component `main`, and architecture `amd64`.
 
-A future repository must include:
+Follow the [APT repository guide](APT_REPOSITORY.md) to verify the dedicated signing-key fingerprint and install the Deb822 source with `Signed-By`. Once configured, use `sudo apt update` and `sudo apt install klicky`. This installs a published release package, not the current source tree. The currently published package is `0.3.0-1`; use `systemctl --user` for its service controls.
 
-- A dedicated OpenPGP signing key
-- Signed `InRelease` metadata
-- Versioned package indexes for supported distributions and architectures
-- Key rotation and revocation documentation
-- Automated installation tests against the published repository
+[APT publication](APT_REPOSITORY.md#publication) is a separate workflow that consumes a release `.deb` and `SHA256SUMS`, signs repository metadata, and deploys public files to GitHub Pages. It accepts a release-published event or manual dispatch. Because the tag-driven release workflow publishes with `GITHUB_TOKEN`, maintainers must explicitly dispatch APT publication after that workflow finishes; its release event does not automatically start another workflow.
 
-Do not ask users to trust an unsigned repository or pipe remote setup scripts directly into a root shell.
+Publication requires the configured signing secrets and GitHub Pages deployment permissions. The current workflow publishes only the selected release package; it does not retain previous repository versions. See the guide for prerequisites, publication steps, test coverage, and key rotation.

@@ -6,7 +6,11 @@ The Klicky APT repository publishes signed amd64 packages at:
 https://muneer320.github.io/klicky
 ```
 
+It is a public GitHub Pages repository with suite `stable`, component `main`, and architecture `amd64`. The currently published package is `0.3.0-1`, from the `v0.3.0` release. It does not include the current source tree's `klicky service` commands; use `systemctl --user` as shown below.
+
 ## Install the repository
+
+You need `curl`, GnuPG, and an amd64 Debian-compatible system that provides the package's dependencies. The published `0.3.0-1` package requires `libasound2t64 (>= 1.0.29)`, `libc6 (>= 2.34)`, `systemd`, and `udev`; it is not compatible with every older Debian or Ubuntu release. The suite name `stable` is Klicky's repository channel, not a Debian release codename.
 
 Download the public key without granting trust yet:
 
@@ -100,20 +104,44 @@ Never commit private keys, passphrases, or revocation certificates.
 
 ## Publication
 
-`.github/workflows/apt-repository.yml` runs when a GitHub release is published or through an explicit manual dispatch.
+[The APT workflow](../.github/workflows/apt-repository.yml) accepts a GitHub `release: published` event or an explicit manual dispatch. Ordinary pushes and pull requests do not publish APT packages.
+
+**The tag-driven release workflow does not automatically chain into APT publication.** [The release workflow](../.github/workflows/release.yml) publishes using `GITHUB_TOKEN`; GitHub suppresses subsequent release-event workflow runs from that token. See [GitHub's workflow-trigger rules](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow).
+
+After the release workflow has finished uploading the `.deb` and `SHA256SUMS`, a maintainer can dispatch publication for that release:
+
+```bash
+gh workflow run apt-repository.yml --repo Muneer320/klicky \
+  --ref master -f tag=v0.3.0
+```
+
+Replace the tag with the intended published release. The workflow accepts `vMAJOR.MINOR.PATCH`, requires exactly one matching amd64 `.deb`, verifies its checksum, and requires its Debian version to be `MAJOR.MINOR.PATCH-1`.
+
+Publication prerequisites:
+
+- GitHub Pages configured to deploy through Actions, with the `github-pages` environment permitting deployment.
+- Secrets `APT_GPG_PRIVATE_KEY`, `APT_GPG_PASSPHRASE`, and `APT_GPG_FINGERPRINT`, configured by the signing-key setup script.
+- A signing key whose fingerprint matches the value pinned in the workflow and the installation instructions. Key rotation must update these together.
+- Permission to dispatch the workflow; its deployment job uses `pages: write` and `id-token: write`.
 
 The workflow:
 
-1. Downloads the release amd64 `.deb`.
+1. Downloads and verifies the selected release's amd64 `.deb` and checksums.
 2. Imports the encrypted signing subkey into an ephemeral GnuPG home.
 3. Verifies the key and passphrase with a signing probe.
-4. Rebuilds the complete repository from published packages.
+4. Builds a fresh repository containing the selected release package.
 5. Generates `InRelease`, `Release`, `Release.gpg`, and package indexes.
 6. Exports only public key material.
 7. Uploads only public repository files as a Pages artifact.
 8. Deploys through GitHub's OIDC-backed Pages environment.
 
 Pull requests never receive signing secrets and cannot publish the repository.
+
+Each deployment replaces the public repository with that selected package version. Although the builder supports an `--existing-root` option, the publication workflow does not use it or download older packages. Dispatching an older release can therefore replace the current repository contents with that older version.
+
+## Validation coverage
+
+[Package CI](../.github/workflows/packages.yml) runs the builder's unit tests and a Linux integration test with a temporary signing key and local `file:` repository. The integration test checks signed metadata, `apt-get update`, and package discovery; it does not install from the live Pages site. The publication builder also verifies the generated `InRelease` signature before upload. There is no automated post-deployment installation check against the public URL.
 
 ## Key rotation
 
