@@ -109,21 +109,43 @@ impl Drop for Owner {
     }
 }
 
-/// True only after the main daemon loop answers, not merely when a PID exists.
-pub fn responsive(directory: &Path) -> bool {
-    ipc::request(
+#[derive(Debug, Default)]
+pub struct Status {
+    pub process_exists: bool,
+    pub responsive: bool,
+}
+
+/// A matching event-loop reply is not a keyboard or audio health check.
+pub fn status(directory: &Path) -> Result<Status> {
+    let Some(pid) = read_pid(directory)?.filter(|pid| process_exists(*pid)) else {
+        return Ok(Status::default());
+    };
+    let response = ipc::request(
         &directory.join("klicky.sock"),
         &Command::Status,
         Instant::now() + Duration::from_millis(200),
-    )
-    .is_ok()
+    );
+    let same_pid = read_pid(directory)? == Some(pid);
+    let exists = same_pid && process_exists(pid);
+    Ok(Status {
+        process_exists: exists,
+        responsive: exists && response.is_ok_and(|reply_pid| reply_pid == pid),
+    })
+}
+
+pub fn responsive(directory: &Path) -> bool {
+    status(directory).is_ok_and(|status| status.responsive)
 }
 
 pub fn wait_ready(directory: &Path) -> Result<()> {
     let deadline = Instant::now() + TIMEOUT;
     loop {
         match ipc::request(&directory.join("klicky.sock"), &Command::Status, deadline) {
-            Ok(_) => return Ok(()),
+            Ok(pid) if read_pid(directory)? == Some(pid) && process_exists(pid) => return Ok(()),
+            Ok(_) if Instant::now() >= deadline => {
+                bail!("daemon readiness response does not match a live PID file")
+            }
+            Ok(_) => thread::sleep(POLL),
             Err(error) if Instant::now() >= deadline => {
                 return Err(error.context("daemon did not become responsive within 3 seconds"))
             }
@@ -297,6 +319,30 @@ mod tests {
         assert!(wait_for_exit(i32::MAX, Instant::now()).is_ok());
         assert!(!process_exists(0));
         assert!(!process_exists(-1));
+    }
+
+    #[test]
+    fn readiness_requires_a_matching_live_pid() -> Result<()> {
+        for matching in [true, false] {
+            let directory = Directory::new();
+            let _owner = Owner::acquire(&directory.0)?.unwrap();
+            let listener = UnixListener::bind(directory.0.join("klicky.sock"))?;
+            let server = thread::spawn(move || {
+                let (mut stream, _) = listener.accept().unwrap();
+                let mut line = String::new();
+                BufReader::new(&stream).read_line(&mut line).unwrap();
+                assert_eq!(line.trim(), "\"Status\"");
+                let pid = if matching {
+                    std::process::id()
+                } else {
+                    i32::MAX as u32
+                };
+                writeln!(stream, "{{\"pid\":{pid}}}").unwrap();
+            });
+            assert_eq!(wait_ready(&directory.0).is_ok(), matching);
+            server.join().unwrap();
+        }
+        Ok(())
     }
 
     // A real process owns the lock and socket, but shutdown is gated by stdin.

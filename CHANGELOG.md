@@ -12,12 +12,19 @@ The project follows [Semantic Versioning](https://semver.org/).
 - Deb822 source configuration with a repository-specific `Signed-By` key
 - End-to-end APT index, signature, and package-discovery validation
 
+### Changed
+
+- Current-source status reports `running: yes` only for a matching live-daemon IPC response; `process exists` separately reports PID liveness without implying input or audio health
+
 ### Fixed
 
 - Daemon stop waits up to three seconds for confirmed process exit and reports shutdown failures instead of treating IPC delivery as success
 - A persistent ownership lock serializes startup and PID/socket cleanup; only the owning daemon removes runtime state, including after initialization failures
 - Service start and enable verify daemon responsiveness after the service manager returns; status reports event-loop responsiveness separately from PID-based running state
 - Regression coverage for rapid stop/start, stale or missing runtime state, stalled shutdown, invalid acknowledgments, and service readiness
+- Reject mismatched or stale PID acknowledgments in status and service readiness checks
+- macOS service startup validates `~/.local/bin/klicky` instead of registering a temporary invoking executable, and refreshes older LaunchAgents
+- macOS daemon LaunchAgents restart unsuccessful exits with a 30-second throttle; intentional stops unload the job to cancel pending retries without removing login startup
 
 ## 0.3.0 - 2026-10-03
 

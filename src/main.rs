@@ -69,7 +69,7 @@ fn main() -> Result<()> {
 
     match cli.command {
         Commands::Start { benchmark } => cmd_start(benchmark)?,
-        Commands::Stop => cmd_stop()?,
+        Commands::Stop => service::stop()?,
         Commands::List => cmd_list()?,
         Commands::Switch { name } => cmd_switch(name)?,
         Commands::Volume { level } => cmd_volume(level)?,
@@ -309,26 +309,22 @@ fn cmd_volume(level: f32) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn is_running() -> bool {
-    lifecycle::read_pid(&config::runtime_dir())
-        .ok()
-        .flatten()
-        .is_some_and(lifecycle::process_exists)
-}
-
 fn cmd_status() -> Result<()> {
     let cfg = config::Config::load()?;
-    let running = is_running();
+    let status = lifecycle::status(&config::runtime_dir())?;
 
     println!("klicky status:");
-    println!("  running:    {}", if running { "yes" } else { "no" });
+    println!(
+        "  running:    {}",
+        if status.responsive { "yes" } else { "no" }
+    );
+    println!(
+        "  process exists: {}",
+        if status.process_exists { "yes" } else { "no" }
+    );
     println!(
         "  responsive: {}",
-        if lifecycle::responsive(&config::runtime_dir()) {
-            "yes"
-        } else {
-            "no"
-        }
+        if status.responsive { "yes" } else { "no" }
     );
     println!("  sound pack: {}", cfg.sound_pack);
     println!("  volume:     {:.1}", cfg.volume);

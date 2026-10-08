@@ -140,6 +140,8 @@ cd klicky
 
 The script installs the binary at `~/.local/bin/klicky`, copies the bundled packs, and creates a per-user LaunchAgent that starts when you log in. It does not require `sudo`.
 
+macOS service commands use that installed executable, never the invoking build's path. Missing, non-executable, or symlinked installations are rejected; rerun the installer to repair them. `service start` and `service enable` update older daemon LaunchAgents to the current path and recovery policy.
+
 > [!IMPORTANT]
 > **macOS Accessibility:** In **System Settings > Privacy & Security > Accessibility**, add and allow the installed binary at `$HOME/.local/bin/klicky`. Permission for `target/release/klicky` is not permission for the installed copy.
 
@@ -189,11 +191,11 @@ Installing puts the binary and sounds on disk. **Enable** starts Klicky now and 
 | `klicky service enable` | Enable login startup and start now |
 | `klicky service disable` | Stop now and disable login startup |
 | `klicky service start` / `klicky service stop` | Start or stop this session without changing login startup |
-| `klicky service status` | Report autostart and PID-based running state |
+| `klicky service status` | Report autostart, process existence, and confirmed daemon responsiveness |
 
 | Runtime | What it does |
 |---|---|
-| `klicky status` | Report PID-based running state, pack, and volume |
+| `klicky status` | Report process existence, confirmed daemon responsiveness, pack, and volume |
 | `klicky start` / `klicky stop` | Run the daemon in the foreground or request its exit |
 | `klicky start --benchmark` | Print mapped keys and input-to-mixer-dispatch timing |
 
@@ -352,11 +354,13 @@ To see startup errors in Terminal, stop the service and run Klicky in the foregr
 
 Use another Terminal for `~/.local/bin/klicky stop`, then run `~/.local/bin/klicky service start` when finished. Closing the menu helper does not stop the daemon.
 
+Current macOS LaunchAgents restart unsuccessful exits with a **30-second launch throttle**. Repeated startup failures keep retrying at that rate until stopped; `klicky stop`, `service stop`, and `service disable` cancel pending retries after confirmed shutdown. Stop preserves login startup; disable removes it. This recovery policy still needs validation in a real launchd session.
+
 ### Installation mismatch
 
 If `service` is unknown, you are likely running a published `v0.3.0` Linux binary. Use `systemctl --user` or build the current source. Check `command -v klicky`: a source-installed `~/.local/bin/klicky` can override `/usr/bin/klicky`. Their units and sound directories differ; see the [package migration step](#released-linux-packages).
 
-`klicky status` checks a PID rather than proving that audio and input are healthy. If it says running but you hear nothing, use the platform service diagnostics above and check the selected pack, permissions, and audio route.
+In current source builds, `running: yes` and `responsive: yes` require an IPC reply matching the recorded live PID. `process exists: yes` with `responsive: no` means the recorded process exists but the daemon is not confirmed responsive. Published `v0.3.0` retains PID-based status. **Responsiveness does not test keyboard input or audio output**; if you hear nothing, check the selected pack, permissions, and audio route.
 
 ## Develop and contribute
 

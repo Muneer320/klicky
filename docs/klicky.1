@@ -28,9 +28,10 @@ Stopping an already stopped daemon succeeds.
 .TP
 .B status
 Show daemon state, selected sound pack, and volume.
-The running field reports whether the recorded process exists; responsive
-reports whether the daemon event loop answers IPC. A live PID alone does not
-prove the daemon is healthy.
+The running and responsive fields are yes only when an event-loop IPC reply
+matches the recorded live PID. The process exists field separately reports PID
+liveness. A live but unresponsive process is not reported as a running daemon.
+Responsiveness does not test keyboard input or audio playback.
 .TP
 .B list
 List user and system sound packs.
@@ -85,6 +86,21 @@ uses the same acknowledged stop operation as the direct command; it does not
 force-kill a hung daemon. On macOS, disable also requires confirmed shutdown
 before removing login configuration. Lifecycle acknowledgments require a daemon built with
 the same protocol; stop an older installed daemon before replacing its binary.
+.PP
+On macOS, start and enable require a regular executable at ~/.local/bin/klicky.
+They never register the invoking executable's build path. Symlinked binaries or
+redirected installation directories are rejected. Run ./scripts/install-macos.sh
+from the repository to install or repair this path. Start and enable update older
+daemon property lists to the validated path and current recovery policy.
+.PP
+The macOS daemon LaunchAgent uses KeepAlive with SuccessfulExit=false and a
+30-second ThrottleInterval. Unsuccessful exits are retried; a successful
+acknowledged stop exits with status zero. Repeated startup failures may continue
+retrying at the throttled rate until stopped; this is not a retry-count limit.
+Direct stop and service stop unload the job after confirmed shutdown to cancel
+pending retries while retaining the login property list. Disable also removes
+the login configuration. A readiness timeout does not cancel a queued retry.
+This policy requires validation with a real launchd session in addition to unit tests.
 .SH SECURITY
 Klicky receives raw global key-down events, including events generated while entering sensitive text.
 Normal mode does not store, transmit, or log typed input.
