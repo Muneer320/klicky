@@ -29,9 +29,15 @@ fn command(program: &str, args: &[&str]) -> Result<()> {
 fn linux(action: ServiceAction) -> Result<()> {
     let unit = "klicky.service";
     match action {
-        ServiceAction::Enable => command("systemctl", &["--user", "enable", "--now", unit])?,
+        ServiceAction::Enable => {
+            command("systemctl", &["--user", "enable", "--now", unit])?;
+            crate::lifecycle::wait_ready(&crate::config::runtime_dir())?;
+        }
         ServiceAction::Disable => command("systemctl", &["--user", "disable", "--now", unit])?,
-        ServiceAction::Start => command("systemctl", &["--user", "start", unit])?,
+        ServiceAction::Start => {
+            command("systemctl", &["--user", "start", unit])?;
+            crate::lifecycle::wait_ready(&crate::config::runtime_dir())?;
+        }
         ServiceAction::Stop => command("systemctl", &["--user", "stop", unit])?,
         ServiceAction::Status => {
             let enabled = Command::new("systemctl")
@@ -43,6 +49,7 @@ fn linux(action: ServiceAction) -> Result<()> {
                 if enabled { "enabled" } else { "disabled" }
             );
             println!("running: {}", if is_running() { "yes" } else { "no" });
+            print_responsiveness();
             return Ok(());
         }
     }
@@ -78,14 +85,13 @@ fn macos(action: ServiceAction) -> Result<()> {
             write_plist(&plist, LABEL, &binary)?;
             let path = plist.to_str().context("LaunchAgent path is not UTF-8")?;
             command("launchctl", &["bootstrap", &domain, path])?;
+            crate::lifecycle::wait_ready(&crate::config::runtime_dir())?;
             println!("Klicky will start at login");
         }
         ServiceAction::Disable => {
+            crate::cmd_stop()?;
             if loaded() {
                 command("launchctl", &["bootout", &service])?;
-            }
-            if is_running() {
-                crate::cmd_stop()?;
             }
             if plist.exists() {
                 fs::remove_file(&plist)?;
@@ -110,14 +116,11 @@ fn macos(action: ServiceAction) -> Result<()> {
             } else if !is_running() {
                 command("launchctl", &["kickstart", "-k", &service])?;
             }
+            crate::lifecycle::wait_ready(&crate::config::runtime_dir())?;
             println!("Klicky service started");
         }
         ServiceAction::Stop => {
-            if is_running() {
-                crate::cmd_stop()?;
-            } else {
-                println!("Klicky is not running");
-            }
+            crate::cmd_stop()?;
         }
         ServiceAction::Status => {
             println!(
@@ -129,9 +132,21 @@ fn macos(action: ServiceAction) -> Result<()> {
                 }
             );
             println!("running: {}", if is_running() { "yes" } else { "no" });
+            print_responsiveness();
         }
     }
     Ok(())
+}
+
+fn print_responsiveness() {
+    println!(
+        "responsive: {}",
+        if crate::lifecycle::responsive(&crate::config::runtime_dir()) {
+            "yes"
+        } else {
+            "no"
+        }
+    );
 }
 
 #[cfg(target_os = "macos")]

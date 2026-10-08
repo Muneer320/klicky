@@ -120,10 +120,6 @@ pub fn ensure_runtime_dir() -> Result<PathBuf> {
     Ok(path)
 }
 
-pub fn pid_path() -> PathBuf {
-    runtime_dir().join("klicky.pid")
-}
-
 pub fn socket_path() -> PathBuf {
     runtime_dir().join("klicky.sock")
 }

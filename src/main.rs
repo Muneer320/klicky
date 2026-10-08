@@ -1,5 +1,6 @@
 mod config;
 mod ipc;
+mod lifecycle;
 mod listener;
 #[cfg(target_os = "macos")]
 mod media_keys;
@@ -7,9 +8,6 @@ mod player;
 mod service;
 mod soundpack;
 
-use std::fs;
-use std::os::unix::fs::PermissionsExt;
-use std::process;
 use std::sync::mpsc;
 use std::thread;
 
@@ -83,20 +81,17 @@ fn main() -> Result<()> {
 }
 
 fn cmd_start(benchmark: bool) -> Result<()> {
-    config::ensure_runtime_dir()?;
-    let pid_path = config::pid_path();
-    if pid_path.exists() {
-        let pid_str = fs::read_to_string(&pid_path).unwrap_or_default();
-        if let Ok(pid) = pid_str.trim().parse::<i32>() {
-            unsafe {
-                if libc::kill(pid, 0) == 0 {
-                    println!("klicky is already running (pid {})", pid);
-                    return Ok(());
-                }
+    let directory = config::ensure_runtime_dir()?;
+    let _owner = match lifecycle::Owner::acquire(&directory)? {
+        Some(owner) => owner,
+        None => {
+            if lifecycle::responsive(&directory) {
+                println!("klicky is already running");
+                return Ok(());
             }
+            bail!("klicky is starting, stopping, or unresponsive; retry after it has stopped");
         }
-        fs::remove_file(&pid_path)?;
-    }
+    };
 
     let mut cfg = config::Config::load()?;
     let sound_roots = config::sound_roots();
@@ -112,14 +107,6 @@ fn cmd_start(benchmark: bool) -> Result<()> {
         cfg.sound_pack = first;
         cfg.save()?;
     }
-
-    fs::write(&pid_path, process::id().to_string())?;
-    fs::set_permissions(&pid_path, fs::Permissions::from_mode(0o600))?;
-
-    println!(
-        "klicky started with '{}' (volume: {})",
-        cfg.sound_pack, cfg.volume
-    );
 
     run_daemon(cfg, benchmark)?;
 
@@ -142,12 +129,12 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
 
     // Key listener channel
     let (key_tx, key_rx) = mpsc::channel();
+    let (listener_error_tx, listener_error_rx) = mpsc::channel();
     #[cfg(target_os = "macos")]
     let media_key_tx = key_tx.clone();
     thread::spawn(move || {
         if let Err(error) = listener::start_listening(key_tx) {
-            eprintln!("[klicky] key listener stopped: {error:#}");
-            process::exit(1);
+            let _ = listener_error_tx.send(error);
         }
     });
 
@@ -157,17 +144,25 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
     // Latency tracking
     let mut latencies: Vec<f64> = Vec::new();
 
+    println!(
+        "klicky started with '{}' (volume: {})",
+        cfg.sound_pack, cfg.volume
+    );
+
     // Main event loop
     loop {
+        if let Ok(error) = listener_error_rx.try_recv() {
+            return Err(error.context("key listener stopped"));
+        }
         // Check for IPC commands (non-blocking)
-        while let Ok(cmd) = ipc_rx.try_recv() {
-            match cmd {
+        while let Ok(mut request) = ipc_rx.try_recv() {
+            match request.command {
                 ipc::Command::Stop => {
+                    let _ = request.acknowledge();
                     if benchmark && !latencies.is_empty() {
                         print_latency_summary(&latencies);
                     }
-                    cleanup();
-                    process::exit(0);
+                    return Ok(());
                 }
                 ipc::Command::Switch { pack: name } => {
                     let result = config::resolve_sound_pack(&name, &sound_roots)
@@ -188,7 +183,9 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
                     cfg.volume = player.volume();
                     let _ = cfg.save();
                 }
-                ipc::Command::Status => {}
+                ipc::Command::Status => {
+                    let _ = request.acknowledge();
+                }
             }
         }
 
@@ -253,11 +250,10 @@ fn print_latency_summary(latencies: &[f64]) {
 }
 
 pub(crate) fn cmd_stop() -> Result<()> {
-    match ipc::send_command(&ipc::Command::Stop) {
-        Ok(_) => println!("klicky stopped"),
-        Err(_) => println!("klicky is not running"),
+    match lifecycle::stop(&config::runtime_dir())? {
+        true => println!("klicky stopped"),
+        false => println!("klicky is not running"),
     }
-    cleanup();
     Ok(())
 }
 
@@ -314,16 +310,10 @@ fn cmd_volume(level: f32) -> Result<()> {
 }
 
 pub(crate) fn is_running() -> bool {
-    let pid_path = config::pid_path();
-    if !pid_path.exists() {
-        return false;
-    }
-    let pid_str = fs::read_to_string(pid_path).unwrap_or_default();
-    pid_str
-        .trim()
-        .parse::<i32>()
-        .map(|pid| unsafe { libc::kill(pid, 0) == 0 })
-        .unwrap_or(false)
+    lifecycle::read_pid(&config::runtime_dir())
+        .ok()
+        .flatten()
+        .is_some_and(lifecycle::process_exists)
 }
 
 fn cmd_status() -> Result<()> {
@@ -332,12 +322,15 @@ fn cmd_status() -> Result<()> {
 
     println!("klicky status:");
     println!("  running:    {}", if running { "yes" } else { "no" });
+    println!(
+        "  responsive: {}",
+        if lifecycle::responsive(&config::runtime_dir()) {
+            "yes"
+        } else {
+            "no"
+        }
+    );
     println!("  sound pack: {}", cfg.sound_pack);
     println!("  volume:     {:.1}", cfg.volume);
     Ok(())
-}
-
-fn cleanup() {
-    let _ = fs::remove_file(config::pid_path());
-    let _ = fs::remove_file(config::socket_path());
 }

@@ -12,6 +12,8 @@ On Linux it reads keyboard events through evdev and works independently of Wayla
 .TP
 .B start
 Start the daemon in the foreground.
+Startup is exclusive: another instance cannot take ownership while the daemon
+is starting or stopping. Failed initialization releases ownership and cleans up.
 .TP
 .B start --benchmark
 Start the daemon and print mapped key names with input-to-dispatch timing.
@@ -19,9 +21,16 @@ Do not use benchmark mode while entering sensitive information.
 .TP
 .B stop
 Stop a running daemon through its Unix socket.
+Wait up to three seconds for shutdown to be confirmed. Sending the request alone
+does not count as success. A missing socket, IPC failure, or a process that does
+not exit produces an error (nonzero exit status) unless termination is confirmed.
+Stopping an already stopped daemon succeeds.
 .TP
 .B status
 Show daemon state, selected sound pack, and volume.
+The running field reports whether the recorded process exists; responsive
+reports whether the daemon event loop answers IPC. A live PID alone does not
+prove the daemon is healthy.
 .TP
 .B list
 List user and system sound packs.
@@ -35,6 +44,9 @@ Set playback volume between 0.0 and 1.0.
 .BI service " enable|disable|start|stop|status"
 Manage automatic startup and the background user service. Enable starts Klicky now
 and at future logins. Start and stop only affect the current session.
+Start and enable wait up to three seconds after the service manager returns for
+the daemon event loop to respond. A timeout does not undo the service-manager
+action: inspect service status before retrying.
 .SH OPTIONS
 .TP
 .BR -h , " --help"
@@ -54,7 +66,11 @@ Per-user sound packs. These override system packs with the same name.
 Package-managed system sound packs.
 .TP
 .I $XDG_RUNTIME_DIR/klicky/
-Owner-only PID file and Unix socket.
+Owner-only PID file, Unix socket, and persistent klicky.lock file.
+Only the daemon holding the lock removes PID/socket state. The stop client never
+unlinks these files. After a crash or forced termination, the next startup
+reclaims stale state under the lock. Do not delete runtime files while Klicky is
+active, and do not unlink the lock file between starts.
 .SH SERVICE
 Linux uses a systemd user unit. macOS uses a per-user LaunchAgent.
 Enable automatic startup for the current user with:
@@ -62,6 +78,13 @@ Enable automatic startup for the current user with:
 .nf
 klicky service enable
 .fi
+.PP
+Use the service manager to inspect or stop an unresponsive service. Linux systemd
+retains its configured stop timeout and termination policy. macOS service stop
+uses the same acknowledged stop operation as the direct command; it does not
+force-kill a hung daemon. On macOS, disable also requires confirmed shutdown
+before removing login configuration. Lifecycle acknowledgments require a daemon built with
+the same protocol; stop an older installed daemon before replacing its binary.
 .SH SECURITY
 Klicky receives raw global key-down events, including events generated while entering sensitive text.
 Normal mode does not store, transmit, or log typed input.

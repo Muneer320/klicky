@@ -12,6 +12,13 @@ The project follows [Semantic Versioning](https://semver.org/).
 - Deb822 source configuration with a repository-specific `Signed-By` key
 - End-to-end APT index, signature, and package-discovery validation
 
+### Fixed
+
+- Daemon stop waits up to three seconds for confirmed process exit and reports shutdown failures instead of treating IPC delivery as success
+- A persistent ownership lock serializes startup and PID/socket cleanup; only the owning daemon removes runtime state, including after initialization failures
+- Service start and enable verify daemon responsiveness after the service manager returns; status reports event-loop responsiveness separately from PID-based running state
+- Regression coverage for rapid stop/start, stale or missing runtime state, stalled shutdown, invalid acknowledgments, and service readiness
+
 ## 0.3.0 - 2026-10-03
 
 ### Added
