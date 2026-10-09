@@ -18,6 +18,10 @@ template markers, escaping dynamic metadata. Keep the four relative archive link
 intact: `klicky.sources`, both public key formats, and `dists/stable/InRelease`.
 Do not point them at the domain root: GitHub Pages serves them under `/klicky/`.
 
+The builder's `render_sources` function is the authoritative Deb822 definition;
+`klicky.sources` is generated into the publication output, not copied from a
+second static file.
+
 ## Local checks
 
 For an interactive local preview with Python alone:

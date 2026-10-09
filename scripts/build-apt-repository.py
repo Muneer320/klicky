@@ -127,12 +127,6 @@ def render_index(public_url: str, versions: list[str], fingerprint: str) -> str:
     return template
 
 
-def write_index(
-    path: Path, public_url: str, versions: list[str], fingerprint: str
-) -> None:
-    path.write_text(render_index(public_url, versions, fingerprint))
-
-
 def build_repository(
     output: Path,
     existing_root: Path | None,
@@ -230,7 +224,7 @@ def build_repository(
         )
 
         versions = [version for _, version in packages_with_versions]
-        write_index(publish / "index.html", public_url, versions, fingerprint)
+        (publish / "index.html").write_text(render_index(public_url, versions, fingerprint))
 
         output.mkdir(parents=True, exist_ok=True)
         for path in output.iterdir():

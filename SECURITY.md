@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Security fixes are currently applied to the latest commit on the default branch. Klicky has not published a stable release yet.
+Security fixes are currently applied to the latest commit on the default branch. Published packages are listed under [Releases](https://github.com/Muneer320/klicky/releases); a published package may not contain fixes from current source. No separate maintenance branches are supported.
 
 ## Reporting a vulnerability
 

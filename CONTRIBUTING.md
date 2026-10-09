@@ -17,47 +17,23 @@ Straightforward bug fixes, documentation corrections, and narrowly scoped tests 
 
 ## Development setup
 
-Install Rust 1.87 or newer and the native audio development package for your operating system.
+Use the README's build prerequisites for [Linux](README.md#build-from-source-on-linux) or [macOS](README.md#build-and-install-on-macos). Install Rust 1.87 or newer; distribution-provided Rust packages may be older. Building and running the automated tests does not require installing a login service or granting keyboard access.
 
-Arch Linux:
-
-```bash
-sudo pacman -S --needed rust alsa-lib pkgconf
-```
-
-Ubuntu or Debian:
-
-```bash
-sudo apt install cargo rustc pkg-config libasound2-dev
-```
-
-Fedora:
-
-```bash
-sudo dnf install cargo rust alsa-lib-devel pkgconf-pkg-config
-```
-
-Clone and validate:
+Clone the repository, then run the [checks below](#tests):
 
 ```bash
 git clone https://github.com/Muneer320/klicky.git
 cd klicky
-cargo fmt --check
-cargo check --all-targets
-cargo test
-cargo clippy --all-targets --all-features -- -D warnings
 ```
 
 ## Repository map
 
 | Path | Purpose |
 |---|---|
-| `src/listener/` | Platform input backends and key mapping |
-| `src/player.rs` | Persistent low-latency audio output |
-| `src/soundpack.rs` | Decode, slice, normalize, and cache sounds |
-| `src/ipc.rs` | Unix socket command transport |
-| `packaging/` | Reusable systemd, udev, and Omarchy assets |
-| `scripts/` | Installation and removal helpers |
+| `src/` | See the complete [architecture module map](docs/ARCHITECTURE.md#module-map) |
+| `tests/` | CLI lifecycle and status regression tests |
+| `packaging/` | Distribution metadata, service units, desktop helpers, and Pages template |
+| `scripts/` | Installation, removal, APT publication, and validation tools |
 | `sounds/` | Bundled sound packs |
 | `docs/` | Architecture and platform documentation |
 
@@ -93,8 +69,11 @@ cargo fmt --check
 cargo check --all-targets
 cargo test
 cargo clippy --all-targets --all-features -- -D warnings
+PYTHONUTF8=1 python3 -B scripts/check-docs.py
 cargo build --release
 ```
+
+For APT changes, run `python3 -B -m unittest scripts/test_apt_repository.py` and, on Linux with GnuPG and reprepro, `python3 -B scripts/test_apt_repository_integration.py PACKAGE.deb`. See [APT validation coverage](docs/APT_REPOSITORY.md#validation-coverage) for what these checks establish. For website changes, follow the [website checks](docs/WEBSITE.md#local-checks). In PowerShell, set `$env:PYTHONUTF8 = '1'` before running Python.
 
 ## Commits
 

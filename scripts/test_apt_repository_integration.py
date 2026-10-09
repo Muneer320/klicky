@@ -14,6 +14,9 @@ def main() -> None:
 
     project = Path(__file__).resolve().parent.parent
     package = Path(sys.argv[1]).resolve()
+    expected_version = subprocess.check_output(
+        ["dpkg-deb", "--field", str(package), "Version"], text=True
+    ).strip()
 
     with tempfile.TemporaryDirectory(prefix="klicky-apt-test-") as directory:
         root = Path(directory)
@@ -29,6 +32,7 @@ def main() -> None:
 
         environment = os.environ.copy()
         environment["GNUPGHOME"] = str(gnupg)
+        environment["LC_ALL"] = "C"
         subprocess.run(
             [
                 "gpg",
@@ -97,15 +101,17 @@ def main() -> None:
         ]
         subprocess.run(["apt-get", *apt_options, "update"], check=True)
         policy = subprocess.check_output(
-            ["apt-cache", *apt_options, "policy", "klicky"], text=True
+            ["apt-cache", *apt_options, "policy", "klicky"],
+            env=environment,
+            text=True,
         )
-        if "0.3.0-1" not in policy:
+        if f"Candidate: {expected_version}" not in {line.strip() for line in policy.splitlines()}:
             raise RuntimeError(policy)
 
         print(f"fingerprint={fingerprint}")
         print("signature=verified")
         print("apt_update=passed")
-        print("package_version=0.3.0-1")
+        print(f"package_version={expected_version}")
 
 
 if __name__ == "__main__":

@@ -35,7 +35,7 @@ created `/tmp/klicky-validation.f4wzFf`. This audit did not access or remove tho
 files. Check that temporary checkout on the Mac before deciding whether to remove
 it; do not treat the old notes as proof of its current state.
 
-## Fixed in this working tree
+## Completed website and audit work (`de8b7b9`)
 
 - **Custom pack range overflow:** `src/soundpack.rs:43-48` added two untrusted
   sample offsets before clamping. The regression
@@ -114,9 +114,9 @@ Do not run these destructive scenarios against the user's ordinary installation.
   Arch PKGBUILD/.SRCINFO, Debian changelog, and man-page header. Preserve historical
   entries when adding the future version; do not replace dependency versions.
 - `.github/workflows/packages.yml:29,106` asserts binary version 0.3.0.
-  `scripts/test_apt_repository_integration.py:102,108` asserts/prints 0.3.0-1.
-  Derive these from package metadata in the release preparation task. The old
-  version in APT unit fixtures is legitimate test data.
+  Derive these workflow assertions from metadata during release preparation.
+  The APT integration test now reads the input package's version and verifies
+  the exact APT candidate. Old versions in APT unit fixtures are legitimate data.
 - Update README, website, packaging/APT guides and dispatch default deliberately.
   The current release is v0.3.0; v0.4.0 has not been published.
 - `release.yml` publishes automatically on a v* tag after its Debian/Arch jobs,
@@ -170,9 +170,8 @@ Do not run these destructive scenarios against the user's ordinary installation.
 - Architecture module map was missing lifecycle/service; corrected in this task.
 - No real menu screenshot exists. A future screenshot is useful but optional;
   the new website does not fabricate one.
-- No dependency vulnerability scan was performed. Do not infer absence of
-  vulnerabilities from compilation. Review RustSec results and platform-specific
-  dependency advisories before making security assurances.
+- The cleanup follow-up below includes a RustSec scan. Repeat it for the exact
+  release candidate; a clean advisory scan does not establish absence of defects.
 
 ## Platform and release acceptance plan
 
@@ -202,7 +201,7 @@ Clippy, both release builds, Swift compilation, Debian/Arch builds, and APT test
 [packages](https://github.com/Muneer320/klicky/actions/runs/37858726009).
 This supersedes the old "no macOS build" caveat, but not manager/hardware gaps.
 
-Current working-tree validation:
+Website/audit validation before the cleanup follow-up:
 
 - Linux Rust 1.90: focused regression failed before the fix and passed after it;
   cargo fmt --check, cargo check --all-targets, cargo test (38 passed; one
@@ -225,6 +224,83 @@ Current working-tree validation:
 - Production stays a self-contained HTML page, rendered by the existing Python
   builder; no TypeScript or frontend bundle build exists.
 
- No current-tree native Mac build or real service-manager run is
+No local native Mac build or real service-manager run is
 claimed. Browser checks exercise Chromium and automation, not a screen reader or
 Safari. The redesigned page remains unpublished until separately approved.
+
+## Cleanup follow-up, 2026-10-09
+
+The website/audit commit `de8b7b9` is on `origin/master`. Its remote
+[CI](https://github.com/Muneer320/klicky/actions/runs/37863178407) and
+[package builds](https://github.com/Muneer320/klicky/actions/runs/37863178424)
+passed. Master pushes run checks, not the release or Pages publication workflows.
+The five unrelated changelog additions remain unstaged and unchanged.
+
+### Cleanup decisions
+
+| Item | Evidence and decision |
+|---|---|
+| Legacy banner | Removed `assets/klicky-banner.svg`: no tracked content, installer, package manifest or workflow references it. The current README has no banner and the website uses inline SVG. Git history retains the old illustration. |
+| Static Deb822 copy | Removed `packaging/apt/klicky.sources`: no consumer reads it. `build-apt-repository.py::render_sources` already generates the published file from the configured URL. The public download path remains unchanged. |
+| Index-writing wrapper | Inlined `write_index`, a single-use one-statement wrapper with no other callers. Rendering remains in the tested `render_index`; signing and output replacement are unchanged. |
+| Contributor duplication | Replaced repeated native prerequisite commands and the partial module map with README/architecture links; retained contributor policy, test commands and added APT/website validation navigation. |
+| APT test version | A local `0.0.0+cleanup1` fixture passed signature/index generation but failed the old hardcoded `0.3.0-1` assertion. The revised test checks the input package's exact candidate, under a stable locale, and passes with both versions. No project/package release version changed. |
+| Dependency advisory | Cargo audit 0.22.2 found informational unsoundness [RUSTSEC-2026-0190](https://rustsec.org/advisories/RUSTSEC-2026-0190.html) in anyhow 1.0.102. No `downcast_mut` calls exist in Klicky's source/tests. Updated only that lockfile entry to patched 1.0.103; no dependency was added or removed. |
+
+### Rechecked and deliberately retained
+
+The audit traced every Rust module, both integration suites, script consumers,
+package manifests, all workflows, desktop helpers, documentation and bundled
+pack metadata. No further Rust dead code was established by compiler/Clippy
+checks. Absence of text references alone was not treated as proof of dead code.
+
+- R1 through R4 remain open. This cleanup does not change runtime command,
+  volume, configuration, uninstall, or service-manager behavior.
+- Persistent lifecycle lock ownership, cleanup ordering and PID-matched replies
+  retain regression coverage. A live reused PID can still conservatively block
+  startup; responsive status remains an IPC check, not an input/audio test.
+- Blocking non-lifecycle sends and manager subprocesses, unbounded channels,
+  silent media-tap failures, decoder I/O-as-EOF, unsupervised listener panics,
+  Swift main-thread polling, startup-only input discovery and output-device
+  recovery remain the verified follow-ups listed above.
+- The direct `cocoa` dependency has no Rust import, but macOS FFI/framework
+  linkage and the older transitive cocoa used by rdev need a native build before
+  removal. Symphonia's default codecs may support custom packs beyond OGG;
+  narrowing features needs an explicit compatibility decision.
+- Source and packaged systemd units intentionally have different executable
+  paths. The APT builder's `--existing-root` option is tested compatibility,
+  despite not being used by publication. Neither is obsolete.
+- Historical media-key notes, licenses, pack recordings, `.SRCINFO`, changelog
+  history and the ignored subprocess fixture remain useful and are retained.
+- No accidental build artifacts were found tracked. Ignored local build/browser artifacts
+  were left alone. Future work should bound fake-server test accept/join waits
+  and test native macOS MSRV, installation upgrades/removal and real managers.
+
+The next implementation work should address R1's bounded command results and
+atomic configuration persistence, followed by launchctl error classification
+and safe uninstall. Handle the zero-volume gain policy in a focused audio fix
+with regression tests; then run the physical/platform acceptance plan above.
+
+### Cleanup validation
+
+- Linux container, Rust 1.90: formatting, all-target check, 38 tests (same count
+  as before cleanup), strict all-target/all-feature Clippy, and release build
+  passed. The ignored subprocess fixture is still exercised by its parent test.
+- Rust 1.87: locked all-target check passed with the updated lockfile.
+- `cargo audit --deny warnings` passed with cargo-audit 0.22.2 and RustSec database
+  commit `550efd3d587a29b2e2c2b21b17a440da4fede999` (1,295 advisories).
+- Eight APT unit tests and signed integration with both the checksum-verified
+  release package and alternate local fixture passed. The Windows sandbox first
+  denied a temporary-directory operation; rerunning outside it passed without
+  changing the tests. The alternate fixture deliberately failed the old version
+  assertion before the test was corrected.
+- Website checks passed at 320, 360, 768 and 1440 pixels in light/dark modes,
+  including axe, keyboard/focus, reduced motion, anchors, console and base path.
+- UTF-8 documentation checks, 53 local Markdown links/anchors, all ten pack
+  timing maps, shell syntax, ShellCheck, checksum-verified actionlint 1.7.12
+  (the same SC2016 exclusion as CI), and `git diff --check` passed.
+
+The cleanup changes no Rust source, workflows, service definitions or release
+versions. Its dependency update still needs the normal native macOS CI run;
+real hardware/service-manager checks remain outstanding. No screen-reader,
+Safari, package upgrade/removal or live deployment test is claimed.
