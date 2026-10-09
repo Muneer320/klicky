@@ -199,6 +199,8 @@ Installing puts the binary and sounds on disk. **Enable** starts Klicky now and 
 | `klicky start` / `klicky stop` | Run the daemon in the foreground or request its exit |
 | `klicky start --benchmark` | Print mapped keys and input-to-mixer-dispatch timing |
 
+With a running daemon, sound-control success currently confirms request delivery, not daemon-side loading or persistence. If a pack does not change or a setting does not survive restart, inspect the daemon output or service logs.
+
 Stop a managed service before starting Klicky in the foreground. Do not use benchmark mode while entering passwords or other sensitive text; see [Benchmark methodology](docs/BENCHMARKS.md).
 
 ### Published `v0.3.0` Linux package

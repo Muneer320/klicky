@@ -14,10 +14,12 @@ The project follows [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Rebuilt the Pages landing page with an interactive key illustration, platform-specific installation paths, sound-pack reference, and explicit benchmark limits while retaining signed APT archive links
 - Current-source status reports `running: yes` only for a matching live-daemon IPC response; `process exists` separately reports PID liveness without implying input or audio health
 
 ### Fixed
 
+- Prevent extreme custom sound-pack timing ranges from overflowing sample offsets and crashing the daemon
 - Daemon stop waits up to three seconds for confirmed process exit and reports shutdown failures instead of treating IPC delivery as success
 - A persistent ownership lock serializes startup and PID/socket cleanup; only the owning daemon removes runtime state, including after initialization failures
 - Service start and enable verify daemon responsiveness after the service manager returns; status reports event-loop responsiveness separately from PID-based running state

@@ -1,6 +1,7 @@
 import importlib.util
 import tempfile
 import unittest
+from html.parser import HTMLParser
 from pathlib import Path
 
 
@@ -68,10 +69,53 @@ class AptRepositoryTests(unittest.TestCase):
         self.assertIn("0.3.0-1", page)
         self.assertIn("sudo apt install klicky", page)
         self.assertIn("DBB6 7AE4 78D2 FFCE C663 7B55 9899 E554 D358 0D8F", page)
-        self.assertIn("prefers-color-scheme: dark", page)
+        self.assertRegex(page, r"prefers-color-scheme:\s*dark")
         self.assertIn('href="#main"', page)
         self.assertNotIn("<script", page)
         self.assertNotIn("https://fonts.", page)
+
+    def test_product_page_preserves_navigation_packs_and_archive_paths(self):
+        class Elements(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.ids = []
+                self.links = []
+
+            def handle_starttag(self, tag, attrs):
+                attrs = dict(attrs)
+                if "id" in attrs:
+                    self.ids.append(attrs["id"])
+                if tag == "a":
+                    self.links.append(attrs["href"])
+
+        page = apt_repository.render_index(
+            "https://example.com/klicky", ["0.3.0-1"], "A" * 40
+        )
+        elements = Elements()
+        elements.feed(page)
+        self.assertEqual(len(elements.ids), len(set(elements.ids)))
+        for link in elements.links:
+            if link.startswith("#"):
+                self.assertIn(link[1:], elements.ids)
+            elif not link.startswith("https://"):
+                self.assertIn(link, {
+                    "klicky.sources", "klicky-archive-keyring.gpg",
+                    "klicky-archive-keyring.asc", "dists/stable/InRelease",
+                })
+        for pack in (MODULE_PATH.parent.parent / "sounds").iterdir():
+            if pack.is_dir():
+                self.assertIn(pack.name, page)
+        self.assertNotIn("{{", page)
+        self.assertIn("not physical key-to-speaker latency", page)
+        self.assertRegex(page, r"prefers-reduced-motion:\s*reduce")
+        self.assertIn("Silent, conceptual illustration", page)
+
+    def test_index_escapes_dynamic_archive_metadata(self):
+        page = apt_repository.render_index(
+            "https://example.com/klicky", ['<img src=x onerror="bad">'], "A" * 40
+        )
+        self.assertNotIn("<img", page)
+        self.assertIn("&lt;img", page)
 
 
 if __name__ == "__main__":

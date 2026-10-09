@@ -42,7 +42,7 @@ impl SoundPack {
         for (key_name, [start_ms, duration_ms]) in &config.defines {
             let start_idx = (*start_ms as f64 * samples_per_ms) as usize;
             let len = (*duration_ms as f64 * samples_per_ms) as usize;
-            let end_idx = (start_idx + len).min(all_samples.len());
+            let end_idx = start_idx.saturating_add(len).min(all_samples.len());
 
             if start_idx < all_samples.len() {
                 let mut samples = all_samples[start_idx..end_idx].to_vec();
@@ -127,6 +127,32 @@ fn decode_ogg_fully(path: &Path) -> Result<(Vec<i16>, u16, u32)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn extreme_timing_ranges_do_not_panic_or_wrap() -> Result<()> {
+        let dir = std::env::temp_dir().join(format!("klicky-pack-range-{}", std::process::id()));
+        std::fs::create_dir_all(&dir)?;
+        let result = (|| -> Result<()> {
+            std::fs::copy(
+                Path::new(env!("CARGO_MANIFEST_DIR")).join("sounds/eg-oreo/sound.ogg"),
+                dir.join("sound.ogg"),
+            )?;
+            std::fs::write(
+                dir.join("config.json"),
+                format!(
+                    r#"{{"defines":{{"long":[1,{0}],"outside":[{0},{0}],"normal":[0,1]}}}}"#,
+                    u64::MAX
+                ),
+            )?;
+            let pack = SoundPack::load(&dir)?;
+            assert!(!pack.samples["long"].is_empty());
+            assert!(!pack.samples["normal"].is_empty());
+            assert!(!pack.samples.contains_key("outside"));
+            Ok(())
+        })();
+        std::fs::remove_dir_all(dir)?;
+        result
+    }
 
     #[test]
     fn normalization_boosts_quiet_samples_without_clipping_loud_ones() {

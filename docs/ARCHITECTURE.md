@@ -30,6 +30,8 @@ sequenceDiagram
 |---|---|
 | `src/main.rs` | CLI dispatch, daemon lifecycle, IPC handling, event draining, benchmark output |
 | `src/config.rs` | Config, sound-pack, PID, and socket paths |
+| `src/lifecycle.rs` | Persistent ownership lock, runtime cleanup, bounded shutdown and IPC readiness |
+| `src/service.rs` | systemd user service and macOS LaunchAgent management |
 | `src/ipc.rs` | JSON commands over a Unix domain socket |
 | `src/listener.rs` | Shared `KeyEvent` contract and platform backend selection |
 | `src/listener/linux.rs` | Linux device discovery, evdev reading, key mapping, key-down filtering |

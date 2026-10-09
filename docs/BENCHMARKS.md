@@ -35,7 +35,7 @@ Results:
 | p99 | 0.57 ms |
 | Maximum | 0.57 ms |
 
-The percentile calculation uses nearest-rank values over the collected samples.
+The summary sorts the samples and selects zero-based indices `n / 2`, `floor(0.95 * n)`, and `floor(0.99 * n)`. This is an index-based selection, not an interpolated percentile or the standard nearest-rank definition.
 
 A real excerpt from that run:
 

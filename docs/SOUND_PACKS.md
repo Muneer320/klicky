@@ -128,10 +128,15 @@ The cap protects nearly silent recordings from turning background noise into a l
 
 ## Validate a pack
 
-Start Klicky in the foreground and switch to the pack:
+Stop any managed instance first, then start Klicky in the foreground:
 
 ```bash
 klicky start
+```
+
+In a second terminal, request the switch:
+
+```bash
 klicky switch my-pack
 ```
 
@@ -142,7 +147,7 @@ klicky switch my-pack
 journalctl --user -u klicky.service -f
 ```
 
-A malformed JSON file or undecodable OGG stream produces a load error and leaves the current pack active.
+A malformed JSON file or undecodable OGG stream produces a load error and leaves the current pack active. The CLI reports delivery of a switch request, not daemon-side completion; inspect the foreground output or service logs to confirm loading. On macOS, custom packs live under `~/Library/Application Support/klicky/sounds/`.
 
 ## Redistribution
 

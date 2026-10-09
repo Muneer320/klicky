@@ -101,6 +101,10 @@ Direct stop and service stop unload the job after confirmed shutdown to cancel
 pending retries while retaining the login property list. Disable also removes
 the login configuration. A readiness timeout does not cancel a queued retry.
 This policy requires validation with a real launchd session in addition to unit tests.
+.PP
+With a running daemon, sound-control commands report delivery rather than confirmed
+pack loading or configuration persistence. Inspect daemon output or service logs
+if a switch fails or a setting does not survive restart.
 .SH SECURITY
 Klicky receives raw global key-down events, including events generated while entering sensitive text.
 Normal mode does not store, transmit, or log typed input.
