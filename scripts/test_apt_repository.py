@@ -48,6 +48,22 @@ class AptRepositoryTests(unittest.TestCase):
 
             self.assertEqual(packages, {old.name: new})
 
+    def test_incoming_package_preserves_other_existing_versions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            existing = root / "existing" / "pool" / "main" / "k" / "klicky"
+            incoming = root / "incoming"
+            existing.mkdir(parents=True)
+            incoming.mkdir()
+            old = existing / "klicky_0.2.0-1_amd64.deb"
+            new = incoming / "klicky_0.3.0-1_amd64.deb"
+            old.write_bytes(b"old")
+            new.write_bytes(b"new")
+
+            packages = apt_repository.collect_package_sources(root / "existing", [new])
+
+            self.assertEqual(packages, {old.name: old, new.name: new})
+
     def test_deb822_source_uses_repository_keyring(self):
         source = apt_repository.render_sources("https://muneer320.github.io/klicky")
         self.assertIn("Types: deb", source)

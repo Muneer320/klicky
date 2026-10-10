@@ -58,7 +58,8 @@ jobs:
           python3 -m unittest scripts/test_apt_repository.py
           package=$(find dist -name 'klicky_*_amd64.deb' -print -quit)
           test -n "$package"
-          python3 scripts/test_apt_repository_integration.py "$package"
+          python3 scripts/test_apt_repository_integration.py \
+            --exercise-history-retention "$package"
 
   arch-package:
     runs-on: ubuntu-latest

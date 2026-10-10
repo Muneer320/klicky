@@ -1,6 +1,13 @@
 name: Publish APT repository
 
 on:
+  push:
+    branches: [master]
+    paths:
+      - .github/workflows/apt-repository.yml
+      - packaging/apt/index.html
+      - scripts/build-apt-repository.py
+      - scripts/test_apt_repository_integration.py
   release:
     types: [published]
   workflow_dispatch:
@@ -29,8 +36,15 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
           INPUT_TAG: ${{ inputs.tag }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          tag=${RELEASE_TAG:-$INPUT_TAG}
+          if [[ -n "$RELEASE_TAG" ]]; then
+            tag=$RELEASE_TAG
+          elif [[ -n "$INPUT_TAG" ]]; then
+            tag=$INPUT_TAG
+          else
+            tag=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name)
+          fi
           if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             printf 'Invalid release tag: %s\n' "$tag" >&2
             exit 1
@@ -58,6 +72,11 @@ jobs:
           test -f download/SHA256SUMS
           (cd download && sha256sum --check SHA256SUMS --ignore-missing)
           package=$(find download -name 'klicky_*_amd64.deb' -print -quit)
+          package_name=$(basename "$package")
+          checksum_count=$(awk -v name="$package_name" \
+            '$2 == name || $2 == "*" name { count++ } END { print count + 0 }' \
+            download/SHA256SUMS)
+          test "$checksum_count" -eq 1
           version=$(dpkg-deb --field "$package" Version)
           test "$version" = "${RELEASE_TAG#v}-1"
           cp "$package" incoming/
@@ -80,14 +99,61 @@ jobs:
               --local-user "$EXPECTED_APT_GPG_FINGERPRINT" \
               --output "$probe.sig" --detach-sign "$probe"
           gpg --batch --verify "$probe.sig" "$probe"
-      - name: Build signed repository
+          gpg --batch --yes \
+            --output "$RUNNER_TEMP/klicky-archive-keyring.gpg" \
+            --export "$EXPECTED_APT_GPG_FINGERPRINT"
+      - name: Fetch and verify published package history
+        run: |
+          mkdir -p \
+            "$RUNNER_TEMP/apt-lists/partial" \
+            "$RUNNER_TEMP/apt-cache/archives/partial" \
+            existing-packages
+          cat > "$RUNNER_TEMP/klicky.sources" <<EOF
+          Types: deb
+          URIs: $PUBLIC_URL
+          Suites: stable
+          Components: main
+          Architectures: amd64
+          Signed-By: $RUNNER_TEMP/klicky-archive-keyring.gpg
+          EOF
+          apt_options=(
+            -o "Dir::Etc::sourcelist=$RUNNER_TEMP/klicky.sources"
+            -o "Dir::Etc::sourceparts=-"
+            -o "Dir::State::lists=$RUNNER_TEMP/apt-lists"
+            -o "Dir::Cache::archives=$RUNNER_TEMP/apt-cache/archives"
+            -o "APT::Get::List-Cleanup=0"
+          )
+          apt-get "${apt_options[@]}" update
+          apt-cache "${apt_options[@]}" madison klicky |
+            awk -F '|' '
+              {
+                name = $1
+                version = $2
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", name)
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", version)
+                if (name == "klicky" && version != "") print version
+              }
+            ' | sort -u > "$RUNNER_TEMP/klicky-versions"
+          test -s "$RUNNER_TEMP/klicky-versions"
+          mapfile -t versions < "$RUNNER_TEMP/klicky-versions"
+          for version in "${versions[@]}"; do
+            (cd existing-packages && \
+              apt-get "${apt_options[@]}" download "klicky=$version")
+          done
+          package_count=$(find existing-packages -maxdepth 1 -type f -name '*.deb' | wc -l)
+          test "$package_count" -eq "${#versions[@]}"
+      - name: Build and verify complete Pages artifact
         run: |
           package=$(find incoming -name 'klicky_*_amd64.deb' -print -quit)
-          python3 scripts/build-apt-repository.py \
+          mkdir -p site
+          printf 'klicky.muneer320.tech\n' > site/CNAME
+          python3 scripts/test_apt_repository_integration.py \
+            --existing-root existing-packages \
             --output site \
+            --gnupg-home "$GNUPGHOME" \
             --fingerprint "$EXPECTED_APT_GPG_FINGERPRINT" \
-            --public-url "$PUBLIC_URL" \
             "$package"
+          test "$(cat site/CNAME)" = klicky.muneer320.tech
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
