@@ -11,11 +11,16 @@ The project follows [Semantic Versioning](https://semver.org/).
 - Signed amd64 APT repository publication through GitHub Pages
 - Deb822 source configuration with a repository-specific `Signed-By` key
 - End-to-end APT index, signature, and package-discovery validation
+- `klicky service enable|disable|start|stop|status` for systemd user services on Linux and LaunchAgents on macOS
+- macOS source installer that installs the binary and sound packs and enables login startup
+- Optional Swift menu bar control with a separate login LaunchAgent for toggling Klicky on macOS
+- macOS CI compilation check for the menu bar helper
 
 ### Changed
 
 - Consolidated contributor setup and removed unused website/archive source files; APT integration checks now derive the expected candidate version from the input package
 - Rebuilt the Pages landing page with an interactive key illustration, platform-specific installation paths, sound-pack reference, and explicit benchmark limits while retaining signed APT archive links
+- Documented Linux and macOS installation, login startup, and service controls in the README and manual page
 - Current-source status reports `running: yes` only for a matching live-daemon IPC response; `process exists` separately reports PID liveness without implying input or audio health
 
 ### Fixed
