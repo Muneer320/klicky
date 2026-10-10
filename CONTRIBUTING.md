@@ -15,6 +15,8 @@ Open an issue before changing any of these areas:
 
 Straightforward bug fixes, documentation corrections, and narrowly scoped tests can go directly to a pull request.
 
+All repository changes must be developed on a feature branch and submitted through a pull request to `master`. Do not commit directly to `master`; wait for the relevant CI and validation checks to pass before merging.
+
 ## Development setup
 
 Use the README's build prerequisites for [Linux](README.md#build-from-source-on-linux) or [macOS](README.md#build-and-install-on-macos). Install Rust 1.87 or newer; distribution-provided Rust packages may be older. Building and running the automated tests does not require installing a login service or granting keyboard access.

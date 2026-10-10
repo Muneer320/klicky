@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import html
+import os
 import re
 import shutil
 import subprocess
@@ -19,7 +21,8 @@ PRESERVED_OUTPUTS = {".git", "CNAME"}
 def validate_fingerprint(value: str) -> str:
     value = value.strip()
     if not FINGERPRINT.fullmatch(value):
-        raise ValueError("fingerprint must contain exactly 40 hexadecimal characters")
+        raise ValueError(
+            "fingerprint must contain exactly 40 hexadecimal characters")
     return value.upper()
 
 
@@ -27,7 +30,8 @@ def validate_public_url(value: str) -> str:
     value = value.rstrip("/")
     parsed = urlsplit(value)
     if parsed.scheme != "https" or not parsed.netloc or parsed.query or parsed.fragment:
-        raise ValueError("public repository URL must be an HTTPS URL without a query or fragment")
+        raise ValueError(
+            "public repository URL must be an HTTPS URL without a query or fragment")
     return value
 
 
@@ -108,13 +112,14 @@ def render_index(public_url: str, versions: list[str], fingerprint: str) -> str:
     if not versions:
         raise ValueError("at least one package version is required")
 
-    template_path = Path(__file__).resolve().parent.parent / "packaging/apt/index.html"
+    template_path = Path(__file__).resolve(
+    ).parent.parent / "packaging/apt/index.html"
     template = template_path.read_text()
     items = "".join(
         f"<li>klicky {html.escape(version)}</li>" for version in versions
     )
     grouped_fingerprint = " ".join(
-        fingerprint[index : index + 4] for index in range(0, len(fingerprint), 4)
+        fingerprint[index: index + 4] for index in range(0, len(fingerprint), 4)
     )
     replacements = {
         "{{PUBLIC_URL}}": html.escape(public_url, quote=True),
@@ -163,7 +168,15 @@ def build_repository(
             staged = package_dir / package.name
             shutil.copy2(package, staged)
             subprocess.run(
-                ["reprepro", "--basedir", str(repository), "includedeb", "stable", str(staged)],
+                [
+                    "reprepro",
+                    "--keepunreferencedfiles",
+                    "--basedir",
+                    str(repository),
+                    "includedeb",
+                    "stable",
+                    str(staged),
+                ],
                 check=True,
             )
 
@@ -171,6 +184,77 @@ def build_repository(
             ["reprepro", "--basedir", str(repository), "check", "stable"],
             check=True,
         )
+
+        package_index = (
+            repository / "dists/stable/main/binary-amd64/Packages"
+        )
+        package_index_gzip = package_index.with_name("Packages.gz")
+        packages_output = subprocess.check_output(
+            ["dpkg-scanpackages", "--multiversion",
+                "--arch", "amd64", "pool", "/dev/null"],
+            cwd=repository,
+            text=True,
+        )
+        package_index.write_text(packages_output)
+        package_index_gzip.write_bytes(
+            gzip.compress(packages_output.encode("utf-8"), mtime=0)
+        )
+
+        release_path = repository / "dists/stable/Release"
+        release_options = [
+            "-o",
+            "APT::FTPArchive::Release::Origin=Klicky",
+            "-o",
+            "APT::FTPArchive::Release::Label=Klicky",
+            "-o",
+            "APT::FTPArchive::Release::Codename=stable",
+            "-o",
+            "APT::FTPArchive::Release::Suite=stable",
+            "-o",
+            "APT::FTPArchive::Release::Architectures=amd64",
+            "-o",
+            "APT::FTPArchive::Release::Components=main",
+            "-o",
+            "APT::FTPArchive::Release::Description=Klicky stable APT repository",
+        ]
+        with release_path.open("w", encoding="utf-8", newline="\n") as release:
+            subprocess.run(
+                ["apt-ftparchive", *release_options, "release", "dists/stable"],
+                cwd=repository,
+                stdout=release,
+                check=True,
+            )
+
+        passphrase = os.environ.get("APT_GPG_PASSPHRASE", "") + "\n"
+        signature_args = [
+            "gpg",
+            "--batch",
+            "--yes",
+            "--pinentry-mode",
+            "loopback",
+            "--passphrase-fd",
+            "0",
+            "--local-user",
+            fingerprint,
+            "--digest-algo",
+            "SHA256",
+        ]
+        for signature_path, signature_mode in (
+            (repository / "dists/stable/InRelease", "--clearsign"),
+            (repository / "dists/stable/Release.gpg", "--detach-sign"),
+        ):
+            subprocess.run(
+                [
+                    *signature_args,
+                    "--output",
+                    str(signature_path),
+                    signature_mode,
+                    str(release_path),
+                ],
+                input=passphrase,
+                text=True,
+                check=True,
+            )
 
         required = [
             repository / "dists" / "stable" / "InRelease",
@@ -239,7 +323,8 @@ def build_repository(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Build the signed Klicky APT repository")
+    parser = argparse.ArgumentParser(
+        description="Build the signed Klicky APT repository")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--existing-root", type=Path)
     parser.add_argument("--fingerprint", required=True)
