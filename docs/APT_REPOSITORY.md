@@ -128,7 +128,7 @@ Publication prerequisites:
 
 Before building, the workflow exports only the public key for the pinned signing fingerprint and configures an isolated APT source using that key via `Signed-By`. `apt-get update` must verify the live `InRelease`; the workflow then downloads every `klicky` version in the authenticated package index. A signature, index, package-download, or checksum failure stops the job before artifact upload. There is no fallback to a single-package repository.
 
-The builder recursively imports `.deb` files from `--existing-root` and the selected release package. A same-named incoming package replaces that file; differently versioned packages are retained. `reprepro` regenerates package indexes and Release metadata and signs them with the same pinned key. The metadata and signature bytes are regenerated, not copied byte-for-byte.
+The builder recursively imports `.deb` files from `--existing-root` and the selected release package. A same-named incoming package replaces that file; differently versioned packages are retained. `reprepro` builds the package pool while keeping superseded files; `dpkg-scanpackages --multiversion` then generates the final index containing every package version. `apt-ftparchive` regenerates Release checksums from those final indexes, and GnuPG signs `Release` and `InRelease` with the same pinned key. The metadata and signature bytes are regenerated, not copied byte-for-byte.
 
 The workflow:
 
