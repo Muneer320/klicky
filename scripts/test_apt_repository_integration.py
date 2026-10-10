@@ -58,6 +58,8 @@ def main() -> None:
                 "Package: klicky\n"
                 "Version: 0.0.1-1\n"
                 "Architecture: amd64\n"
+                "Section: utils\n"
+                "Priority: optional\n"
                 "Maintainer: Klicky CI <ci@example.invalid>\n"
                 "Description: Historical package fixture\n"
             )
@@ -73,7 +75,8 @@ def main() -> None:
                 ],
                 check=True,
             )
-        package_sources = apt_repository.collect_package_sources(existing_root, packages)
+        package_sources = apt_repository.collect_package_sources(
+            existing_root, packages)
         expected_versions = {
             apt_repository.validate_package(package)
             for package in package_sources.values()
@@ -151,20 +154,25 @@ def main() -> None:
             name for name in required_files if not (repository / name).is_file()
         ]
         if missing:
-            raise RuntimeError(f"Pages artifact is missing required files: {missing}")
+            raise RuntimeError(
+                f"Pages artifact is missing required files: {missing}")
 
         page = (repository / "index.html").read_text()
+        grouped_fingerprint = " ".join(
+            fingerprint[index: index + 4] for index in range(0, len(fingerprint), 4)
+        )
         for content in (
             "<title>Klicky / Give your keys a voice</title>",
             "sudo apt install klicky",
-            "DBB6 7AE4 78D2 FFCE C663 7B55 9899 E554 D358 0D8F",
+            grouped_fingerprint,
         ):
             if content not in page:
                 raise RuntimeError(
                     f"Pages homepage is missing expected content: {content}"
                 )
         if "{{" in page:
-            raise RuntimeError("Pages homepage contains an unresolved template marker")
+            raise RuntimeError(
+                "Pages homepage contains an unresolved template marker")
 
         index = gzip.decompress(
             (repository / "dists/stable/main/binary-amd64/Packages.gz").read_bytes()
@@ -180,18 +188,23 @@ def main() -> None:
                 fields.get("Package") != "klicky"
                 or fields.get("Architecture") != "amd64"
             ):
-                raise RuntimeError(f"Unexpected package entry in generated index: {fields}")
+                raise RuntimeError(
+                    f"Unexpected package entry in generated index: {fields}")
             filename = Path(fields["Filename"])
             if filename.is_absolute() or ".." in filename.parts:
-                raise RuntimeError(f"Unsafe package path in generated index: {filename}")
+                raise RuntimeError(
+                    f"Unsafe package path in generated index: {filename}")
             package_path = repository / filename
             if not package_path.is_file():
-                raise RuntimeError(f"Indexed package file is missing: {filename}")
+                raise RuntimeError(
+                    f"Indexed package file is missing: {filename}")
             package_bytes = package_path.read_bytes()
             if len(package_bytes) != int(fields["Size"]):
-                raise RuntimeError(f"Indexed package size does not match: {filename}")
+                raise RuntimeError(
+                    f"Indexed package size does not match: {filename}")
             if hashlib.sha256(package_bytes).hexdigest() != fields["SHA256"]:
-                raise RuntimeError(f"Indexed package checksum does not match: {filename}")
+                raise RuntimeError(
+                    f"Indexed package checksum does not match: {filename}")
             indexed_versions.add(fields["Version"])
         if indexed_versions != expected_versions:
             raise RuntimeError(

@@ -52,7 +52,7 @@ jobs:
       - name: Install repository tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y reprepro
+          sudo apt-get install -y reprepro dpkg-dev apt-utils
       - name: Test signed repository
         run: |
           python3 -m unittest scripts/test_apt_repository.py
