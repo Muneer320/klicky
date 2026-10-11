@@ -37,11 +37,7 @@ fn command_output(program: &str, args: &[&str]) -> Result<Output> {
     command_output_with_timeout(program, args, COMMAND_TIMEOUT)
 }
 
-fn command_output_with_timeout(
-    program: &str,
-    args: &[&str],
-    timeout: Duration,
-) -> Result<Output> {
+fn command_output_with_timeout(program: &str, args: &[&str], timeout: Duration) -> Result<Output> {
     let mut command = Command::new(program);
     command
         .args(args)
@@ -51,8 +47,14 @@ fn command_output_with_timeout(
     let mut child = command
         .spawn()
         .with_context(|| format!("failed to start {program} {}", args.join(" ")))?;
-    let stdout = child.stdout.take().context("service command stdout unavailable")?;
-    let stderr = child.stderr.take().context("service command stderr unavailable")?;
+    let stdout = child
+        .stdout
+        .take()
+        .context("service command stdout unavailable")?;
+    let stderr = child
+        .stderr
+        .take()
+        .context("service command stderr unavailable")?;
     let stdout_reader = thread::spawn(move || read_output(stdout));
     let stderr_reader = thread::spawn(move || read_output(stderr));
     let deadline = Instant::now() + timeout;
@@ -411,8 +413,8 @@ fn xml_escape(value: &str) -> String {
 mod tests {
     use super::*;
     use std::fs;
-    use std::os::unix::process::ExitStatusExt;
     use std::os::unix::fs::PermissionsExt;
+    use std::os::unix::process::ExitStatusExt;
     use std::path::PathBuf;
     use std::sync::atomic::{AtomicUsize, Ordering};
     static NEXT: AtomicUsize = AtomicUsize::new(0);
