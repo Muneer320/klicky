@@ -1,6 +1,6 @@
 pkgbase = klicky
 	pkgdesc = Low-latency mechanical keyboard sounds for Linux
-	pkgver = 0.3.0
+	pkgver = 0.4.0
 	pkgrel = 1
 	url = https://github.com/Muneer320/klicky
 	install = klicky.install
@@ -13,7 +13,7 @@ pkgbase = klicky
 	depends = glibc
 	depends = systemd
 	options = !debug
-	source = klicky::git+https://github.com/Muneer320/klicky.git#tag=v0.3.0
+	source = klicky::git+https://github.com/Muneer320/klicky.git#tag=v0.4.0
 	b2sums = SKIP
 
 pkgname = klicky

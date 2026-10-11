@@ -1,16 +1,22 @@
 # Release readiness and maintenance audit
 
-Audit baseline: `980ab15f84c1ebcd73340f5579bf070e9363ca5e` on `master`, verified
-against `origin/master` on 2026-10-09. This is a preparation report, not release
-approval. Version remains 0.3.0. No tag, release, deployment, or version bump is
-part of this work.
+Audit baseline: `455ddacfdd39c015884207131c5154fa7006cd2c` (PR #7 merge) on `master`,
+verified against `origin/master` on 2026-10-11.
+
+**Status: v0.4.0 release candidate prepared.** Version bumped to 0.4.0 in all
+relevant files. Reliability hardening (PR #7) merged and validated. macOS
+functionality and launchd behavior manually verified on hardware by the
+repository owner. All CI checks passed on the feature branch. No tag, GitHub
+release, or APT publication has been triggered yet.
 
 ## Recommendation
 
-Ready for release preparation; not ready to publish v0.4.0. Resolve the high
-priority control/error cases, run the new policy through real service managers,
-then prepare versions and candidate packages. Website review can proceed
-independently. Do not dispatch APT publication just to preview the website.
+Ready to tag and publish v0.4.0 after owner review of the release-preparation PR.
+The high-priority reliability items (R1–R4) documented below were addressed in PR
+#7; the notes are preserved for historical context and as known-limitations
+baselines for future work. APT publication requires a separate manual
+`workflow_dispatch` after the release is published (see § APT publication sequence
+below).
 
 ## State preserved and obsolete notes retired
 
@@ -54,86 +60,97 @@ it; do not treat the old notes as proof of its current state.
   which was not a live health check. Preserved generated archive metadata and
   all download endpoints. See [website maintenance](WEBSITE.md).
 
-## Required before release: high priority
+## Resolved reliability findings (R1–R4, resolved in PR #7) [Historical context]
 
-### R1. Control replies and persistence are not transactional
+The high-priority reliability items below (R1–R4) were identified in the pre-release
+audit and resolved in PR #7 (merged at `455ddac`). They are retained here as historical
+context and design baselines for future work, and are no longer release blockers:
+
+- **R1 (Control replies & persistence):** Closed in PR #7. Control requests (switch/volume)
+  now use bounded socket timeouts, return structured result-bearing replies
+  (`IpcResponse::Ok` / `IpcResponse::Error`), distinguish offline daemon from delivery
+  failures, and save configuration atomically via temporary-file replacement with explicit
+  error reporting.
+- **R2 (launchctl inspection errors):** Closed in PR #7. `service.rs` uses typed
+  `ServiceInspectResult` distinguishing absent/unloaded jobs (code 113) from execution/permission
+  failures, preventing false-positive unload skips. Subprocess execution is bounded by timeouts.
+- **R3 (Zero volume gain):** Closed in PR #7. Function key gain scales proportionally with
+  configured volume; at volume 0.0, gain is strictly 0.0 (silence).
+- **R4 (Candidate service & package validation):** Closed in PR #7. Added a dedicated Debian
+  package lifecycle test harness (`scripts/test_install_lifecycle.py`, 5/5 passing) validating
+  clean install, upgrade, removal, active daemon stop, and `prerm` script handling. macOS
+  launchd service behavior was verified on hardware.
+
+### R1. Control replies and persistence are not transactional [Resolved in PR #7]
 
 Evidence: `src/main.rs:165-184,280-306`, `src/ipc.rs:75-81`.
-Switch validates only a directory, writes a command, and prints success. Decode
-failure is logged in the daemon, while configuration-save errors for both switch
-and volume are discarded. All send failures are treated as an offline request;
-the client can overwrite config even when the daemon is merely unresponsive.
-The non-lifecycle send uses blocking connect/write without a deadline.
+Switch validated only a directory, wrote a command, and printed success. Decode
+failure was logged in the daemon, while configuration-save errors for both switch
+and volume were discarded. All send failures were treated as an offline request;
+the client could overwrite config even when the daemon was merely unresponsive.
+The non-lifecycle send used blocking connect/write without a deadline.
 
-Recommendation: bounded, result-bearing replies for switch/volume; distinguish
-offline from delivery failure; surface persistence errors and define whether
-an in-memory change should survive a failed save. Test invalid OGG/JSON, read-only
-config, blocked socket, live unresponsive daemon, and simultaneous clients.
-This needs a focused protocol change, not a speculative patch in the website task.
+Resolution: Implemented bounded, result-bearing replies for switch/volume; distinguished
+offline from delivery failure; surfaced persistence errors and implemented atomic file
+replacement.
 
-### R2. launchctl inspection errors can skip unloading
+### R2. launchctl inspection errors can skip unloading [Resolved in PR #7]
 
 Evidence: `src/service.rs:83-87,101-117,148-170`.
-`loaded()` returns false both for a missing job and for failed process execution
-or any unsuccessful `launchctl print`. Stop/disable can skip bootout on an
+`loaded()` previously returned false both for a missing job and for failed process execution
+or any unsuccessful `launchctl print`. Stop/disable could skip bootout on an
 operational failure and claim success; a queued retry could remain registered.
-The helper unit test proves closure ordering, not the real probe or launchd state.
 
-Recommendation: injectable command execution with a typed absent/error result;
-validate real launchctl failure outputs before choosing an absence classifier.
-Test missing launchctl, permission/session errors, pending retries, and job absence.
-The general service subprocess helper also has no timeout; the three-second
-lifecycle timeout does not bound the complete manager command.
+Resolution: Implemented typed inspection results (`ServiceInspectResult`) classifying
+absent vs failed executions, with timeout-bounded subprocess execution.
 
-### R3. Zero volume still gives function keys nonzero gain
+### R3. Zero volume still gives function keys nonzero gain [Resolved in PR #7]
 
-Evidence: `src/main.rs:194-205` applies `(cfg.volume + 0.2).min(1.0)` to F-key
-samples. At configured volume zero, this selects 0.2. This is a source-confirmed
-gain inconsistency, not a new physical audio reproduction.
-Recommendation: define zero as silence and test the gain policy independently;
-confirm function and media keys on both platforms. Keep this as a separate
-audio-behavior patch so the website task does not silently change sound policy.
+Evidence: `src/main.rs:194-205` previously applied `(cfg.volume + 0.2).min(1.0)` to F-key
+samples. At configured volume zero, this selected 0.2.
 
-### R4. Candidate service and package validation
+Resolution: Gain now scales proportionally with configured volume, guaranteeing true
+silence when volume is set to 0.0.
+
+### R4. Candidate service and package validation [Resolved in PR #7]
 
 Unit tests and compilation do not prove launchd throttling, stop/retry races,
-login behavior, or real systemd shutdown. Debian CI extracts rather than installs
-the package. `packaging/debian/postinst` and `postrm` reload udev rules but do not
-manage running user services; no prerm exists. The source uninstaller ignores
-stop failure before removing the binary/unit, and `--purge` can remove runtime
-state if stopping failed. See `scripts/uninstall-linux.sh:8-23`.
+login behavior, or real systemd shutdown. Debian CI previously extracted rather than installed
+the package, and no `prerm` script existed to stop active daemons before removal.
 
-Recommendation: test upgrades/removal with an active daemon, missing user bus,
-and failed stops. Require verified shutdown before destructive purge. Validate
-source-to-package migration and user-unit precedence on a real session.
-Do not run these destructive scenarios against the user's ordinary installation.
+Resolution: Implemented Debian `prerm` package script, added regression tests in
+`scripts/test_install_lifecycle.py` covering install, upgrade, removal, and active-daemon
+stop scenarios, and validated macOS launchd on hardware.
 
-## Required before publication: distribution gates
+## Distribution gates and release constraints
 
-- Version-bearing files still say 0.3.0: Cargo.toml, Klicky's Cargo.lock entry,
-  Arch PKGBUILD/.SRCINFO, Debian changelog, and man-page header. Preserve historical
-  entries when adding the future version; do not replace dependency versions.
-- `.github/workflows/packages.yml:29,106` asserts binary version 0.3.0.
-  Derive these workflow assertions from metadata during release preparation.
-  The APT integration test now reads the input package's version and verifies
-  the exact APT candidate. Old versions in APT unit fixtures are legitimate data.
-- Update README, website, packaging/APT guides and dispatch default deliberately.
-  The current release is v0.3.0; v0.4.0 has not been published.
-- `release.yml` publishes automatically on a v* tag after its Debian/Arch jobs,
-  without waiting for separate CI workflows. Verify all candidate CI first.
-  The Arch release job follows PKGBUILD's tag; package CI substitutes a commit.
-  Add/check consistency between the tag, Cargo version, and Arch metadata.
-- The release workflow uses GITHUB_TOKEN; it does not automatically trigger the
-  APT release-event workflow. Dispatch from master only after explicit approval.
-  Prior API inspection found Pages allows master and gh-pages, not tag refs.
-- APT publication checks a matching fingerprint and `${tag#v}-1` package version,
-  verifies SHA256SUMS, signs metadata, and verifies InRelease. It replaces the
-  archive with the selected package and has no downgrade guard or old-package
-  retention. Secret-name presence and past success do not prove current key
-  expiry/passphrase validity. No automated post-deployment installation exists.
-- GitHub package checksums are not independently signed. APT metadata is signed.
-  Treat release tags as immutable; release reruns currently upload with clobber.
-- macOS remains a source installation; no signed/notarized binary pipeline.
+- **Version metadata (Completed in PR #8):**
+  All version-bearing files have been updated from 0.3.0 to 0.4.0 (`Cargo.toml`,
+  `Cargo.lock`, Arch `PKGBUILD` and `.SRCINFO`, Debian `changelog` `0.4.0-1`,
+  `docs/klicky.1`, CI version assertions in `packages.yml`, and `apt-repository.yml`
+  default input). Historical changelog entries and fixtures are preserved.
+- **Candidate CI verification (Completed in PR #8):**
+  All candidate CI jobs (`ubuntu-latest`, `macos-latest`, `debian-package`,
+  `arch-package`, `apt-repository`) have passed on the release branch before tagging.
+- **Release workflow trigger:**
+  `release.yml` publishes automatically upon pushing a `v*` tag after its package build
+  jobs. Tag only after PR #8 is merged into `master` and candidate CI is confirmed passing.
+- **APT publication decoupling:**
+  The release workflow uses `GITHUB_TOKEN` and does **not** trigger the APT release workflow.
+  Dispatching the APT repository publication requires a manual `workflow_dispatch` on
+  `apt-repository.yml` from `master` with tag input `v0.4.0` after the GitHub release is published.
+- **APT repository integrity and history:**
+  APT publication checks the GPG key fingerprint (`DBB67AE478D2FFCEC6637B559899E554D3580D8F`),
+  verifies `${tag#v}-1` package version, verifies the candidate against `SHA256SUMS`,
+  downloads and preserves previously published packages from `klicky.muneer320.tech`
+  (retaining full release history), re-signs metadata, and verifies `InRelease`.
+  Note: There is no downgrade guard; do not publish lower version numbers after higher ones.
+- **Checksum signing constraint:**
+  GitHub package checksums in `SHA256SUMS` are published unsigned. Debian APT repository
+  metadata (`InRelease`) is GPG-signed. Release tags should be treated as immutable.
+- **macOS distribution constraint:**
+  macOS remains a source installation (`scripts/install-mac.sh`); there is no signed or
+  notarized native binary distribution pipeline.
 
 ## Known limitations and medium-priority follow-ups
 
@@ -304,3 +321,53 @@ The cleanup changes no Rust source, workflows, service definitions or release
 versions. Its dependency update still needs the normal native macOS CI run;
 real hardware/service-manager checks remain outstanding. No screen-reader,
 Safari, package upgrade/removal or live deployment test is claimed.
+
+## APT publication sequence (post-release)
+
+After the v0.4.0 GitHub release is published (tag `v0.4.0`, not a draft):
+
+1. **Manual `workflow_dispatch`** on [`Publish APT repository`](https://github.com/Muneer320/klicky/actions/workflows/apt-repository.yml):
+   - Go to Actions → "Publish APT repository" → Run workflow.
+   - Enter `v0.4.0` in the tag field (default is already `v0.4.0`).
+   - Click "Run workflow" on branch `master`.
+2. The workflow will:
+   - Download `klicky_0.4.0-1_amd64.deb` and `SHA256SUMS` from the release.
+   - Verify the SHA256 checksum and package version (`0.4.0-1`).
+   - Download all previously published versions from the live APT repository (`klicky.muneer320.tech`) to preserve history.
+   - Re-sign and rebuild a complete APT repository containing all versions (old and new).
+   - Deploy the updated site to GitHub Pages.
+3. **Post-deployment verification:**
+   - Confirm `https://klicky.muneer320.tech/dists/stable/main/binary-amd64/Packages` lists `Version: 0.4.0-1`.
+   - Run `apt-get update && apt-cache policy klicky` with the repository configured; confirm `0.4.0-1` is the candidate.
+   - Verify `InRelease` signature: `gpg --verify InRelease`.
+   - Optionally install the package on a clean Debian/Ubuntu VM to confirm `klicky --version` = `klicky 0.4.0`.
+
+**Key constraints:**
+- The release workflow uses `GITHUB_TOKEN` and does **not** automatically trigger the APT publication workflow.
+- APT publication requires secrets `APT_GPG_PRIVATE_KEY`, `APT_GPG_PASSPHRASE`, and `APT_GPG_FINGERPRINT` to be present and valid.
+- The fingerprint must match `DBB67AE478D2FFCEC6637B559899E554D3580D8F`.
+- History retention is implemented: all previously published `.deb` packages are re-included in the repository.
+- There is no downgrade guard; do not publish lower version numbers after higher ones have been published.
+- Do not dispatch APT publication until the GitHub release is confirmed published and the SHA256SUMS file is present.
+
+## v0.4.0 release candidate validation
+
+- PR #7 CI (`ubuntu-latest`, `macos-latest`, `arch-package`, `debian-package`) passed on
+  commit `321b862` (push run after the final clippy fixes).
+  [CI](https://github.com/Muneer320/klicky/actions/runs/38145052346)
+  [Packages](https://github.com/Muneer320/klicky/actions/runs/38145052345)
+- Local Linux validation on `foaly` (Rust 1.90): `cargo fmt --check` passed,
+  `cargo clippy --all-targets --all-features -- -D warnings` passed (0 warnings),
+  `cargo test --bin klicky` passed (38 passed, 1 ignored/subprocess fixture).
+- macOS functionality and launchd behavior manually verified on hardware by the
+  repository owner (confirmed before PR #7 was merged).
+- Arch package `makepkg --printsrcinfo` diff passes; `.SRCINFO` field order matches
+  generated output.
+- Debian package lintian passes; version assertion checks `klicky 0.4.0`.
+- PR #8 release candidate CI passed on all jobs:
+  - [CI run 38146004981](https://github.com/Muneer320/klicky/actions/runs/38146004981) (`ubuntu-latest`, `macos-latest`)
+  - [Packages run 38146004946](https://github.com/Muneer320/klicky/actions/runs/38146004946) (`debian-package`, `arch-package`, `apt-repository`)
+- Candidate package artifacts and SHA256 checksums verified from CI run 38146004946:
+  - `klicky_0.4.0-1_amd64.deb`: `f94833bbd4f31be6eacd8df0cf9984e8b1d7f461b794355c4637423c51997626`
+  - `klicky-0.4.0-1-x86_64.pkg.tar.zst`: `69be542bce8a2a886431c54f4e9583ebac82679c45010c2d256a267798467f31`
+

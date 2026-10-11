@@ -30,14 +30,14 @@ cd klicky
 
 ## Repository map
 
-| Path | Purpose |
-|---|---|
-| `src/` | See the complete [architecture module map](docs/ARCHITECTURE.md#module-map) |
-| `tests/` | CLI lifecycle and status regression tests |
-| `packaging/` | Distribution metadata, service units, desktop helpers, and Pages template |
-| `scripts/` | Installation, removal, APT publication, and validation tools |
-| `sounds/` | Bundled sound packs |
-| `docs/` | Architecture and platform documentation |
+| Path         | Purpose                                                                     |
+| ------------ | --------------------------------------------------------------------------- |
+| `src/`       | See the complete [architecture module map](docs/ARCHITECTURE.md#module-map) |
+| `tests/`     | CLI lifecycle and status regression tests                                   |
+| `packaging/` | Distribution metadata, service units, desktop helpers, and Pages template   |
+| `scripts/`   | Installation, removal, APT publication, and validation tools                |
+| `sounds/`    | Bundled sound packs                                                         |
+| `docs/`      | Architecture and platform documentation                                     |
 
 ## Engineering guidelines
 

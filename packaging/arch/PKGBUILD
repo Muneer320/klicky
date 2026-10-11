@@ -1,6 +1,6 @@
 # Maintainer: Muneer Alam <muneer.alam320@gmail.com>
 pkgname=klicky
-pkgver=0.3.0
+pkgver=0.4.0
 pkgrel=1
 pkgdesc="Low-latency mechanical keyboard sounds for Linux"
 arch=('x86_64')
