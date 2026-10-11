@@ -353,3 +353,10 @@ After the v0.4.0 GitHub release is published (tag `v0.4.0`, not a draft):
 - Arch package `makepkg --printsrcinfo` diff passes; `.SRCINFO` field order matches
   generated output.
 - Debian package lintian passes; version assertion checks `klicky 0.4.0`.
+- PR #8 release candidate CI passed on all jobs:
+  - [CI run 38146004981](https://github.com/Muneer320/klicky/actions/runs/38146004981) (`ubuntu-latest`, `macos-latest`)
+  - [Packages run 38146004946](https://github.com/Muneer320/klicky/actions/runs/38146004946) (`debian-package`, `arch-package`, `apt-repository`)
+- Candidate package artifacts and SHA256 checksums verified from CI run 38146004946:
+  - `klicky_0.4.0-1_amd64.deb`: `f94833bbd4f31be6eacd8df0cf9984e8b1d7f461b794355c4637423c51997626`
+  - `klicky-0.4.0-1-x86_64.pkg.tar.zst`: `69be542bce8a2a886431c54f4e9583ebac82679c45010c2d256a267798467f31`
+
