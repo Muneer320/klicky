@@ -32,7 +32,7 @@ impl Config {
 
     fn load_from(path: &Path) -> Result<Self> {
         if path.exists() {
-            let contents = fs::read_to_string(&path)?;
+            let contents = fs::read_to_string(path)?;
             let config: Self = toml::from_str(&contents)?;
             config.validate()?;
             Ok(config)

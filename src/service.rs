@@ -135,6 +135,7 @@ fn command(program: &str, args: &[&str]) -> Result<()> {
     Ok(())
 }
 
+#[cfg(any(target_os = "macos", test))]
 fn classify_launchctl_print(output: &Output, service: &str) -> Result<bool> {
     if output.status.success() {
         return Ok(true);
@@ -153,6 +154,7 @@ fn classify_launchctl_print(output: &Output, service: &str) -> Result<bool> {
     );
 }
 
+#[cfg(any(target_os = "macos", test))]
 fn launchctl_loaded_with(
     service: &str,
     run: impl FnOnce(&str, &[&str]) -> Result<Output>,
