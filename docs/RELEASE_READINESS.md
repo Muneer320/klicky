@@ -1,16 +1,22 @@
 # Release readiness and maintenance audit
 
-Audit baseline: `980ab15f84c1ebcd73340f5579bf070e9363ca5e` on `master`, verified
-against `origin/master` on 2026-10-09. This is a preparation report, not release
-approval. Version remains 0.3.0. No tag, release, deployment, or version bump is
-part of this work.
+Audit baseline: `455ddacfdd39c015884207131c5154fa7006cd2c` (PR #7 merge) on `master`,
+verified against `origin/master` on 2026-10-11.
+
+**Status: v0.4.0 release candidate prepared.** Version bumped to 0.4.0 in all
+relevant files. Reliability hardening (PR #7) merged and validated. macOS
+functionality and launchd behavior manually verified on hardware by the
+repository owner. All CI checks passed on the feature branch. No tag, GitHub
+release, or APT publication has been triggered yet.
 
 ## Recommendation
 
-Ready for release preparation; not ready to publish v0.4.0. Resolve the high
-priority control/error cases, run the new policy through real service managers,
-then prepare versions and candidate packages. Website review can proceed
-independently. Do not dispatch APT publication just to preview the website.
+Ready to tag and publish v0.4.0 after owner review of the release-preparation PR.
+The high-priority reliability items (R1–R4) documented below were addressed in PR
+#7; the notes are preserved for historical context and as known-limitations
+baselines for future work. APT publication requires a separate manual
+`workflow_dispatch` after the release is published (see § APT publication sequence
+below).
 
 ## State preserved and obsolete notes retired
 
@@ -304,3 +310,46 @@ The cleanup changes no Rust source, workflows, service definitions or release
 versions. Its dependency update still needs the normal native macOS CI run;
 real hardware/service-manager checks remain outstanding. No screen-reader,
 Safari, package upgrade/removal or live deployment test is claimed.
+
+## APT publication sequence (post-release)
+
+After the v0.4.0 GitHub release is published (tag `v0.4.0`, not a draft):
+
+1. **Manual `workflow_dispatch`** on [`Publish APT repository`](https://github.com/Muneer320/klicky/actions/workflows/apt-repository.yml):
+   - Go to Actions → "Publish APT repository" → Run workflow.
+   - Enter `v0.4.0` in the tag field (default is already `v0.4.0`).
+   - Click "Run workflow" on branch `master`.
+2. The workflow will:
+   - Download `klicky_0.4.0-1_amd64.deb` and `SHA256SUMS` from the release.
+   - Verify the SHA256 checksum and package version (`0.4.0-1`).
+   - Download all previously published versions from the live APT repository (`klicky.muneer320.tech`) to preserve history.
+   - Re-sign and rebuild a complete APT repository containing all versions (old and new).
+   - Deploy the updated site to GitHub Pages.
+3. **Post-deployment verification:**
+   - Confirm `https://klicky.muneer320.tech/dists/stable/main/binary-amd64/Packages` lists `Version: 0.4.0-1`.
+   - Run `apt-get update && apt-cache policy klicky` with the repository configured; confirm `0.4.0-1` is the candidate.
+   - Verify `InRelease` signature: `gpg --verify InRelease`.
+   - Optionally install the package on a clean Debian/Ubuntu VM to confirm `klicky --version` = `klicky 0.4.0`.
+
+**Key constraints:**
+- The release workflow uses `GITHUB_TOKEN` and does **not** automatically trigger the APT publication workflow.
+- APT publication requires secrets `APT_GPG_PRIVATE_KEY`, `APT_GPG_PASSPHRASE`, and `APT_GPG_FINGERPRINT` to be present and valid.
+- The fingerprint must match `DBB67AE478D2FFCEC6637B559899E554D3580D8F`.
+- History retention is implemented: all previously published `.deb` packages are re-included in the repository.
+- There is no downgrade guard; do not publish lower version numbers after higher ones have been published.
+- Do not dispatch APT publication until the GitHub release is confirmed published and the SHA256SUMS file is present.
+
+## v0.4.0 release candidate validation
+
+- PR #7 CI (`ubuntu-latest`, `macos-latest`, `arch-package`, `debian-package`) passed on
+  commit `321b862` (push run after the final clippy fixes).
+  [CI](https://github.com/Muneer320/klicky/actions/runs/38145052346)
+  [Packages](https://github.com/Muneer320/klicky/actions/runs/38145052345)
+- Local Linux validation on `foaly` (Rust 1.90): `cargo fmt --check` passed,
+  `cargo clippy --all-targets --all-features -- -D warnings` passed (0 warnings),
+  `cargo test --bin klicky` passed (38 passed, 1 ignored/subprocess fixture).
+- macOS functionality and launchd behavior manually verified on hardware by the
+  repository owner (confirmed before PR #7 was merged).
+- Arch package `makepkg --printsrcinfo` diff passes; `.SRCINFO` field order matches
+  generated output.
+- Debian package lintian passes; version assertion checks `klicky 0.4.0`.

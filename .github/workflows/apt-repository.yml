@@ -15,7 +15,7 @@ on:
       tag:
         description: Published Klicky release tag
         required: true
-        default: v0.3.0
+        default: v0.4.0
 
 concurrency:
   group: apt-repository

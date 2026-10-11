@@ -16,7 +16,8 @@ spec.loader.exec_module(apt_repository)
 class AptRepositoryTests(unittest.TestCase):
     def test_fingerprint_is_normalized(self):
         value = "0123456789abcdef0123456789abcdef01234567"
-        self.assertEqual(apt_repository.validate_fingerprint(value), value.upper())
+        self.assertEqual(
+            apt_repository.validate_fingerprint(value), value.upper())
 
     def test_invalid_fingerprint_is_rejected(self):
         for value in ("short", "g" * 40, "0" * 39, "0" * 41):
@@ -44,7 +45,8 @@ class AptRepositoryTests(unittest.TestCase):
             old.write_bytes(b"old")
             new.write_bytes(b"new")
 
-            packages = apt_repository.collect_package_sources(root / "existing", [new])
+            packages = apt_repository.collect_package_sources(
+                root / "existing", [new])
 
             self.assertEqual(packages, {old.name: new})
 
@@ -60,12 +62,14 @@ class AptRepositoryTests(unittest.TestCase):
             old.write_bytes(b"old")
             new.write_bytes(b"new")
 
-            packages = apt_repository.collect_package_sources(root / "existing", [new])
+            packages = apt_repository.collect_package_sources(
+                root / "existing", [new])
 
             self.assertEqual(packages, {old.name: old, new.name: new})
 
     def test_deb822_source_uses_repository_keyring(self):
-        source = apt_repository.render_sources("https://muneer320.github.io/klicky")
+        source = apt_repository.render_sources(
+            "https://muneer320.github.io/klicky")
         self.assertIn("Types: deb", source)
         self.assertIn("Suites: stable", source)
         self.assertIn("Components: main", source)
@@ -84,7 +88,8 @@ class AptRepositoryTests(unittest.TestCase):
         self.assertIn("Klicky APT Repository", page)
         self.assertIn("0.3.0-1", page)
         self.assertIn("sudo apt install klicky", page)
-        self.assertIn("DBB6 7AE4 78D2 FFCE C663 7B55 9899 E554 D358 0D8F", page)
+        self.assertIn(
+            "DBB6 7AE4 78D2 FFCE C663 7B55 9899 E554 D358 0D8F", page)
         self.assertRegex(page, r"prefers-color-scheme:\s*dark")
         self.assertIn('href="#main"', page)
         self.assertNotIn("<script", page)
@@ -128,7 +133,8 @@ class AptRepositoryTests(unittest.TestCase):
 
     def test_index_escapes_dynamic_archive_metadata(self):
         page = apt_repository.render_index(
-            "https://example.com/klicky", ['<img src=x onerror="bad">'], "A" * 40
+            "https://example.com/klicky", [
+                '<img src=x onerror="bad">'], "A" * 40
         )
         self.assertNotIn("<img", page)
         self.assertIn("&lt;img", page)

@@ -3,7 +3,7 @@
 > Mechanical keyboard sounds for Linux and macOS, played from prepared audio the moment a key event arrives.
 
 [![CI](https://github.com/Muneer320/klicky/actions/workflows/ci.yml/badge.svg)](https://github.com/Muneer320/klicky/actions/workflows/ci.yml)
-[![Linux release](https://img.shields.io/badge/Linux_release-v0.3.0-2ea44f)](https://github.com/Muneer320/klicky/releases/tag/v0.3.0)
+[![Linux release](https://img.shields.io/badge/Linux_release-v0.4.0-2ea44f)](https://github.com/Muneer320/klicky/releases/tag/v0.4.0)
 [![Rust 1.87+](https://img.shields.io/badge/Rust-1.87%2B-dea584)](Cargo.toml)
 [![MIT license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
@@ -24,7 +24,7 @@ Klicky turns ordinary typing into mechanical keyboard sounds. Pick from **10 bun
 | Input | `evdev` on Wayland or X11 | Global listener + media-key event tap | Unsupported |
 | Background service | systemd user unit | LaunchAgent | N/A |
 | Desktop toggle | Omarchy bar, optional | Menu bar, optional | N/A |
-| Install | `v0.3.0` packages or current source | Current source only | N/A |
+| Install | `v0.4.0` packages or current source | Current source only | N/A |
 
 **Linux/Omarchy and macOS have both been physically tested.** There is **no downloadable macOS release asset**.
 
@@ -37,28 +37,28 @@ Choose **one** installation path:
 
 | Platform | Path |
 |---|---|
-| Arch Linux, Omarchy, Ubuntu, Debian | [Published `v0.3.0` package](#released-linux-packages) |
+| Arch Linux, Omarchy, Ubuntu, Debian | [Published `v0.4.0` package](#released-linux-packages) |
 | Linux, including Fedora | [Current source](#build-from-source-on-linux) |
 | macOS | [Current source](#build-and-install-on-macos) |
 
 > [!IMPORTANT]
-> **Release versus current source:** published `v0.3.0` Linux packages use `systemctl --user`; they do **not** have `klicky service`. Current source builds do. Both currently report version `0.3.0`, so check `klicky --help` for `service` rather than relying on `--version`.
+> **Release versus current source:** published `v0.4.0` Linux packages include `klicky service` for managing the systemd user unit.
 
 ### Released Linux packages
 
-The published `v0.3.0` packages target **Arch x86_64** and **Debian/Ubuntu amd64**. Download the matching package from the [v0.3.0 release](https://github.com/Muneer320/klicky/releases/tag/v0.3.0), then run one of the following from the directory containing the download.
+The published `v0.4.0` packages target **Arch x86_64** and **Debian/Ubuntu amd64**. Download the matching package from the [v0.4.0 release](https://github.com/Muneer320/klicky/releases/tag/v0.4.0), then run one of the following from the directory containing the download.
 
 Arch Linux or Omarchy:
 
 ```bash
-sudo pacman -U ./klicky-0.3.0-1-x86_64.pkg.tar.zst
+sudo pacman -U ./klicky-0.4.0-1-x86_64.pkg.tar.zst
 systemctl --user enable --now klicky.service
 ```
 
 Ubuntu or Debian:
 
 ```bash
-sudo apt install ./klicky_0.3.0-1_amd64.deb
+sudo apt install ./klicky_0.4.0-1_amd64.deb
 systemctl --user enable --now klicky.service
 ```
 
@@ -203,7 +203,7 @@ With a running daemon, sound-control success currently confirms request delivery
 
 Stop a managed service before starting Klicky in the foreground. Do not use benchmark mode while entering passwords or other sensitive text; see [Benchmark methodology](docs/BENCHMARKS.md).
 
-### Published `v0.3.0` Linux package
+### Published `v0.4.0` Linux package
 
 This release uses **systemd directly** for background control:
 
@@ -360,9 +360,9 @@ Current macOS LaunchAgents restart unsuccessful exits with a **30-second launch 
 
 ### Installation mismatch
 
-If `service` is unknown, you are likely running a published `v0.3.0` Linux binary. Use `systemctl --user` or build the current source. Check `command -v klicky`: a source-installed `~/.local/bin/klicky` can override `/usr/bin/klicky`. Their units and sound directories differ; see the [package migration step](#released-linux-packages).
+If `service` is unknown, you are running an older Klicky binary without service management support. Upgrade to the `v0.4.0` package or build from current source. Check `command -v klicky`: a source-installed `~/.local/bin/klicky` can override `/usr/bin/klicky`. Their units and sound directories differ; see the [package migration step](#released-linux-packages).
 
-In current source builds, `running: yes` and `responsive: yes` require an IPC reply matching the recorded live PID. `process exists: yes` with `responsive: no` means the recorded process exists but the daemon is not confirmed responsive. Published `v0.3.0` retains PID-based status. **Responsiveness does not test keyboard input or audio output**; if you hear nothing, check the selected pack, permissions, and audio route.
+In current source builds and `v0.4.0` packages, `running: yes` and `responsive: yes` require an IPC reply matching the recorded live PID. `process exists: yes` with `responsive: no` means the recorded process exists but the daemon is not confirmed responsive. **Responsiveness does not test keyboard input or audio output**; if you hear nothing, check the selected pack, permissions, and audio route.
 
 ## Develop and contribute
 
