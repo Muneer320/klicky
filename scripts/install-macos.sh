@@ -12,9 +12,14 @@ sound_dir="$HOME/Library/Application Support/klicky/sounds"
 
 cd "$repo_root"
 cargo build --release
+
+if [[ -x "$bin_dir/klicky" ]]; then
+  "$bin_dir/klicky" stop
+fi
+
 mkdir -p "$bin_dir" "$sound_dir"
 install -m755 target/release/klicky "$bin_dir/klicky"
-cp -R sounds/. "$sound_dir/"
+cp -Rn sounds/. "$sound_dir/"
 "$bin_dir/klicky" service enable
 
 printf '\nKlicky is installed and starts at login.\n'

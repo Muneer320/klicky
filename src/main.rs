@@ -156,7 +156,7 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
         }
         // Check for IPC commands (non-blocking)
         while let Ok(mut request) = ipc_rx.try_recv() {
-            match request.command {
+            match request.command.clone() {
                 ipc::Command::Stop => {
                     let _ = request.acknowledge();
                     if benchmark && !latencies.is_empty() {
@@ -165,23 +165,41 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
                     return Ok(());
                 }
                 ipc::Command::Switch { pack: name } => {
-                    let result = config::resolve_sound_pack(&name, &sound_roots)
-                        .context("sound pack not found")
-                        .and_then(|path| soundpack::SoundPack::load(&path));
-                    match result {
-                        Ok(new_pack) => {
-                            pack = new_pack;
-                            cfg.sound_pack = name.clone();
-                            let _ = cfg.save();
-                            eprintln!("Switched to '{}'", name);
-                        }
-                        Err(e) => eprintln!("Failed to load '{}': {}", name, e),
+                    let result = switch_pack(
+                        &mut cfg,
+                        &mut pack,
+                        &name,
+                        &sound_roots,
+                        config::Config::save,
+                    );
+                    let response = match &result {
+                        Ok(()) => request.acknowledge(),
+                        Err(error) => request.reject(format!("{error:#}")),
+                    };
+                    if let Err(error) = result {
+                        eprintln!("Failed to switch to '{name}': {error:#}");
+                    } else {
+                        eprintln!("Switched to '{name}'");
+                    }
+                    if let Err(error) = response {
+                        eprintln!("Failed to respond to switch request: {error:#}");
                     }
                 }
                 ipc::Command::Volume { level } => {
-                    player.set_volume(level);
-                    cfg.volume = player.volume();
-                    let _ = cfg.save();
+                    let result = set_config_volume(&mut cfg, level, config::Config::save);
+                    let response = match &result {
+                        Ok(volume) => {
+                            player.set_volume(*volume);
+                            request.acknowledge()
+                        }
+                        Err(error) => request.reject(format!("{error:#}")),
+                    };
+                    if let Err(error) = result {
+                        eprintln!("Failed to set volume: {error:#}");
+                    }
+                    if let Err(error) = response {
+                        eprintln!("Failed to respond to volume request: {error:#}");
+                    }
                 }
                 ipc::Command::Status => {
                     let _ = request.acknowledge();
@@ -192,16 +210,12 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
         // Play sounds for key events (non-blocking, drain all pending)
         while let Ok(key_event) = key_rx.try_recv() {
             if let Some(samples) = pack.samples.get(key_event.key_name) {
-                let is_fkey = key_event.key_name.starts_with('F')
-                    && key_event.key_name.len() <= 3
-                    && key_event.key_name[1..].parse::<u32>().is_ok();
-                if is_fkey {
-                    // Boost F-key volume since their samples are quieter
+                if is_function_key(key_event.key_name) {
                     player.play_with_volume(
                         samples,
                         pack.channels,
                         pack.sample_rate,
-                        (cfg.volume + 0.2).min(1.0),
+                        key_playback_volume(cfg.volume, key_event.key_name),
                     );
                 } else {
                     player.play(samples, pack.channels, pack.sample_rate);
@@ -282,13 +296,19 @@ fn cmd_switch(name: String) -> Result<()> {
         bail!("Sound pack '{}' not found", name);
     }
 
-    if ipc::send_command(&ipc::Command::Switch { pack: name.clone() }).is_ok() {
-        println!("Switched to '{}'", name);
-    } else {
-        let mut cfg = config::Config::load()?;
-        cfg.sound_pack = name.clone();
-        cfg.save()?;
-        println!("Switched to '{}' (will apply on next start)", name);
+    match ipc::send_command(&ipc::Command::Switch { pack: name.clone() }) {
+        Ok(_) => println!("Switched to '{name}'"),
+        Err(error) if ipc::is_daemon_unavailable(&error) => {
+            let mut cfg = config::Config::load()?;
+            cfg.sound_pack = name.clone();
+            cfg.save()?;
+            println!("Switched to '{name}' (will apply on next start)");
+        }
+        Err(error) => {
+            return Err(error).context(
+                "Klicky did not confirm the sound-pack change; no offline change was saved",
+            )
+        }
     }
     Ok(())
 }
@@ -298,15 +318,72 @@ fn cmd_volume(level: f32) -> Result<()> {
         bail!("Volume must be between 0.0 and 1.0");
     }
 
-    if ipc::send_command(&ipc::Command::Volume { level }).is_ok() {
-        println!("Volume set to {:.1}", level);
-    } else {
-        let mut cfg = config::Config::load()?;
-        cfg.volume = level;
-        cfg.save()?;
-        println!("Volume set to {:.1} (will apply on next start)", level);
+    match ipc::send_command(&ipc::Command::Volume { level }) {
+        Ok(_) => println!("Volume set to {level:.1}"),
+        Err(error) if ipc::is_daemon_unavailable(&error) => {
+            let mut cfg = config::Config::load()?;
+            cfg.volume = level;
+            cfg.save()?;
+            println!("Volume set to {level:.1} (will apply on next start)");
+        }
+        Err(error) => {
+            return Err(error)
+                .context("Klicky did not confirm the volume change; no offline change was saved")
+        }
     }
     Ok(())
+}
+
+fn switch_pack(
+    config: &mut config::Config,
+    pack: &mut soundpack::SoundPack,
+    name: &str,
+    roots: &[std::path::PathBuf],
+    persist: impl FnOnce(&config::Config) -> Result<()>,
+) -> Result<()> {
+    let path = config::resolve_sound_pack(name, roots)
+        .with_context(|| format!("sound pack '{name}' not found"))?;
+    let new_pack = soundpack::SoundPack::load(&path)?;
+    let next = config::Config {
+        sound_pack: name.to_string(),
+        volume: config.volume,
+    };
+    persist(&next)?;
+    *config = next;
+    *pack = new_pack;
+    Ok(())
+}
+
+fn set_config_volume(
+    config: &mut config::Config,
+    level: f32,
+    save: impl FnOnce(&config::Config) -> Result<()>,
+) -> Result<f32> {
+    if !level.is_finite() || !(0.0..=1.0).contains(&level) {
+        bail!("Volume must be between 0.0 and 1.0");
+    }
+    let next = config::Config {
+        sound_pack: config.sound_pack.clone(),
+        volume: level,
+    };
+    save(&next)?;
+    *config = next;
+    Ok(level)
+}
+
+fn key_playback_volume(volume: f32, key_name: &str) -> f32 {
+    if !is_function_key(key_name) {
+        return volume;
+    }
+    if volume <= 0.0 {
+        0.0
+    } else {
+        (volume + 0.2).min(1.0)
+    }
+}
+
+fn is_function_key(key_name: &str) -> bool {
+    key_name.starts_with('F') && key_name.len() <= 3 && key_name[1..].parse::<u32>().is_ok()
 }
 
 fn cmd_status() -> Result<()> {
@@ -329,4 +406,124 @@ fn cmd_status() -> Result<()> {
     println!("  sound pack: {}", cfg.sound_pack);
     println!("  volume:     {:.1}", cfg.volume);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn key_playback_volume_keeps_zero_silent_for_all_key_categories() {
+        for key_name in ["A", "NEXTSONG", "F1", "F12"] {
+            assert_eq!(key_playback_volume(0.0, key_name), 0.0, "{key_name}");
+        }
+    }
+
+    #[test]
+    fn function_key_boost_respects_volume_boundaries() {
+        assert_eq!(key_playback_volume(0.25, "F1"), 0.45);
+        assert_eq!(key_playback_volume(0.8, "F12"), 1.0);
+        assert_eq!(key_playback_volume(1.0, "F1"), 1.0);
+        assert_eq!(key_playback_volume(0.25, "A"), 0.25);
+        assert_eq!(key_playback_volume(0.25, "NEXTSONG"), 0.25);
+    }
+
+    #[test]
+    fn failed_switch_persistence_does_not_change_runtime_or_config() -> Result<()> {
+        let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let roots = [manifest.join("sounds")];
+        let mut config = config::Config {
+            sound_pack: "eg-oreo".to_string(),
+            volume: 0.5,
+        };
+        let mut pack = soundpack::SoundPack::load(&roots[0].join("eg-oreo"))?;
+        let old_channels = pack.channels;
+        let old_rate = pack.sample_rate;
+        let old_keys = pack
+            .samples
+            .keys()
+            .cloned()
+            .collect::<std::collections::HashSet<_>>();
+
+        let result = switch_pack(&mut config, &mut pack, "cherrymx-blue-abs", &roots, |_| {
+            anyhow::bail!("simulated read-only config")
+        });
+
+        assert!(result.is_err());
+        assert_eq!(config.sound_pack, "eg-oreo");
+        assert_eq!(pack.channels, old_channels);
+        assert_eq!(pack.sample_rate, old_rate);
+        assert_eq!(
+            pack.samples
+                .keys()
+                .cloned()
+                .collect::<std::collections::HashSet<_>>(),
+            old_keys
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn successful_switch_persists_before_changing_runtime_state() -> Result<()> {
+        let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let roots = [manifest.join("sounds")];
+        let mut config = config::Config {
+            sound_pack: "eg-oreo".to_string(),
+            volume: 0.5,
+        };
+        let mut pack = soundpack::SoundPack::load(&roots[0].join("eg-oreo"))?;
+        let mut persisted_name = None;
+
+        switch_pack(
+            &mut config,
+            &mut pack,
+            "cherrymx-blue-abs",
+            &roots,
+            |next| {
+                persisted_name = Some(next.sound_pack.clone());
+                Ok(())
+            },
+        )?;
+
+        assert_eq!(persisted_name.as_deref(), Some("cherrymx-blue-abs"));
+        assert_eq!(config.sound_pack, "cherrymx-blue-abs");
+        Ok(())
+    }
+
+    #[test]
+    fn failed_volume_persistence_does_not_change_config() {
+        let mut config = config::Config {
+            sound_pack: "eg-oreo".to_string(),
+            volume: 0.5,
+        };
+        let result = set_config_volume(&mut config, 0.8, |_| {
+            anyhow::bail!("simulated read-only config")
+        });
+        assert!(result.is_err());
+        assert_eq!(config.volume, 0.5);
+    }
+
+    #[test]
+    fn volume_update_validates_finite_range_and_persists_boundaries() -> Result<()> {
+        for invalid in [-0.1, 1.1, f32::NAN, f32::INFINITY] {
+            let mut config = config::Config::default();
+            assert!(set_config_volume(&mut config, invalid, |_| Ok(())).is_err());
+            assert_eq!(config.volume, 0.8);
+        }
+        for valid in [0.0, 0.5, 1.0] {
+            let mut config = config::Config::default();
+            let mut persisted = None;
+            assert_eq!(
+                set_config_volume(&mut config, valid, |next| {
+                    persisted = Some(next.volume);
+                    Ok(())
+                })?,
+                valid
+            );
+            assert_eq!(config.volume, valid);
+            assert_eq!(persisted, Some(valid));
+        }
+        Ok(())
+    }
 }

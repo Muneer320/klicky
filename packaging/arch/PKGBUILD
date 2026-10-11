@@ -4,6 +4,7 @@ pkgver=0.3.0
 pkgrel=1
 pkgdesc="Low-latency mechanical keyboard sounds for Linux"
 arch=('x86_64')
+install=klicky.install
 url="https://github.com/Muneer320/klicky"
 license=('MIT')
 depends=('alsa-lib' 'gcc-libs' 'glibc' 'systemd')
