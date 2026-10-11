@@ -13,7 +13,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::config;
 
-#[derive(Debug, Serialize, Deserialize)]
+pub const COMMAND_TIMEOUT: Duration = Duration::from_secs(3);
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Command {
     Stop,
     Switch { pack: String },
@@ -29,14 +31,24 @@ pub struct Request {
 #[derive(Serialize, Deserialize)]
 struct Response {
     pid: i32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    error: Option<String>,
 }
 
 impl Request {
     pub fn acknowledge(&mut self) -> Result<()> {
+        self.respond(None)
+    }
+
+    pub fn reject(&mut self, error: impl Into<String>) -> Result<()> {
+        self.respond(Some(error.into()))
+    }
+
+    fn respond(&mut self, error: Option<String>) -> Result<()> {
         let response = serde_json::to_string(&Response {
             pid: std::process::id() as i32,
+            error,
         })?;
-        // A response means the daemon loop accepted the request, not that it exited.
         writeln!(self.stream, "{response}")?;
         Ok(())
     }
@@ -72,12 +84,23 @@ fn bind_listener(path: &Path) -> Result<UnixListener> {
     Ok(listener)
 }
 
-pub fn send_command(cmd: &Command) -> Result<()> {
-    let sock_path = config::socket_path();
-    let mut stream = UnixStream::connect(&sock_path)?;
-    let msg = serde_json::to_string(cmd)?;
-    writeln!(stream, "{}", msg)?;
-    Ok(())
+pub fn send_command(cmd: &Command) -> Result<i32> {
+    request(
+        &config::socket_path(),
+        cmd,
+        Instant::now() + COMMAND_TIMEOUT,
+    )
+}
+
+pub fn is_daemon_unavailable(error: &anyhow::Error) -> bool {
+    error.chain().any(|cause| {
+        cause.downcast_ref::<io::Error>().is_some_and(|error| {
+            matches!(
+                error.kind(),
+                io::ErrorKind::NotFound | io::ErrorKind::ConnectionRefused
+            )
+        })
+    })
 }
 
 /// Nonblocking connect and I/O share one deadline, including a full accept queue.
@@ -198,6 +221,9 @@ pub fn request(path: &Path, command: &Command, deadline: Instant) -> Result<i32>
     if response.pid <= 0 {
         bail!("invalid daemon PID in IPC response");
     }
+    if let Some(error) = response.error {
+        bail!("daemon rejected command: {error}");
+    }
     Ok(response.pid)
 }
 
@@ -205,6 +231,7 @@ pub fn request(path: &Path, command: &Command, deadline: Instant) -> Result<i32>
 mod tests {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::mpsc;
     static NEXT: AtomicUsize = AtomicUsize::new(0);
 
     #[test]
@@ -218,11 +245,12 @@ mod tests {
     }
 
     #[test]
-    fn lifecycle_protocol_requires_valid_acknowledgment() -> Result<()> {
+    fn commands_require_valid_acknowledgment() -> Result<()> {
         for reply in [
             "not json\n",
             "{\"pid\":0}\n",
             "{\"pid\":-1}\n",
+            "{\"pid\":123,\"error\":\"operation failed\"}\n",
             "",
             "{\"pid\":123}\n",
         ] {
@@ -240,19 +268,77 @@ mod tests {
                 let line = read_line(&mut stream, Instant::now() + Duration::from_secs(1)).unwrap();
                 assert!(matches!(
                     serde_json::from_slice::<Command>(&line).unwrap(),
-                    Command::Status
+                    Command::Switch { .. }
                 ));
                 stream.write_all(reply.as_bytes()).unwrap();
             });
             let result = request(
                 &path,
-                &Command::Status,
+                &Command::Switch {
+                    pack: "eg-oreo".to_string(),
+                },
                 Instant::now() + Duration::from_secs(1),
             );
             server.join().unwrap();
             assert_eq!(result.is_ok(), reply == "{\"pid\":123}\n");
             std::fs::remove_dir_all(directory)?;
         }
+        Ok(())
+    }
+
+    #[test]
+    fn unavailable_socket_errors_are_distinguished_from_timeout() {
+        let missing = std::env::temp_dir().join(format!(
+            "klicky-missing-socket-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        let error = request(
+            &missing,
+            &Command::Status,
+            Instant::now() + Duration::from_millis(100),
+        )
+        .unwrap_err();
+        assert!(is_daemon_unavailable(&error));
+
+        let timeout = anyhow::anyhow!("IPC response timed out");
+        assert!(!is_daemon_unavailable(&timeout));
+    }
+
+    #[test]
+    fn command_request_times_out_after_server_accepts_without_reply() -> Result<()> {
+        let directory = std::env::temp_dir().join(format!(
+            "klicky-ipc-timeout-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        std::fs::create_dir_all(&directory)?;
+        let path = directory.join("socket");
+        let listener = bind_listener(&path)?;
+        let (accepted_tx, accepted_rx) = mpsc::channel();
+        let (release_tx, release_rx) = mpsc::channel();
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream.set_nonblocking(true).unwrap();
+            read_line(&mut stream, Instant::now() + Duration::from_secs(1)).unwrap();
+            accepted_tx.send(()).unwrap();
+            let _ = release_rx.recv_timeout(Duration::from_secs(1));
+        });
+        let path_for_client = path.clone();
+        let client = thread::spawn(move || {
+            request(
+                &path_for_client,
+                &Command::Volume { level: 0.5 },
+                Instant::now() + Duration::from_millis(100),
+            )
+        });
+
+        accepted_rx.recv_timeout(Duration::from_secs(1))?;
+        let error = client.join().unwrap().unwrap_err();
+        assert!(error.to_string().contains("IPC response timed out"));
+        release_tx.send(()).unwrap();
+        server.join().unwrap();
+        std::fs::remove_dir_all(directory)?;
         Ok(())
     }
 

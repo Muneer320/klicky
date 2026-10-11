@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+
+case "${1:-}" in
+    remove|deconfigure|upgrade|failed-upgrade)
+        root=${DPKG_ROOT:-}
+        checker="$root/var/lib/dpkg/info/klicky.preinst"
+        if [ ! -x "$checker" ]; then
+            printf 'Cannot safely remove or upgrade Klicky: package process guard is missing.\n' >&2
+            exit 1
+        fi
+        proc_root="$root/proc"
+        [ -n "$root" ] || proc_root=/proc
+        "$checker" check-active "$proc_root"
+        ;;
+esac
+
+exit 0

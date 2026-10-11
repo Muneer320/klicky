@@ -1,7 +1,14 @@
 use anyhow::{bail, Context, Result};
-use std::process::Command;
+use std::io::{self, Read};
+use std::os::unix::process::CommandExt;
+use std::process::{Command, Output, Stdio};
+use std::thread;
+use std::time::{Duration, Instant};
 
 use crate::ServiceAction;
+
+const COMMAND_TIMEOUT: Duration = Duration::from_secs(10);
+const COMMAND_POLL: Duration = Duration::from_millis(10);
 
 /// On macOS a direct stop also cancels any launchd retry queued after a crash.
 pub fn stop() -> Result<()> {
@@ -26,15 +33,138 @@ pub fn run(action: ServiceAction) -> Result<()> {
     }
 }
 
-fn command(program: &str, args: &[&str]) -> Result<()> {
-    let status = Command::new(program)
+fn command_output(program: &str, args: &[&str]) -> Result<Output> {
+    command_output_with_timeout(program, args, COMMAND_TIMEOUT)
+}
+
+fn command_output_with_timeout(program: &str, args: &[&str], timeout: Duration) -> Result<Output> {
+    let mut command = Command::new(program);
+    command
         .args(args)
-        .status()
-        .with_context(|| format!("failed to run {program}"))?;
-    if !status.success() {
-        bail!("{program} {} failed ({status})", args.join(" "));
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .process_group(0);
+    let mut child = command
+        .spawn()
+        .with_context(|| format!("failed to start {program} {}", args.join(" ")))?;
+    let stdout = child
+        .stdout
+        .take()
+        .context("service command stdout unavailable")?;
+    let stderr = child
+        .stderr
+        .take()
+        .context("service command stderr unavailable")?;
+    let stdout_reader = thread::spawn(move || read_output(stdout));
+    let stderr_reader = thread::spawn(move || read_output(stderr));
+    let deadline = Instant::now() + timeout;
+
+    let status = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break status,
+            Ok(None) if Instant::now() < deadline => thread::sleep(COMMAND_POLL),
+            Ok(None) => {
+                unsafe {
+                    libc::kill(-(child.id() as i32), libc::SIGKILL);
+                }
+                let _ = child.kill();
+                let _ = child.wait();
+                let _ = stdout_reader.join();
+                let _ = stderr_reader.join();
+                bail!(
+                    "{program} {} timed out after {} seconds",
+                    args.join(" "),
+                    timeout.as_secs_f32()
+                );
+            }
+            Err(error) => {
+                unsafe {
+                    libc::kill(-(child.id() as i32), libc::SIGKILL);
+                }
+                let _ = child.kill();
+                let _ = child.wait();
+                let _ = stdout_reader.join();
+                let _ = stderr_reader.join();
+                return Err(error).with_context(|| {
+                    format!("failed while waiting for {program} {}", args.join(" "))
+                });
+            }
+        }
+    };
+
+    let stdout = stdout_reader
+        .join()
+        .map_err(|_| anyhow::anyhow!("{program} stdout reader panicked"))??;
+    let stderr = stderr_reader
+        .join()
+        .map_err(|_| anyhow::anyhow!("{program} stderr reader panicked"))??;
+    Ok(Output {
+        status,
+        stdout,
+        stderr,
+    })
+}
+
+fn read_output(mut stream: impl Read) -> io::Result<Vec<u8>> {
+    let mut bytes = Vec::new();
+    stream.read_to_end(&mut bytes)?;
+    Ok(bytes)
+}
+
+fn command_output_text(output: &Output) -> String {
+    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+    match (stdout.is_empty(), stderr.is_empty()) {
+        (true, true) => String::new(),
+        (false, true) => stdout,
+        (true, false) => stderr,
+        (false, false) => format!("stdout: {stdout}; stderr: {stderr}"),
+    }
+}
+
+fn command(program: &str, args: &[&str]) -> Result<()> {
+    let output = command_output(program, args)?;
+    if !output.status.success() {
+        bail!(
+            "{program} {} failed ({}): {}",
+            args.join(" "),
+            output.status,
+            command_output_text(&output)
+        );
     }
     Ok(())
+}
+
+#[cfg(any(target_os = "macos", test))]
+fn classify_launchctl_print(output: &Output, service: &str) -> Result<bool> {
+    if output.status.success() {
+        return Ok(true);
+    }
+    let details = command_output_text(output);
+    if output.status.code() == Some(113)
+        && details.contains("Could not find service")
+        && details.contains(service)
+    {
+        return Ok(false);
+    }
+    bail!(
+        "launchctl print {service} failed ({}): {}",
+        output.status,
+        details
+    );
+}
+
+#[cfg(any(target_os = "macos", test))]
+fn launchctl_loaded_with(
+    service: &str,
+    run: impl FnOnce(&str, &[&str]) -> Result<Output>,
+) -> Result<bool> {
+    classify_launchctl_print(&run("launchctl", &["print", service])?, service)
+}
+
+#[cfg(target_os = "macos")]
+fn launchctl_loaded(service: &str) -> Result<bool> {
+    launchctl_loaded_with(service, command_output)
 }
 
 #[cfg(target_os = "linux")]
@@ -52,10 +182,18 @@ fn linux(action: ServiceAction) -> Result<()> {
         }
         ServiceAction::Stop => command("systemctl", &["--user", "stop", unit])?,
         ServiceAction::Status => {
-            let enabled = Command::new("systemctl")
-                .args(["--user", "is-enabled", "--quiet", unit])
-                .status()?
-                .success();
+            let output = command_output("systemctl", &["--user", "is-enabled", "--quiet", unit])?;
+            let enabled = if output.status.success() {
+                true
+            } else if output.status.code() == Some(1) {
+                false
+            } else {
+                bail!(
+                    "systemctl --user is-enabled {unit} failed ({}): {}",
+                    output.status,
+                    command_output_text(&output)
+                );
+            };
             println!(
                 "autostart: {}",
                 if enabled { "enabled" } else { "disabled" }
@@ -80,17 +218,10 @@ fn macos(action: ServiceAction) -> Result<()> {
     let session_plist = home.join("Library/Application Support/klicky/session.plist");
     let domain = format!("gui/{}", unsafe { libc::getuid() });
     let service = format!("{domain}/{LABEL}");
-    let loaded = || -> bool {
-        Command::new("launchctl")
-            .args(["print", &service])
-            .output()
-            .is_ok_and(|output| output.status.success())
-    };
-
     match action {
         ServiceAction::Enable => {
             let binary = installed_binary(&home)?;
-            if loaded() {
+            if launchctl_loaded(&service)? {
                 crate::cmd_stop()?;
                 command("launchctl", &["bootout", &service])?;
             }
@@ -104,7 +235,7 @@ fn macos(action: ServiceAction) -> Result<()> {
             stop_launch_agent(
                 || crate::lifecycle::stop(&crate::config::runtime_dir()),
                 || {
-                    if loaded() {
+                    if launchctl_loaded(&service)? {
                         command("launchctl", &["bootout", &service])
                     } else {
                         Ok(())
@@ -127,14 +258,15 @@ fn macos(action: ServiceAction) -> Result<()> {
                 &session_plist
             };
             let changed = plist_needs_update(active_plist, &plist_contents(LABEL, &binary)?)?;
-            if loaded() && changed {
+            let loaded = launchctl_loaded(&service)?;
+            if loaded && changed {
                 // Migrate old paths/recovery policy before starting the job.
                 crate::cmd_stop()?;
                 command("launchctl", &["bootout", &service])?;
             }
             // Do not mark migration complete on disk until the old job unloaded.
             write_plist(active_plist, LABEL, &binary)?;
-            if !loaded() {
+            if !loaded {
                 let path = active_plist
                     .to_str()
                     .context("LaunchAgent path is not UTF-8")?;
@@ -151,7 +283,7 @@ fn macos(action: ServiceAction) -> Result<()> {
             let stopped = stop_launch_agent(
                 || crate::lifecycle::stop(&crate::config::runtime_dir()),
                 || {
-                    if loaded() {
+                    if launchctl_loaded(&service)? {
                         command("launchctl", &["bootout", &service])
                     } else {
                         Ok(())
@@ -284,6 +416,7 @@ mod tests {
     use super::*;
     use std::fs;
     use std::os::unix::fs::PermissionsExt;
+    use std::os::unix::process::ExitStatusExt;
     use std::path::PathBuf;
     use std::sync::atomic::{AtomicUsize, Ordering};
     static NEXT: AtomicUsize = AtomicUsize::new(0);
@@ -415,5 +548,56 @@ mod tests {
         )
         .is_err());
         Ok(())
+    }
+
+    fn mock_output(code: i32, stdout: &str, stderr: &str) -> Output {
+        Output {
+            status: std::process::ExitStatus::from_raw(code << 8),
+            stdout: stdout.as_bytes().to_vec(),
+            stderr: stderr.as_bytes().to_vec(),
+        }
+    }
+
+    #[test]
+    fn launchctl_print_distinguishes_absence_from_operational_errors() {
+        let service = "gui/501/dev.klicky.daemon";
+        let loaded = launchctl_loaded_with(service, |program, args| {
+            assert_eq!(program, "launchctl");
+            assert_eq!(args, ["print", service]);
+            Ok(mock_output(0, "loaded", ""))
+        });
+        assert!(loaded.unwrap());
+
+        let absent = launchctl_loaded_with(service, |_, _| {
+            Ok(mock_output(
+                113,
+                "",
+                "Could not find service \"gui/501/dev.klicky.daemon\" in domain for user gui: 501",
+            ))
+        });
+        assert!(!absent.unwrap());
+
+        for failure in [
+            mock_output(1, "", "Operation not permitted"),
+            mock_output(113, "", "Could not find service malformed target"),
+        ] {
+            let error = launchctl_loaded_with(service, |_, _| Ok(failure)).unwrap_err();
+            assert!(error.to_string().contains("launchctl print"));
+            assert!(!error.to_string().is_empty());
+        }
+    }
+
+    #[test]
+    fn service_commands_have_a_deadline_and_capture_diagnostics() {
+        let error = command_output_with_timeout(
+            "sh",
+            &["-c", "exec tail -f /dev/null"],
+            Duration::from_millis(50),
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("timed out"));
+
+        let error = command("sh", &["-c", "printf diagnostic >&2; exit 2"]).unwrap_err();
+        assert!(error.to_string().contains("diagnostic"));
     }
 }

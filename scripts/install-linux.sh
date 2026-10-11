@@ -21,9 +21,13 @@ done
 cd "$repo_root"
 cargo build --release
 
+if [[ -x "$bin_dir/klicky" ]]; then
+  "$bin_dir/klicky" stop
+fi
+
 install -Dm755 target/release/klicky "$bin_dir/klicky"
 mkdir -p "$config_dir/sounds"
-cp -a sounds/. "$config_dir/sounds/"
+cp -an sounds/. "$config_dir/sounds/"
 install -Dm644 packaging/systemd/klicky.service "$user_unit_dir/klicky.service"
 
 if [[ ${KLICKY_SKIP_UDEV:-0} != 1 ]]; then
@@ -35,7 +39,6 @@ fi
 systemctl --user daemon-reload
 systemctl --user reenable klicky.service
 systemctl --user restart klicky.service
-rm -f "$config_dir/klicky.pid" "$config_dir/klicky.sock"
 
 printf '\nKlicky installed successfully.\n'
 printf 'Binary: %s\n' "$bin_dir/klicky"

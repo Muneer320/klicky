@@ -89,10 +89,6 @@ impl Player {
     pub fn set_volume(&mut self, volume: f32) {
         self.volume = volume.clamp(0.0, 1.0);
     }
-
-    pub fn volume(&self) -> f32 {
-        self.volume
-    }
 }
 
 fn open_low_latency_sink() -> Result<MixerDeviceSink> {
