@@ -208,17 +208,6 @@ For desktop software, the repository provides packaged builds and source install
 
 **Demo Video:** [G-Drive Link](https://drive.google.com/file/d/1hEttpMaugoL3aleS5EE4ItJ8kwWFxOAD/view?usp=sharing)
 
-The demonstration covers:
-
-1. Installation and startup
-2. System-wide keyboard sound playback
-3. Sound-pack selection
-4. Runtime volume control
-5. Background service control
-6. Omarchy integration
-7. Architecture and implementation
-8. Automated tests
-
 ## Security
 
 Klicky observes global key-down events because that is required to produce system-wide typing sounds. The Linux installer uses a keyboard-only `uaccess` rule to grant the active desktop user access to the required device, and the daemon runs as the logged-in user rather than root.
