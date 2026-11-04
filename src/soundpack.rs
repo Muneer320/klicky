@@ -12,6 +12,9 @@ use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
 
+#[cfg(target_os = "windows")]
+mod bounded;
+
 const TARGET_PEAK: f32 = i16::MAX as f32 * 0.85;
 const MAX_NORMALIZATION_GAIN: f32 = 6.0;
 
