@@ -12,6 +12,7 @@ mod lifecycle;
 mod listener;
 #[cfg(target_os = "macos")]
 mod media_keys;
+mod playback;
 mod player;
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 mod service;

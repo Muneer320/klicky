@@ -33,6 +33,7 @@ pub const MAX_KEY_AGE: Duration = Duration::from_millis(30);
 pub struct Press {
     pub key: crate::KeyEvent,
     pub epoch: u64,
+    pub observed_at: Instant,
 }
 
 pub enum Status {
@@ -139,6 +140,12 @@ impl Input {
         self.wake()
     }
 
+    /// Drop queued presses after a pack commit without reseeding held keys.
+    pub fn discard_pending(&self) -> Result<()> {
+        self.control.epoch.fetch_add(1, Ordering::AcqRel);
+        self.wake()
+    }
+
     fn wake(&self) -> Result<()> {
         unsafe { SetEvent(HANDLE(self.control.changed.as_raw_handle()))? };
         Ok(())
@@ -199,6 +206,7 @@ struct State {
     enabled: bool,
     fence: Option<(Instant, u32)>,
     failure: Option<String>,
+    observed_at: Instant,
 }
 
 impl State {
@@ -291,6 +299,7 @@ impl State {
                 timestamp,
             },
             epoch: self.epoch,
+            observed_at: self.observed_at,
         };
         if self.sender.try_send(event).is_err() {
             self.control
@@ -339,6 +348,7 @@ fn run(control: Arc<Control>, sender: Sender<Press>, status: &Sender<Status>) ->
         enabled: false,
         fence: None,
         failure: None,
+        observed_at: Instant::now(),
     });
     unsafe {
         let instance = GetModuleHandleW(None)?;
@@ -432,6 +442,7 @@ unsafe extern "system" fn window_proc(
     wparam: WPARAM,
     lparam: LPARAM,
 ) -> LRESULT {
+    let observed_at = Instant::now();
     if message == WM_NCCREATE {
         let creation = &*(lparam.0 as *const CREATESTRUCTW);
         SetWindowLongPtrW(window, GWLP_USERDATA, creation.lpCreateParams as isize);
@@ -443,6 +454,8 @@ unsafe extern "system" fn window_proc(
     let pointer = GetWindowLongPtrW(window, GWLP_USERDATA) as *mut State;
     if !pointer.is_null() && (message == WM_INPUT || message == WM_INPUT_DEVICE_CHANGE) {
         let state = &mut *pointer;
+        state.observed_at = observed_at;
+        state.apply_control();
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| -> Result<()> {
             if message == WM_INPUT_DEVICE_CHANGE {
                 state

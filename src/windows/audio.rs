@@ -133,6 +133,9 @@ impl Supervisor {
     pub fn has_exited(&self) -> bool {
         self.worker.as_ref().is_none_or(JoinHandle::is_finished)
     }
+    pub fn shutdown_complete(&self) -> bool {
+        self.worker.is_none()
+    }
     pub fn set_active(&self, active: bool) {
         if self.shared.active.swap(active, Ordering::AcqRel) != active {
             self.shared.epoch.fetch_add(1, Ordering::AcqRel);

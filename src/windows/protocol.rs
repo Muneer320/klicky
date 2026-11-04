@@ -92,6 +92,7 @@ pub enum EngineState {
     Paused,
     WaitingForAudio,
     Recovering,
+    Failed,
     Stopping,
 }
 
