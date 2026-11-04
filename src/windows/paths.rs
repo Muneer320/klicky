@@ -9,6 +9,8 @@ use anyhow::{bail, Context, Result};
 
 use super::files;
 
+pub(super) const MAX_DISCOVERED_PACKS: usize = 512;
+
 #[derive(Clone, Debug)]
 pub struct Paths {
     data: PathBuf,
@@ -113,6 +115,9 @@ impl Paths {
                             );
                         }
                     }
+                    if root_names.len() == MAX_DISCOVERED_PACKS {
+                        bail!("Windows sound-pack discovery exceeds {MAX_DISCOVERED_PACKS} packs per root");
+                    }
                     root_names.push(name);
                 }
             }
@@ -126,6 +131,9 @@ impl Paths {
                     }
                 }
                 if !overridden {
+                    if names.len() == MAX_DISCOVERED_PACKS {
+                        bail!("Windows sound-pack discovery exceeds {MAX_DISCOVERED_PACKS} distinct packs");
+                    }
                     names.push(name);
                 }
             }
@@ -185,7 +193,7 @@ pub(super) fn validate_pack_name(name: &str) -> Result<()> {
     Ok(())
 }
 
-fn same_name(left: &str, right: &str) -> Result<bool> {
+pub(super) fn same_name(left: &str, right: &str) -> Result<bool> {
     let left: Vec<u16> = left.encode_utf16().collect();
     let right: Vec<u16> = right.encode_utf16().collect();
     // Validated single components bound both slices and keep the OS comparison ordinal.
