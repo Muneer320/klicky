@@ -3,6 +3,7 @@ mod config;
 mod files;
 mod lifecycle;
 mod paths;
+pub mod pipe;
 mod process;
 pub mod protocol;
 
