@@ -102,6 +102,7 @@ fn validate_ogg(bytes: &[u8], cancelled: &impl Fn() -> bool) -> Result<()> {
     let mut stream = None;
     let mut sequence = 0u32;
     let mut ended = false;
+    let mut continued = false;
     while offset < bytes.len() {
         check(cancelled)?;
         let header = bytes
@@ -109,6 +110,9 @@ fn validate_ogg(bytes: &[u8], cancelled: &impl Fn() -> bool) -> Result<()> {
             .context("truncated Ogg page header")?;
         if &header[..4] != b"OggS" || header[4] != 0 || header[5] & !7 != 0 || ended {
             bail!("invalid or chained Ogg stream");
+        }
+        if (header[5] & 1 != 0) != continued {
+            bail!("discontinuous Ogg packet continuation");
         }
         let serial = u32::from_le_bytes(header[14..18].try_into()?);
         let number = u32::from_le_bytes(header[18..22].try_into()?);
@@ -150,8 +154,11 @@ fn validate_ogg(bytes: &[u8], cancelled: &impl Fn() -> bool) -> Result<()> {
         if crc != expected {
             bail!("Ogg page checksum mismatch");
         }
+        if let Some(last) = table.last() {
+            continued = *last == 255;
+        }
         ended = header[5] & 4 != 0;
-        if ended && table.last() == Some(&255) {
+        if ended && continued {
             bail!("unfinished final Ogg packet");
         }
         offset = end;
