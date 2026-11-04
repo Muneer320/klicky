@@ -568,6 +568,9 @@ impl State {
                     }
                     let message = "Change persisted for next start; cancellation, Stop or expiry prevented active playback";
                     self.last_error = Some(message.into());
+                    if self.pack.is_none() && self.stopping.is_none() {
+                        self.startup_error = Some(message.into());
+                    }
                     if let Some(pending) = active.pending {
                         pending.respond(failure(ErrorCode::Timeout, message));
                     }
