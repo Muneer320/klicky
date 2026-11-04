@@ -88,12 +88,16 @@ impl ConfigStore {
 struct Temporary {
     path: PathBuf,
     file: Option<File>,
+    remove_on_drop: bool,
 }
 
 impl Drop for Temporary {
     fn drop(&mut self) {
         // Close before removal on Windows; only ever remove our own create-new file.
         drop(self.file.take());
+        if !self.remove_on_drop {
+            return;
+        }
         if let Err(error) = fs::remove_file(&self.path) {
             if error.kind() != io::ErrorKind::NotFound {
                 eprintln!(
@@ -124,6 +128,7 @@ fn replace(path: &Path, contents: &[u8], deadline: Instant) -> Result<()> {
                 temporary = Some(Temporary {
                     path: candidate,
                     file: Some(file),
+                    remove_on_drop: true,
                 });
                 break;
             }
@@ -144,7 +149,10 @@ fn replace(path: &Path, contents: &[u8], deadline: Instant) -> Result<()> {
     loop {
         files::check_file_if_present(path)?;
         match fs::rename(&temporary.path, path) {
-            Ok(()) => return Ok(()),
+            Ok(()) => {
+                temporary.remove_on_drop = false;
+                return Ok(());
+            }
             Err(error) if files::sharing_violation(&error) && Instant::now() < deadline => {
                 thread::sleep(files::RETRY_INTERVAL)
             }
