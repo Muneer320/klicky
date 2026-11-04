@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 mod unix;
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 pub use unix::{
-    available_sound_packs, config_path, ensure_runtime_dir, resolve_sound_pack, runtime_dir,
-    socket_path, sound_roots, user_sounds_dir,
+    available_sound_packs, ensure_runtime_dir, resolve_sound_pack, runtime_dir, socket_path,
+    sound_roots,
 };
 
 #[derive(Debug, Serialize, Deserialize)]
