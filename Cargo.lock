@@ -654,6 +654,7 @@ dependencies = [
  "symphonia",
  "toml",
  "windows",
+ "windows-core",
 ]
 
 [[package]]

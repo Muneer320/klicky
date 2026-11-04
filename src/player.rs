@@ -7,7 +7,7 @@ use rodio::cpal::traits::HostTrait;
 use rodio::cpal::BufferSize;
 use rodio::{DeviceSinkBuilder, MixerDeviceSink, Source};
 
-const BUFFER_SIZES: [u32; 3] = [256, 512, 1024];
+pub(crate) const BUFFER_SIZES: [u32; 3] = [256, 512, 1024];
 
 pub struct Player {
     sink: MixerDeviceSink,
@@ -15,11 +15,22 @@ pub struct Player {
 }
 
 #[derive(Clone)]
-struct PcmSource {
+pub(crate) struct PcmSource {
     samples: Arc<Vec<i16>>,
     channels: NonZeroU16,
     sample_rate: NonZeroU32,
     pos: usize,
+}
+
+impl PcmSource {
+    pub(crate) fn new(samples: &Arc<Vec<i16>>, channels: u16, sample_rate: u32) -> Option<Self> {
+        Some(Self {
+            samples: Arc::clone(samples),
+            channels: NonZeroU16::new(channels)?,
+            sample_rate: NonZeroU32::new(sample_rate)?,
+            pos: 0,
+        })
+    }
 }
 
 impl Iterator for PcmSource {
@@ -68,22 +79,10 @@ impl Player {
         sample_rate: u32,
         volume: f32,
     ) {
-        let Some(channels) = NonZeroU16::new(channels) else {
+        let Some(source) = PcmSource::new(samples, channels, sample_rate) else {
             return;
         };
-        let Some(sample_rate) = NonZeroU32::new(sample_rate) else {
-            return;
-        };
-
-        self.sink.mixer().add(
-            PcmSource {
-                samples: Arc::clone(samples),
-                channels,
-                sample_rate,
-                pos: 0,
-            }
-            .amplify(volume),
-        );
+        self.sink.mixer().add(source.amplify(volume));
     }
 
     pub fn set_volume(&mut self, volume: f32) {

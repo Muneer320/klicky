@@ -1,4 +1,5 @@
 //! Windows control-plane components. The application host is integrated separately.
+pub mod audio;
 mod config;
 pub mod control;
 mod files;
