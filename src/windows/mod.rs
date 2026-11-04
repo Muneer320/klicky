@@ -2,6 +2,7 @@
 mod config;
 pub mod control;
 mod files;
+pub mod input;
 mod lifecycle;
 mod paths;
 pub mod pipe;
