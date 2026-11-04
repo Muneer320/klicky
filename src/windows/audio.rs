@@ -1,5 +1,6 @@
 //! Windows stream ownership and recovery stay off engine/input/GUI callbacks.
 mod notifications;
+mod sink;
 mod voices;
 
 use std::os::windows::io::AsRawHandle;
@@ -11,15 +12,15 @@ use std::time::{Duration, Instant};
 use ::windows::Win32::Foundation::{HANDLE, WAIT_FAILED, WAIT_OBJECT_0, WAIT_TIMEOUT};
 use ::windows::Win32::System::Threading::WaitForSingleObject;
 use anyhow::{bail, Context, Result};
+use cpal_windows::traits::HostTrait;
+use cpal_windows::{BufferSize, DeviceId, HostId};
 use crossbeam_channel::{bounded, Receiver, Sender};
-use rodio::cpal::traits::HostTrait;
-use rodio::cpal::{BufferSize, DeviceId, HostId};
-use rodio::{DeviceSinkBuilder, MixerDeviceSink};
+use sink::Sink;
 
 pub use voices::{Output, MAX_VOICES};
 
 const HEALTH_INTERVAL: Duration = Duration::from_millis(250);
-const STALL_LIMIT: Duration = Duration::from_secs(2);
+const STALL_LIMIT: Duration = Duration::from_secs(1);
 const RETRY_INTERVAL: Duration = Duration::from_secs(1);
 
 pub enum Update {
@@ -184,7 +185,7 @@ impl Drop for Supervisor {
 }
 
 struct Playing {
-    sink: MixerDeviceSink,
+    sink: Sink,
     render: Arc<Render>,
     id: Vec<u16>,
     last_heartbeat: u64,
@@ -199,10 +200,10 @@ impl Drop for Playing {
 
 fn open(shared: &Arc<Shared>, notifications: &notifications::Notifications) -> Result<Playing> {
     let id = notifications.default_id()?;
-    // CPAL 0.17's default_output_device uses eConsole. Select the observed
-    // multimedia endpoint explicitly so playback and notifications cannot diverge.
-    let device_id = DeviceId(HostId::Wasapi, String::from_utf16(&id)?);
-    let device = rodio::cpal::default_host()
+    // Select the observed multimedia endpoint explicitly so playback and
+    // notifications cannot diverge when Windows default roles differ.
+    let device_id = DeviceId::new(HostId::Wasapi, String::from_utf16(&id)?);
+    let device = cpal_windows::default_host()
         .device_by_id(&device_id)
         .context("default multimedia audio endpoint is unavailable")?;
     let mut last_error = None;
@@ -226,22 +227,19 @@ fn open(shared: &Arc<Shared>, notifications: &notifications::Notifications) -> R
             voice_drops: AtomicU64::new(0),
         });
         let errors = Arc::clone(&render);
-        let builder = DeviceSinkBuilder::from_device(device.clone())?
-            .with_buffer_size(buffer)
-            .with_error_callback(move |_| {
-                errors.failed.store(true, Ordering::Release);
-                errors.shared.wake();
-            });
-        match builder.open_stream() {
-            Ok(mut sink) => {
-                sink.log_on_drop(false);
+        let opened = Sink::open(&device, buffer, move |_| {
+            errors.failed.store(true, Ordering::Release);
+            errors.shared.wake();
+        });
+        match opened {
+            Ok(sink) => {
                 if notifications.default_id()? != id {
                     bail!("default audio changed during initialization");
                 }
                 sink.mixer().add(voices::Heartbeat {
                     render: Arc::clone(&render),
-                    channels: sink.config().channel_count(),
-                    rate: sink.config().sample_rate(),
+                    channels: sink.channel_count(),
+                    rate: sink.sample_rate(),
                     until_tick: 0,
                 });
                 *shared
@@ -260,7 +258,7 @@ fn open(shared: &Arc<Shared>, notifications: &notifications::Notifications) -> R
             Err(error) => last_error = Some(error),
         }
     }
-    Err(last_error.context("no audio configuration tried")?.into())
+    Err(last_error.context("no audio configuration tried")?)
 }
 
 fn run(shared: Arc<Shared>, changes: Receiver<()>, mailbox: &Mailbox) -> Result<()> {
@@ -287,6 +285,7 @@ fn run(shared: Arc<Shared>, changes: Receiver<()>, mailbox: &Mailbox) -> Result<
                 inactive = false;
             }
             let mut reason = None;
+            let mut backoff = false;
             if let Some(current) = playing.as_mut() {
                 if retry || !voices::shared_live(&shared, current.render.epoch) {
                     reason = Some("audio retry requested");
@@ -294,6 +293,7 @@ fn run(shared: Arc<Shared>, changes: Receiver<()>, mailbox: &Mailbox) -> Result<
                     reason = Some("default audio endpoint changed");
                 } else if current.render.failed.load(Ordering::Acquire) {
                     reason = Some("audio stream reported an error");
+                    backoff = true;
                 } else {
                     let heartbeat = current.render.heartbeat.load(Ordering::Relaxed);
                     if heartbeat != current.last_heartbeat {
@@ -302,7 +302,7 @@ fn run(shared: Arc<Shared>, changes: Receiver<()>, mailbox: &Mailbox) -> Result<
                         if !current.announced {
                             current.render.valid.store(true, Ordering::Release);
                             mailbox.publish(Update::Ready(Output {
-                                description: format!("{:?}", current.sink.config()),
+                                description: current.sink.description().to_owned(),
                                 mixer: current.sink.mixer().clone(),
                                 render: Arc::clone(&current.render),
                             }));
@@ -321,7 +321,12 @@ fn run(shared: Arc<Shared>, changes: Receiver<()>, mailbox: &Mailbox) -> Result<
                 // CPAL teardown joins its renderer and can stall under a broken
                 // driver. Publish degradation before touching that blocking path.
                 playing.take();
-                retry_at = Instant::now();
+                retry_at = Instant::now()
+                    + if backoff {
+                        RETRY_INTERVAL
+                    } else {
+                        Duration::ZERO
+                    };
             }
             if playing.is_none() && (retry || dirty || Instant::now() >= retry_at) {
                 match open(&shared, &notifications) {
