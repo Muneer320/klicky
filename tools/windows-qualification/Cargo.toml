@@ -1,0 +1,33 @@
+[package]
+name = "klicky-qualify"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.87"
+publish = false
+license = "MIT"
+description = "Opt-in Windows keyboard and audio qualification for Klicky"
+
+[[bin]]
+name = "klicky-qualify"
+path = "src/main.rs"
+test = false
+bench = false
+
+[dependencies]
+anyhow = "=1.0.103"
+clap = { version = "=4.5.60", features = ["derive"] }
+rodio = { version = "=0.22.2", default-features = false, features = ["playback"] }
+serde = { version = "=1.0.228", features = ["derive"] }
+serde_json = "=1.0.149"
+symphonia = { version = "=0.5.5", features = ["ogg", "vorbis"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "=0.62.2", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_Media_Audio",
+    "Win32_System_Com",
+    "Win32_System_LibraryLoader",
+    "Win32_UI_Input",
+    "Win32_UI_WindowsAndMessaging",
+] }
