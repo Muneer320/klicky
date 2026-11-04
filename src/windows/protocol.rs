@@ -75,6 +75,15 @@ pub struct InstanceIdentity {
     pub nonce: [u8; 16],
 }
 
+impl InstanceIdentity {
+    pub(super) fn validate(&self) -> Result<(), ProtocolError> {
+        if self.pid == 0 || self.creation_time == 0 || self.nonce == [0; 16] {
+            return Err(ProtocolError::InvalidPayload("invalid instance identity"));
+        }
+        Ok(())
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum EngineState {
@@ -157,12 +166,7 @@ impl Response {
 
     fn validate(&self) -> Result<(), ProtocolError> {
         validate_header(self.protocol, self.request_id)?;
-        if self.instance.pid == 0
-            || self.instance.creation_time == 0
-            || self.instance.nonce == [0; 16]
-        {
-            return Err(ProtocolError::InvalidPayload("invalid instance identity"));
-        }
+        self.instance.validate()?;
         match &self.outcome {
             Outcome::Success { snapshot } => {
                 validate_pack(&snapshot.sound_pack)?;
