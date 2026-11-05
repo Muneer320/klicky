@@ -6,7 +6,11 @@ on:
     paths:
       - .github/workflows/apt-repository.yml
       - packaging/apt/index.html
+      - assets/website/**
+      - assets/branding/social-preview.png
       - scripts/build-apt-repository.py
+      - scripts/install.sh
+      - scripts/install.ps1
       - scripts/test_apt_repository_integration.py
   release:
     types: [published]
@@ -23,6 +27,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.event_name != 'release' || (!github.event.release.prerelease && !github.event.release.draft)
     runs-on: ubuntu-latest
     permissions:
       contents: read

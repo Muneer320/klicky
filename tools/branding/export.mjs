@@ -12,6 +12,7 @@ const render = (svg, size) => new Resvg(svg, {
   font: { loadSystemFonts: false },
 }).render().asPng();
 writeFileSync(resolve(brand, 'klicky.png'), render(source, 512));
+writeFileSync(resolve(brand, 'social-preview.png'), render(readFileSync(resolve(brand, 'social-preview.svg'), 'utf8'), 1280));
 writeFileSync(resolve(brand, 'klicky-monochrome.svg'), mono.replaceAll('#000000', 'currentColor'));
 writeFileSync(resolve(brand, 'klicky-menu-template.png'), render(mono, 18));
 writeFileSync(resolve(brand, 'klicky-menu-template@2x.png'), render(mono, 36));

@@ -11,17 +11,28 @@ The control follows the same behavior as Omarchy's built-in indicators:
 
 ## Install
 
-Install Klicky and its systemd user service first:
+The one-command installer includes the bar control on compatible Omarchy shells:
 
 ```bash
-./scripts/install-linux.sh
+curl -fsSL https://klicky.muneer320.tech/install.sh | bash
 ```
 
-Then install the bar module:
+It installs the app, starts its user service and adds the toggle. To install just the app:
+
+```bash
+curl -fsSL https://klicky.muneer320.tech/install.sh | bash -s -- --no-omarchy-toggle
+```
+
+<details>
+<summary><strong>Install the toggle from an existing checkout</strong></summary>
+
+Install Klicky first with `./scripts/install-linux.sh`, then run:
 
 ```bash
 ./scripts/install-omarchy-toggle.sh
 ```
+
+</details>
 
 The script:
 
