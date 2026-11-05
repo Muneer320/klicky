@@ -2,7 +2,6 @@
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 mod cli;
-#[cfg(any(target_os = "linux", target_os = "macos"))]
 mod config;
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 mod engine;
@@ -17,9 +16,12 @@ mod player;
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 mod service;
 mod soundpack;
+#[cfg(target_os = "windows")]
+pub mod windows;
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 pub use cli::run as run_cli;
+pub use config::Config;
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 pub use engine::run as run_engine;
 pub use listener::{KeyEvent, KeySender};
