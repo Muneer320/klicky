@@ -1,4 +1,4 @@
-name: Windows unsigned portable bundle
+name: Windows unsigned test packages
 
 on:
   push:
@@ -11,6 +11,7 @@ on:
       - .gitattributes
       - packaging/windows/**
       - scripts/build-windows-portable.ps1
+      - scripts/build-windows-installer.ps1
       - scripts/windows-license-files.ps1
       - docs/WINDOWS.md
       - LICENSE
@@ -26,6 +27,7 @@ on:
       - .gitattributes
       - packaging/windows/**
       - scripts/build-windows-portable.ps1
+      - scripts/build-windows-installer.ps1
       - scripts/windows-license-files.ps1
       - docs/WINDOWS.md
       - LICENSE
@@ -46,9 +48,29 @@ jobs:
       - name: Build and verify unsigned development bundle
         shell: pwsh
         run: ./scripts/build-windows-portable.ps1
+      - name: Prepare pinned portable installer compiler
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $asset = Join-Path $env:RUNNER_TEMP 'innosetup-7.1.1-x64.exe'
+          $compiler = Join-Path $env:RUNNER_TEMP 'inno-7.1.1-portable'
+          Invoke-WebRequest 'https://github.com/jrsoftware/issrc/releases/download/is-7_1_1/innosetup-7.1.1-x64.exe' -OutFile $asset
+          if ((Get-FileHash -LiteralPath $asset -Algorithm SHA256).Hash -ine '8a5a6711c3766a6e5fb74f280ba0e3551e719ce94538d901fdbd1f8f9920b3f0') {
+            throw 'Installer compiler asset checksum mismatch.'
+          }
+          $process = Start-Process -FilePath $asset -WindowStyle Hidden -PassThru -ArgumentList @('/PORTABLE=1', '/CURRENTUSER', '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/NOICONS', '/TASKS=""', "/DIR=`"$compiler`"")
+          if (-not $process.WaitForExit(60000) -or $process.ExitCode -ne 0) { throw 'Installer compiler preparation failed.' }
+      - name: Compile unsigned installer without installing Klicky
+        shell: pwsh
+        run: |
+          $archives = @(Get-ChildItem -LiteralPath target/windows-dist -Filter '*.zip')
+          if ($archives.Count -ne 1) { throw 'Expected exactly one identified portable archive.' }
+          ./scripts/build-windows-installer.ps1 -CompilerPath (Join-Path $env:RUNNER_TEMP 'inno-7.1.1-portable/ISCC.exe') -PortableArchive $archives[0].FullName
       - uses: actions/upload-artifact@v4
         with:
           name: klicky-windows-x64-unsigned-preview
-          path: target/windows-dist/*.zip*
+          path: |
+            target/windows-dist/*.zip*
+            target/windows-dist/*-setup.exe*
           if-no-files-found: error
           retention-days: 14

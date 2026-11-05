@@ -1,6 +1,6 @@
 # Architecture
 
-Klicky is a single-process daemon with platform-specific input capture and shared sound, playback, configuration, and command layers.
+Klicky uses one resident process per user session. Linux/macOS retain their Unix daemon and service lifecycle; the Windows development preview has a native tray coordinator with separate input, audio and control adapters. Sound-pack preparation and mixer-facing types are shared. The library entrypoint selects the platform at compile time.
 
 ## Data flow
 
@@ -28,7 +28,10 @@ sequenceDiagram
 
 | Module | Responsibility |
 |---|---|
-| `src/main.rs` | CLI dispatch, daemon lifecycle, IPC handling, event draining, benchmark output |
+| `src/main.rs` | Thin executable entrypoint into the platform-selected library CLI |
+| `src/lib.rs` | Shared types and compile-time platform entrypoints |
+| `src/cli.rs` | Linux/macOS CLI dispatch |
+| `src/engine.rs` | Linux/macOS daemon lifecycle, IPC handling, event draining and benchmark output |
 | `src/config.rs` | Config, sound-pack, PID, and socket paths |
 | `src/lifecycle.rs` | Persistent ownership lock, runtime cleanup, bounded shutdown and IPC readiness |
 | `src/service.rs` | systemd user service and macOS LaunchAgent management |
@@ -40,6 +43,12 @@ sequenceDiagram
 | `src/soundpack.rs` | OGG decoding, per-key slicing, capped peak normalization, PCM caching |
 | `src/player.rs` | Persistent Rodio mixer, low-latency output configuration, overlapping playback |
 | `src/windows/runtime.rs` | Bounded Windows coordinator, transactional activation and confirmed component shutdown |
+| `src/windows/input.rs` | Passive Raw Input thread, per-device repeat tracking and bounded event delivery |
+| `src/windows/audio.rs` | Windows output supervision and route recovery |
+| `src/windows/audio/sink.rs` | Windows-only CPAL 0.18.2 output retaining the Rodio mixer |
+| `src/windows/transactions.rs` | Bounded asynchronous preparation, persistence and activation |
+| `src/windows/control.rs` | Typed commands, delivery receipts and verified native process-exit waits |
+| `src/windows/pipe.rs` | Current-logon protected local named-pipe transport |
 | `src/windows/desktop.rs` | Native notification-area frontend, asynchronous controls and message loop |
 | `src/windows/desktop/startup_worker.rs` | Owned asynchronous shortcut work and native exit confirmation before frontend teardown |
 | `src/windows/session.rs` | Initial unlocked-session verification and lock, disconnect, power and logoff gating |
@@ -73,6 +82,12 @@ The included udev rule adds `uaccess` only to devices tagged with `ID_INPUT_KEYB
 
 Standard keys use `rdev`, which is backed by a macOS event tap. A second session-level event tap handles function-row media behavior on Mac keyboards. Both paths emit the same internal key names used by Linux.
 
+### Windows preview
+
+A message-only window on a dedicated thread receives passive Raw Input. Mapping tracks pressed keys per device and suppresses repeats. The callback sends bounded events without decoding audio, persisting settings or logging key names. The coordinator discards stale/obsolete events and disables capture when the session is inactive, locked or suspending.
+
+The native tray frontend submits asynchronous controls. Sound-pack preparation and persistence run outside the coordinator and audio callback; activation follows successful preparation and persistence. Separate bounded input/control queues and reserved shutdown keep Quit responsive during load. Local control authenticates the current logon and retains the verified server process handle; a stop acknowledgement does not substitute for actual process exit.
+
 ## Sound-pack loading
 
 Each pack contains one `sound.ogg` file and a `config.json` map of key names to `[start_ms, duration_ms]` ranges.
@@ -90,7 +105,7 @@ No decoding, filesystem access, or device initialization occurs on a keypress.
 
 ## Audio output
 
-Rodio 0.22 owns one `MixerDeviceSink`. Klicky attempts fixed output buffers in this order:
+On Linux/macOS, Rodio 0.22 owns one `MixerDeviceSink`. Klicky attempts fixed output buffers in this order:
 
 ```text
 256 frames -> 512 frames -> 1024 frames -> device fallback
@@ -99,6 +114,8 @@ Rodio 0.22 owns one `MixerDeviceSink`. Klicky attempts fixed output buffers in t
 Smaller buffers reduce control latency but are not supported equally by every backend. The fallback sequence preserves startup reliability without silently choosing a large default first.
 
 Every keypress creates a lightweight source cursor over an `Arc<Vec<i16>>`. Samples convert to `f32` as the mixer consumes them. Multiple key sounds can overlap naturally.
+
+Windows keeps the Rodio mixer but uses a Windows-only CPAL 0.18.2 renderer and a bounded voice pool. Endpoint-role notifications, stream errors and callback heartbeats drive recovery. Playback follows the default multimedia output and drops obsolete input during transitions. This adapter leaves the existing Linux/macOS output backend intact. Requested buffer sizes are not measured physical-to-audible latency.
 
 ## Concurrency
 
@@ -119,7 +136,7 @@ flowchart TB
     MAIN -->|sources| AUDIO
 ```
 
-The main loop drains IPC and key-event channels, then sleeps for 500 microseconds. Input callbacks only map a key, capture an `Instant`, and send a channel message.
+The Linux/macOS main loop drains IPC and key-event channels, then sleeps for 500 microseconds. Input callbacks only map a key, capture an `Instant`, and send a channel message. Windows instead uses an event-driven coordinator with bounded work batches; its UI, startup worker, pack worker, input thread and audio renderer have explicit shutdown coordination.
 
 ## Runtime files
 
@@ -145,11 +162,13 @@ macOS typically resolves under:
 ~/Library/Application Support/klicky/
 ```
 
+Windows stores configuration/custom packs under `%LOCALAPPDATA%\Klicky`, with session-specific runtime ownership under `run\session-<id>`. Bundled packs resolve beside the executable, independently of its working directory. A retained `.klicky.bundle.lock` reader protects each active bundle through native process exit. The installer takes that marker exclusively before replacing/removing files; another logged-on session blocks mutation. The installer preview and its recovery limits are described in the [Windows guide](WINDOWS.md).
+
 ## Known constraints
 
 - Linux input devices are discovered at daemon startup. A newly added keyboard requires a daemon restart, while a lost reader causes a systemd-managed process to restart and rediscover devices.
-- Physical audio-device replacement and suspend/resume need additional runtime testing after the Rodio 0.22 migration.
+- Linux/macOS physical audio-device replacement and suspend/resume need additional runtime testing after the Rodio 0.22 migration. Windows implements recovery, with its hardware matrix still under qualification.
 - Benchmark mode measures input callback to mixer dispatch, not microphone-observed audible latency.
-- Windows has no input backend.
+- Windows 11 x64 is a development preview. Calibrated physical latency, matched Linux/macOS baselines, additional hardware and full installation/session/reliability qualification remain open.
 
 These constraints are intentionally explicit. They should become focused issues rather than hidden claims of universal support.

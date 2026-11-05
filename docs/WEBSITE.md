@@ -1,6 +1,7 @@
 # Website maintenance
 
 The public site and signed APT archive share `https://muneer320.github.io/klicky/`.
+The custom domain [klicky.muneer320.tech](https://klicky.muneer320.tech/) serves the same Pages deployment. Its `klicky` CNAME must point to `muneer320.github.io` in the zone served by the domain's delegated nameservers; a record saved at an inactive DNS provider has no effect. The custom domain and HTTPS also need to be configured in GitHub Pages settings.
 The page is rendered from [the HTML template](../packaging/apt/index.html) by
 [the repository builder](../scripts/build-apt-repository.py). There is no frontend
 framework, JavaScript bundle, external font, or production dependency to install.
@@ -85,3 +86,5 @@ the public repository with the selected release's package.
 At the next release, review the page's explicit v0.3.0 links, source-versus-release
 callout, and installation guidance alongside the README. Dynamic package metadata
 does not automatically update this editorial copy.
+
+The live page and current template were compared on 5 November 2026 and matched after the four documented substitutions. The signed archive index advertises both `0.3.0-1` and `0.4.0-1`; the older editorial copy is separate from that index. Website editorial updates, including Windows preview links, require a reviewed Pages/APT publication. Updating platform Markdown does not authorize that production deployment.

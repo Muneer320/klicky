@@ -4,6 +4,18 @@ All notable changes to Klicky are documented here.
 
 The project follows [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+- Windows 11 x64 development preview with passive Raw Input, native tray controls, protected local IPC, opt-in login startup and supervised audio recovery
+- Unsigned Windows portable and per-user installer test artifacts with build identity, bundled notices and guarded update/removal
+
+### Changed
+
+- Extracted shared library boundaries while preserving the Linux/macOS engine and platform backends
+- Updated platform documentation to distinguish preview artifacts from published releases; Windows physical latency and release qualification remain open
+
 ## 0.4.0 - 2026-10-11
 
 ### Added

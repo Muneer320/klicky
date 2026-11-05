@@ -24,6 +24,28 @@ pwsh -NoProfile -File .\scripts\build-windows-portable.ps1
 
 Output goes to `target/windows-dist`. The builder uses static CRT linkage, checks executable metadata/manifests and rejects unexpected direct DLL imports. It does not overwrite an existing identified archive. A clean Windows 11 launch still requires qualification; import inspection cannot establish every runtime dependency or audible latency. No installer, automatic update or signing is provided by this ZIP.
 
+## Installer test candidate
+
+The same artifact workflow also compiles an unsigned installer. Installation, upgrade and failure recovery remain under qualification; use a disposable test environment first. This is not a published Windows release or a WinGet package.
+
+The installer targets Windows 11 x64 and installs for the current user in `%LOCALAPPDATA%\Programs\Klicky`. It requests no elevation, adds no PATH entry and downloads no runtime components. Its Start menu shortcut opens Klicky paused. Login startup is unchecked by default and offered on a fresh install; existing startup registration and Windows approval are preserved during upgrades. No app starts automatically after a fresh silent install.
+
+Build from a clean committed checkout with the portable build prerequisites and the official Inno Setup 7.1.1 x64 compiler:
+
+```powershell
+pwsh -NoProfile -File .\scripts\build-windows-installer.ps1 -CompilerPath 'C:\path\to\ISCC.exe'
+```
+
+The builder first creates the identified portable archive, verifies its complete payload inventory, then compiles `*-setup.exe` and an adjacent SHA-256 file in `target/windows-dist`. Supply `-PortableArchive` to reuse an archive from the exact same committed source. The workflow pins the compiler download by SHA-256 and uploads artifacts without publishing or installing Klicky.
+
+For controlled silent testing, use `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART` and an explicit `/LOG="C:\path\to\install.log"`. Login startup requires an explicit `/TASKS="startup"` on a fresh install. Custom `/DIR` locations are refused by this preview. Exit code 10 means the files were installed but startup registration or restoring the previous running state was not confirmed; inspect the log and tray controls.
+
+Updates verify the installed control executable against the previous installer identity, request graceful shutdown of this bundle, wait for actual process exit and acquire the bundle marker exclusively. A hung owner or another signed-in session blocks replacement. Other portable copies are preserved. An update restarts only a previously running instance and retains its temporary pause intent. Quit requests already pending when preparation begins do not authorize a restart.
+
+Before overwriting an existing install, the installer makes a verified recovery copy in `%LOCALAPPDATA%\KlickyInstaller\recovery`. It retains previous uninstall ownership across upgrades and preserves existing Start menu entries. A precommit installation failure attempts to restore previous files, the prior Start shortcut and the application's Installed Apps registration. If restoration fails or the installer is interrupted, retain that recovery folder and keep the partial bundle stopped. Its `payload` contains the previous bundle; `RECOVERY-FILES.txt` and `RECOVERY-SHA256.txt` identify the copied files. External metadata is saved separately when present. Power-loss recovery and the full clean-machine upgrade matrix remain unqualified. Recovery copies are outside the application and can remain after an interrupted operation.
+
+Remove Klicky through **Settings > Apps > Installed apps**. Removal first stops and verifies this bundle, takes the exclusive marker and removes only its recognized login shortcut. Foreign startup entries are preserved. Configuration and custom packs in `%LOCALAPPDATA%\Klicky` remain. Do not manually replace files in a running installed bundle or move a portable copy into the managed install directory.
+
 ## Build and run
 
 Install the Rust MSVC toolchain and Visual Studio C++ build tools, then build from the repository root:

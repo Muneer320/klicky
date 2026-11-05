@@ -19,7 +19,7 @@ All repository changes must be developed on a feature branch and submitted throu
 
 ## Development setup
 
-Use the README's build prerequisites for [Linux](README.md#build-from-source-on-linux) or [macOS](README.md#build-and-install-on-macos). Install Rust 1.87 or newer; distribution-provided Rust packages may be older. Building and running the automated tests does not require installing a login service or granting keyboard access.
+Use the README's build prerequisites for [Linux](README.md#build-from-source-on-linux), [macOS](README.md#build-and-install-on-macos) or the [Windows preview](README.md#windows-development-preview). Install Rust 1.87 or newer; distribution-provided Rust packages may be older. Windows uses the MSVC toolchain and Windows SDK resource compiler. Building and running the automated tests does not require installing a login service or granting keyboard access.
 
 Clone the repository, then run the [checks below](#tests):
 
@@ -43,7 +43,7 @@ cd klicky
 
 - Understand the current path before replacing it.
 - Prefer the smallest correct design.
-- Keep platform details behind the listener boundary.
+- Keep platform details in their adapters. Preserve the existing Unix engine and the Windows coordinator boundaries.
 - Keep decoding, filesystem access, and device creation out of the keypress path.
 - Add comments only for non-obvious constraints or platform quirks.
 - Do not add abstractions for hypothetical platforms.
@@ -97,7 +97,7 @@ A good pull request includes:
 - Hardware and desktop details for input or audio changes
 - Documentation updates for user-visible behavior
 
-CI must pass on Linux and macOS. Compilation on a platform does not count as runtime verification on that platform.
+CI must pass on Windows, Linux and macOS. Compilation on a platform does not count as runtime verification on that platform. Windows artifact workflows create unsigned test packages without release publication. Installer lifecycle changes require installation/upgrade/removal and failure-recovery evidence; input/audio changes require physical measurements or explicit unresolved qualification limits. See the [Windows guide](docs/WINDOWS.md).
 
 ## Sound contributions
 
