@@ -40,7 +40,7 @@ Never commit private keys, passphrases, or revocation certificates.
 
 ## Publication
 
-[The APT workflow](../.github/workflows/apt-repository.yml) publishes through the existing GitHub Pages artifact and deploy job. It runs for a published GitHub release, a manual dispatch, or a push to `master` that changes the workflow, repository builder, integration validator, or website template. Pull requests do not receive signing secrets or deploy.
+[The APT workflow](../.github/workflows/apt-repository.yml) publishes through the existing GitHub Pages artifact and deploy job. It runs for a published stable GitHub release, a manual dispatch, or a push to the workflow's listed `master` paths (including the website, public media and install/uninstall scripts). Drafts and prereleases are excluded. Pull requests do not receive signing secrets or deploy.
 
 **The tag-driven release workflow does not automatically chain into APT publication.** [The release workflow](../.github/workflows/release.yml) publishes using `GITHUB_TOKEN`; GitHub suppresses subsequent release-event workflow runs from that token. See [GitHub's workflow-trigger rules](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow).
 
@@ -50,7 +50,7 @@ After the release workflow has finished uploading the `.deb` and `SHA256SUMS`, a
 
 ```bash
 gh workflow run apt-repository.yml --repo Muneer320/klicky \
-  --ref master -f tag=v0.3.0
+  --ref master -f tag=v0.4.0
 ```
 
 Replace the tag with the intended published release. The workflow accepts `vMAJOR.MINOR.PATCH`, requires exactly one matching amd64 `.deb`, verifies its checksum, and requires its Debian version to be `MAJOR.MINOR.PATCH-1`.
