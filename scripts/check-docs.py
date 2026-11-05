@@ -23,7 +23,7 @@ def check_em_dashes(errors: list[str]) -> None:
         if not path.is_file():
             continue
         try:
-            text = path.read_text()
+            text = path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             continue
         if chr(0x2014) in text:
@@ -32,7 +32,7 @@ def check_em_dashes(errors: list[str]) -> None:
 
 def check_markdown_links(errors: list[str]) -> None:
     for path in repository_files("*.md"):
-        text = path.read_text()
+        text = path.read_text(encoding="utf-8")
         for raw_target in MARKDOWN_LINK.findall(text):
             target = raw_target.split()[0].strip("<>")
             if target.startswith(("http://", "https://", "mailto:", "#")):
