@@ -5,7 +5,7 @@ use std::process::{Command, Output, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::ServiceAction;
+use crate::cli::ServiceAction;
 
 const COMMAND_TIMEOUT: Duration = Duration::from_secs(10);
 const COMMAND_POLL: Duration = Duration::from_millis(10);
@@ -14,7 +14,7 @@ const COMMAND_POLL: Duration = Duration::from_millis(10);
 pub fn stop() -> Result<()> {
     #[cfg(target_os = "linux")]
     {
-        crate::cmd_stop()
+        crate::cli::cmd_stop()
     }
     #[cfg(target_os = "macos")]
     {
@@ -222,7 +222,7 @@ fn macos(action: ServiceAction) -> Result<()> {
         ServiceAction::Enable => {
             let binary = installed_binary(&home)?;
             if launchctl_loaded(&service)? {
-                crate::cmd_stop()?;
+                crate::cli::cmd_stop()?;
                 command("launchctl", &["bootout", &service])?;
             }
             write_plist(&plist, LABEL, &binary)?;
@@ -261,7 +261,7 @@ fn macos(action: ServiceAction) -> Result<()> {
             let loaded = launchctl_loaded(&service)?;
             if loaded && changed {
                 // Migrate old paths/recovery policy before starting the job.
-                crate::cmd_stop()?;
+                crate::cli::cmd_stop()?;
                 command("launchctl", &["bootout", &service])?;
             }
             // Do not mark migration complete on disk until the old job unloaded.
