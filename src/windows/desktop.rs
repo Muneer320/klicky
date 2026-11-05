@@ -756,8 +756,24 @@ fn show_menu(hwnd: HWND) -> Result<()> {
     } else {
         MF_ENABLED
     };
-    menu.item(PAUSE, "Pause", live_controls)?;
-    menu.item(RESUME, "Resume", live_controls)?;
+    menu.item(
+        PAUSE,
+        "Pause",
+        if view.paused {
+            MF_GRAYED
+        } else {
+            live_controls
+        },
+    )?;
+    menu.item(
+        RESUME,
+        "Resume",
+        if view.paused {
+            live_controls
+        } else {
+            MF_GRAYED
+        },
+    )?;
     menu.item(RETRY, "Retry audio", live_controls)?;
     menu.item(
         REFRESH,
