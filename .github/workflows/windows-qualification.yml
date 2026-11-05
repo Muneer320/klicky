@@ -53,3 +53,4 @@ jobs:
           name: klicky-windows-qualification-x64
           path: target/windows-qualification/release/klicky-qualify.exe
           if-no-files-found: error
+          retention-days: 14

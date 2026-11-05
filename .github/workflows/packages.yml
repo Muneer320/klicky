@@ -39,6 +39,7 @@ jobs:
           name: klicky-debian-amd64
           path: target/debian/klicky_*_amd64.deb
           if-no-files-found: error
+          retention-days: 14
 
   apt-repository:
     needs: debian-package
@@ -113,3 +114,4 @@ jobs:
           name: klicky-arch-x86_64
           path: packaging/arch/klicky-*.pkg.tar.zst
           if-no-files-found: error
+          retention-days: 14
