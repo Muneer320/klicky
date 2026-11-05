@@ -1,5 +1,7 @@
 use std::io;
+use std::os::windows::ffi::OsStringExt;
 use std::os::windows::io::{AsRawHandle, BorrowedHandle, FromRawHandle, OwnedHandle};
+use std::path::PathBuf;
 use std::time::Instant;
 
 use ::windows::Win32::Foundation::{FILETIME, HANDLE, WAIT_FAILED, WAIT_OBJECT_0, WAIT_TIMEOUT};
@@ -8,7 +10,8 @@ use ::windows::Win32::Security::{GetTokenInformation, TokenSessionId, TOKEN_QUER
 use ::windows::Win32::System::Pipes::GetNamedPipeServerProcessId;
 use ::windows::Win32::System::Threading::{
     GetCurrentProcess, GetCurrentProcessId, GetProcessTimes, OpenProcess, OpenProcessToken,
-    WaitForSingleObject, PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_SYNCHRONIZE,
+    QueryFullProcessImageNameW, WaitForSingleObject, PROCESS_NAME_WIN32,
+    PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_SYNCHRONIZE,
 };
 use anyhow::{bail, Context, Result};
 
@@ -82,6 +85,24 @@ impl ServerProcess {
 
     pub fn has_exited(&self) -> Result<bool> {
         self.wait(0)
+    }
+
+    /// Query the retained object; never reopen a PID to decide which bundle owns it.
+    pub fn image_path(&self) -> Result<PathBuf> {
+        let mut path = vec![0u16; 32768];
+        let mut length = path.len() as u32;
+        unsafe {
+            QueryFullProcessImageNameW(
+                HANDLE(self.handle.as_raw_handle()),
+                PROCESS_NAME_WIN32,
+                ::windows::core::PWSTR(path.as_mut_ptr()),
+                &mut length,
+            )?
+        };
+        if length == 0 || length as usize >= path.len() {
+            bail!("Windows returned an invalid process image path");
+        }
+        Ok(std::ffi::OsString::from_wide(&path[..length as usize]).into())
     }
 
     /// Blocking operation for a worker, never an input/audio/UI callback.

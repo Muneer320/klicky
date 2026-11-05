@@ -42,6 +42,10 @@ impl Paths {
         &self.data
     }
 
+    pub(super) fn bundle_dir(&self) -> &Path {
+        &self.bundle
+    }
+
     pub fn config_path(&self) -> PathBuf {
         self.data.join("config.toml")
     }

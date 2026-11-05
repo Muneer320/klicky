@@ -43,6 +43,9 @@ sequenceDiagram
 | `src/windows/desktop.rs` | Native notification-area frontend, asynchronous controls and message loop |
 | `src/windows/session.rs` | Initial unlocked-session verification and lock, disconnect, power and logoff gating |
 | `src/windows/cli.rs` | Windows CLI using verified control transport and ownership-guarded offline configuration |
+| `src/windows/bundle.rs` | Cross-session bundle reader lease retained through process exit |
+| `src/windows/startup.rs` | Per-user Startup shortcut ownership, atomic creation and exact-object removal |
+| `src/windows/service.rs` | Background desktop launch and verified bundle-specific lifecycle |
 | `src/bin/klicky-desktop.rs` | Windows GUI subsystem entrypoint; see the [development preview guide](WINDOWS.md) |
 
 ## Input backends

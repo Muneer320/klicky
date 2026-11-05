@@ -39,6 +39,7 @@ const REFRESH: u32 = 5;
 /// Run in the interactive user's process. Capture starts only after WTS verification.
 pub fn run(options: Options) -> Result<()> {
     let paths = Paths::discover()?;
+    super::bundle::hold_for_process(&paths)?;
     let mut host = Host::spawn(paths.clone(), options)?;
     let controller = host.controller();
     let result = run_ui(paths, controller.clone());
@@ -82,8 +83,13 @@ pub fn run_entry() -> Result<()> {
     })
 }
 
-pub fn show_error(message: &str) {
-    let message = wide(message);
+pub fn show_error(error: &anyhow::Error) {
+    // An updater may own the bundle between CreateProcess and the reader lease.
+    // Exit promptly instead of pinning the executable behind an error dialog.
+    if super::bundle::is_busy(error) {
+        return;
+    }
+    let message = wide(&format!("{error:#}"));
     unsafe {
         MessageBoxW(
             None,

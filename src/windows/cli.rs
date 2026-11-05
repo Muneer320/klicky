@@ -48,6 +48,31 @@ enum Commands {
     Resume,
     /// Reopen the default multimedia audio output
     RetryAudio,
+    /// Manage per-user login startup and the background desktop app
+    Service {
+        #[command(subcommand)]
+        action: ServiceAction,
+    },
+}
+
+#[derive(Subcommand)]
+enum ServiceAction {
+    /// Register login startup and start now; Windows may independently disable startup
+    Enable,
+    /// Remove this bundle's login shortcut and stop its running instance
+    Disable,
+    /// Start this bundle's desktop app for the current session
+    Start,
+    /// Stop this bundle's verified running instance
+    Stop,
+    /// Show shortcut registration and live session state
+    Status,
+    /// Installer hook; other bundles are preserved and every matching exit is verified
+    #[command(hide = true)]
+    PrepareUpdate,
+    /// Installer hook; caller holds the exclusive bundle marker
+    #[command(hide = true)]
+    UnregisterStartup,
 }
 
 pub fn run() -> Result<()> {
@@ -97,7 +122,57 @@ pub fn run() -> Result<()> {
         Commands::Pause => live(Command::Pause { paused: true }),
         Commands::Resume => live(Command::Pause { paused: false }),
         Commands::RetryAudio => live(Command::RetryAudio {}),
+        Commands::Service { action } => service(action),
     }
+}
+
+fn service(action: ServiceAction) -> Result<()> {
+    use super::service as background;
+    let paths = Paths::discover()?;
+    match action {
+        ServiceAction::Enable => {
+            background::startup(paths.clone(), true)?;
+            println!(
+                "Login startup is registered; Windows Startup settings controls whether it runs"
+            );
+            let snapshot = background::start(&paths)
+                .context("Shortcut remains registered, but desktop launch was not confirmed")?;
+            print_snapshot(&snapshot);
+        }
+        ServiceAction::Disable => {
+            background::startup(paths.clone(), false)?;
+            println!("Login startup shortcut removed (or already absent)");
+            if background::stop_for_update(&paths)? {
+                println!("Klicky stopped; process exit confirmed");
+            } else {
+                println!("No matching running bundle was stopped");
+            }
+        }
+        ServiceAction::Start => print_snapshot(&background::start(&paths)?),
+        ServiceAction::Stop | ServiceAction::PrepareUpdate => {
+            if background::stop_for_update(&paths)? {
+                println!("Matching Klicky process exit confirmed");
+            } else {
+                println!("No matching running bundle; other instances were preserved");
+            }
+        }
+        ServiceAction::Status => {
+            println!(
+                "Login shortcut: {:?}; Windows Startup settings controls approval",
+                background::startup_status(paths)?
+            );
+            match Client::current()?.command(Command::Status {}, deadline()) {
+                Ok(reply) => print_outcome(reply.response.outcome)?,
+                Err(ControlError::Absent) => println!("No responsive session endpoint"),
+                Err(error) => return Err(error.into()),
+            }
+        }
+        ServiceAction::UnregisterStartup => {
+            background::unregister_for_removal(paths)?;
+            println!("Owned login shortcut removed (or already absent)");
+        }
+    }
+    Ok(())
 }
 fn deadline() -> Instant {
     Instant::now() + COMMAND_TIMEOUT

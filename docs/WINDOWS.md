@@ -31,6 +31,24 @@ The tray menu offers sound packs, volume in 10% steps, Pause, Resume, Retry audi
 
 Switch and volume changes apply live after preparation and persistence succeed. When no instance owns this session, they save for next start. An unresponsive or unverified instance does not permit an offline fallback. Pause is temporary and is not saved. Stop succeeds only after the verified server process exits.
 
+## Login startup and background launch
+
+Login startup is opt-in. These commands manage this bundle's per-user Startup shortcut and desktop process:
+
+```powershell
+.\target\release\klicky.exe service enable
+.\target\release\klicky.exe service disable
+.\target\release\klicky.exe service start
+.\target\release\klicky.exe service stop
+.\target\release\klicky.exe service status
+```
+
+Enable registers the sibling `klicky-desktop.exe` and starts it now. Disable removes its recognized shortcut and stops this bundle's verified process. Start and stop affect the current session without changing login startup. A different portable copy is preserved. Background launch uses the sibling executable directly and waits for a verified state; Waiting for audio is reported as such.
+
+Windows Settings or Task Manager may independently disable login startup. An existing matching shortcut is preserved byte for byte, so Enable does not override that choice. The status command reports registration, not Windows approval. Use **Settings > Apps > Startup** to change that approval. Shortcut recognition checks the target, arguments, working directory, elevation/launch flags, window mode, hotkey, icon and ownership description. Unrecognized or other-bundle `Klicky.lnk` shortcuts and changes to those launch settings are preserved and require you to resolve the conflict.
+
+Keep the bundle at a stable location while login startup is registered. A running desktop process holds `.klicky.bundle.lock` through process exit. Installers must take that marker exclusively before replacing or removing bundle files; do not delete a held marker or force-close a process to bypass it. Updates also need to account for other logged-on sessions.
+
 ## Files and desktop behavior
 
 Configuration is `%LOCALAPPDATA%\Klicky\config.toml`. Custom packs go in `%LOCALAPPDATA%\Klicky\sounds`; they override bundled names using Windows ordinal name comparison. Discovery accepts at most 512 directories per root and 512 distinct names across roots. Bundled packs resolve beside the executable in `sounds`, or through an absolute `KLICKY_SYSTEM_SOUNDS_DIR`. The working directory is not a fallback. Do not edit the configuration while testing live changes; use the controls above.
