@@ -6,14 +6,16 @@ For Ubuntu 24.04+ and compatible Debian-based **amd64** desktops:
 curl -fsSL https://raw.githubusercontent.com/Muneer320/klicky/master/scripts/install.sh | bash
 ```
 
-This verifies the repository's pinned signing key, adds a dedicated APT source, installs Klicky and starts its user service. Run it as your normal user; it asks for `sudo` when needed. You need `curl` and GnuPG. Future updates arrive through APT:
+This verifies the repository's pinned signing key, adds a dedicated APT source, installs Klicky and starts its user service. Run it as your normal user; it asks for `sudo` when needed. You need `curl` and GnuPG. For future updates, stop Klicky before replacing its package:
 
 ```bash
+systemctl --user stop klicky.service
 sudo apt update
-sudo apt upgrade
+sudo apt install --only-upgrade klicky
+systemctl --user start klicky.service
 ```
 
-The current package needs glibc 2.39+, `libasound2t64`, systemd and udev. On older systems or other architectures, [build from source](INSTALLATION.md#linux-from-source). The repository's `stable` channel is a Klicky channel, not a Debian release codename.
+Other signed-in users must stop their packaged Klicky processes too. The package refuses to replace a running binary. The current package needs glibc 2.39+, `libasound2t64`, systemd and udev. On older systems or other architectures, [build from source](INSTALLATION.md#linux-from-source). The repository's `stable` channel is a Klicky channel, not a Debian release codename.
 
 <details>
 <summary><strong>Set up the repository manually</strong></summary>
@@ -26,7 +28,7 @@ curl -fsSL -o /tmp/klicky-archive-keyring.gpg \
 gpg --show-keys --with-fingerprint /tmp/klicky-archive-keyring.gpg
 ```
 
-Match this fingerprint before installing the key:
+Confirm there is exactly one primary key, matching this fingerprint, before installing it:
 
 ```text
 DBB6 7AE4 78D2 FFCE C663 7B55 9899 E554 D358 0D8F

@@ -54,8 +54,16 @@ build_source() {
 }
 
 check_source_conflict() {
-  if [[ -e "$HOME/.local/bin/klicky" || -L "$HOME/.local/bin/klicky" ]]; then
-    die 'An existing ~/.local/bin/klicky would override the package. Remove the old source installation without --purge first; see the installation guide.'
+  user_unit="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/klicky.service"
+  if [[ -e "$HOME/.local/bin/klicky" || -L "$HOME/.local/bin/klicky" || -e $user_unit || -L $user_unit ]]; then
+    die 'An existing user-local Klicky installation would override the package. Remove the old source installation without --purge first; see the installation guide.'
+  fi
+}
+
+stop_packaged_service() {
+  printf 'Stopping your Klicky service before package installation. Other signed-in users must stop their packaged copy too.\n'
+  if systemctl --user is-active --quiet klicky.service; then
+    systemctl --user stop klicky.service
   fi
 }
 
@@ -81,6 +89,7 @@ install_apt() {
   sudo install -m 0644 "$work_dir/keyring.gpg" /etc/apt/keyrings/klicky-archive-keyring.gpg
   sudo install -m 0644 "$work_dir/klicky.sources" /etc/apt/sources.list.d/klicky.sources
   sudo apt-get update
+  stop_packaged_service
   sudo apt-get install -y klicky
   systemctl --user enable --now klicky.service
 }
@@ -100,6 +109,7 @@ install_arch() {
   awk -v package="$package" '$2 == package || $2 == "*" package {print}' "$work_dir/SHA256SUMS" > "$work_dir/package.sha256"
   [[ $(wc -l < "$work_dir/package.sha256") -eq 1 ]] || die 'The release must contain exactly one checksum for this package.'
   (cd "$work_dir" && sha256sum --check --status package.sha256) || die 'The package checksum does not match.'
+  stop_packaged_service
   sudo pacman -U --noconfirm "$work_dir/$package"
   systemctl --user enable --now klicky.service
 }

@@ -176,7 +176,16 @@ For a portable copy, remove its login startup from the tray, choose Quit and del
 <details>
 <summary><strong>Linux packages</strong></summary>
 
-Use your normal APT updates for the repository install. For a downloaded Arch or Debian package, install the newer package with the same command as before.
+Stop Klicky before updating its package, then start it afterward:
+
+```bash
+systemctl --user stop klicky.service
+# Update through APT, or install the newer downloaded package.
+sudo apt update && sudo apt install --only-upgrade klicky  # APT repository
+systemctl --user start klicky.service
+```
+
+For a downloaded Arch or Debian package, replace the APT command with the corresponding package-install command above. Other signed-in users must stop their packaged Klicky processes too; the package refuses to replace a running binary. If an update fails, resolve the reported error and restart the service when ready.
 
 To remove:
 
