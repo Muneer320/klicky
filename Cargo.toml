@@ -14,6 +14,9 @@ categories = ["command-line-utilities", "multimedia::audio"]
 publish = false
 default-run = "klicky"
 
+[build-dependencies]
+embed-resource = "=3.0.12"
+
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("cargo-clippy"))'] }
 

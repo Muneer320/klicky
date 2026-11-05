@@ -626,7 +626,8 @@ fn try_icon(hwnd: HWND) -> Result<()> {
     let mut data = icon_data(hwnd);
     data.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP | NIF_SHOWTIP;
     data.uCallbackMessage = TRAY_MESSAGE;
-    data.hIcon = unsafe { LoadIconW(None, IDI_APPLICATION)? };
+    // Shared icon handles loaded from this module live for the process lifetime.
+    data.hIcon = unsafe { LoadIconW(Some(GetModuleHandleW(None)?.into()), PCWSTR(101usize as _))? };
     copy_utf16(&tip, &mut data.szTip);
     if !unsafe { Shell_NotifyIconW(if added { NIM_MODIFY } else { NIM_ADD }, &data) }.as_bool() {
         bail!("Cannot display the Klicky notification icon");

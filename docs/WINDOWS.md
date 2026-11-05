@@ -12,6 +12,10 @@ $env:KLICKY_SYSTEM_SOUNDS_DIR = (Resolve-Path .\sounds).Path
 .\target\release\klicky.exe start --seconds 30
 ```
 
+Windows builds require the Windows SDK resource compiler alongside the C++ tools. Both executables embed a Klicky icon, per-executable version information and an application manifest. The manifest requests normal user privileges, per-monitor DPI awareness and long-path support. Windows resources are mandatory: a missing resource compiler fails the build. Linux and macOS builds do not compile these resources.
+
+The Windows file metadata labels these binaries as development previews; it does not represent a published Windows release. To regenerate the original icon with Python's standard library, run `python scripts/generate-windows-icon.py`.
+
 Select your intended output in Windows before starting. After the tray tooltip says Ready, type in an editor. The command above ends automatically after 30 seconds. Without `--seconds`, Klicky stays in the notification area until you choose Quit Klicky, press Ctrl+C in its console, or run `klicky stop`. It does not require elevation or an input driver.
 
 The console-free entrypoint is `klicky-desktop.exe`. Both entrypoints run the same engine and enforce one owner per logon session. Use `--paused` to open the tray without key sounds. `--benchmark` prints aggregate callback-entry-to-mixer timings at exit; it does not measure audible latency or record key names. Neither entrypoint accesses the microphone or reconstructs typed text.
