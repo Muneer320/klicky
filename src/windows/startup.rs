@@ -58,6 +58,15 @@ pub(super) enum Status {
     Foreign,
 }
 
+#[derive(Debug)]
+pub(super) struct ForeignShortcut;
+impl std::fmt::Display for ForeignShortcut {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("An unrecognized Klicky startup shortcut exists; it was preserved")
+    }
+}
+impl std::error::Error for ForeignShortcut {}
+
 pub(super) struct Startup {
     paths: Paths,
     folder: PathBuf,
@@ -89,7 +98,7 @@ impl Startup {
         match self.inspect(!enabled)? {
             Some((file, false)) => {
                 drop(file);
-                bail!("An unrecognized Klicky startup shortcut exists; it was preserved");
+                Err(ForeignShortcut.into())
             }
             Some((file, true)) if enabled => {
                 // Do not recreate a shortcut that Windows may have disabled.

@@ -65,11 +65,14 @@ Login startup is opt-in. These commands manage this bundle's per-user Startup sh
 .\target\release\klicky.exe service enable
 .\target\release\klicky.exe service disable
 .\target\release\klicky.exe service start
+.\target\release\klicky.exe service start --paused
 .\target\release\klicky.exe service stop
 .\target\release\klicky.exe service status
 ```
 
 Enable registers the sibling `klicky-desktop.exe` and starts it now. Disable removes its recognized shortcut and stops this bundle's verified process. Start and stop affect the current session without changing login startup. A different portable copy is preserved. Background launch uses the sibling executable directly and waits for a verified state; Waiting for audio is reported as such.
+
+`service start --paused` applies to a newly launched desktop process. It does not change an already-running instance's pause state.
 
 Windows Settings or Task Manager may independently disable login startup. An existing matching shortcut is preserved byte for byte, so Enable does not override that choice. The status command reports registration, not Windows approval. Use **Settings > Apps > Startup** to change that approval. Shortcut recognition checks the target, arguments, working directory, elevation/launch flags, window mode, hotkey, icon and ownership description. Unrecognized or other-bundle `Klicky.lnk` shortcuts and changes to those launch settings are preserved and require you to resolve the conflict.
 

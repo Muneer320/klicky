@@ -8,11 +8,15 @@ use anyhow::{bail, Context, Result};
 
 use super::bundle;
 use super::control::{Client, ControlError, COMMAND_TIMEOUT};
-use super::protocol::{Command, EngineState, Outcome, Snapshot};
-use super::startup::{Startup, Status};
-use super::{InstanceOwner, Paths};
+use super::protocol::{Command, EngineState, Outcome, Snapshot, UpdateState};
+use super::startup::{ForeignShortcut, Startup, Status};
+use super::{InstanceOwner, Paths, ServerProcess};
 
 pub(super) fn start(paths: &Paths) -> Result<Snapshot> {
+    start_with_pause(paths, false)
+}
+
+pub(super) fn start_with_pause(paths: &Paths, paused: bool) -> Result<Snapshot> {
     let client = Client::current()?;
     let deadline = Instant::now() + Duration::from_secs(15);
     let mut child: Option<Child> = None;
@@ -29,6 +33,9 @@ pub(super) fn start(paths: &Paths) -> Result<Snapshot> {
                 let snapshot = match reply.response.outcome {
                     Outcome::Success { snapshot } => snapshot,
                     Outcome::Failure { message, .. } => bail!("{message}"),
+                    Outcome::UpdatePrepared { .. } => {
+                        bail!("Unexpected installer preparation response")
+                    }
                 };
                 match snapshot.state {
                     EngineState::Failed => bail!("Klicky started but initialization failed; use the tray to inspect and recover"),
@@ -56,8 +63,12 @@ pub(super) fn start(paths: &Paths) -> Result<Snapshot> {
                             );
                         }
                         let executable = bundle::desktop_path(paths)?;
+                        let mut command = Process::new(executable);
+                        if paused {
+                            command.arg("--paused");
+                        }
                         child = Some(
-                            Process::new(executable)
+                            command
                                 .current_dir(paths.bundle_dir())
                                 .stdin(Stdio::null())
                                 .stdout(Stdio::null())
@@ -87,19 +98,43 @@ pub(super) fn start(paths: &Paths) -> Result<Snapshot> {
 pub(super) fn stop_for_update(paths: &Paths) -> Result<bool> {
     let client = Client::current()?;
     let deadline = Instant::now() + COMMAND_TIMEOUT;
+    if let Some(process) = matching_process(paths, &client, deadline)? {
+        client.stop_for(&process, deadline)?;
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
+pub(super) fn prepare_update(paths: &Paths) -> Result<UpdateState> {
+    let client = Client::current()?;
+    let deadline = Instant::now() + COMMAND_TIMEOUT;
+    match matching_process(paths, &client, deadline)? {
+        Some(process) => Ok(client.prepare_update_for(&process, deadline)?),
+        None => Ok(UpdateState {
+            restart: false,
+            paused: false,
+        }),
+    }
+}
+
+fn matching_process(
+    paths: &Paths,
+    client: &Client,
+    deadline: Instant,
+) -> Result<Option<ServerProcess>> {
     match client.command(Command::Status {}, deadline) {
         Ok(reply) => {
             if !bundle::owns_image(paths, &reply.process.image_path()?)? {
-                return Ok(false);
+                return Ok(None);
             }
-            client.stop_for(&reply.process, deadline)?;
-            Ok(true)
+            Ok(Some(reply.process))
         }
         Err(ControlError::Absent) => {
             let _owner = InstanceOwner::try_acquire(paths)?.context(
                 "Session ownership exists without a verified endpoint; update must wait",
             )?;
-            Ok(false)
+            Ok(None)
         }
         Err(error) => Err(error.into()),
     }
@@ -113,7 +148,10 @@ pub(super) fn startup(paths: Paths, enabled: bool) -> Result<Status> {
 }
 
 pub(super) fn unregister_for_removal(paths: Paths) -> Result<Status> {
-    Startup::current(paths)?.set(false)
+    match Startup::current(paths)?.set(false) {
+        Err(error) if error.is::<ForeignShortcut>() => Ok(Status::Foreign),
+        result => result,
+    }
 }
 
 pub(super) fn startup_status(paths: Paths) -> Result<Status> {

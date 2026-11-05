@@ -62,7 +62,11 @@ enum ServiceAction {
     /// Remove this bundle's login shortcut and stop its running instance
     Disable,
     /// Start this bundle's desktop app for the current session
-    Start,
+    Start {
+        /// Apply only when launching a new desktop process
+        #[arg(long)]
+        paused: bool,
+    },
     /// Stop this bundle's verified running instance
     Stop,
     /// Show shortcut registration and live session state
@@ -73,6 +77,9 @@ enum ServiceAction {
     /// Installer hook; caller holds the exclusive bundle marker
     #[command(hide = true)]
     UnregisterStartup,
+    /// Installer hook; register without launching after the bundle is unlocked
+    #[command(hide = true)]
+    RegisterStartup,
 }
 
 pub fn run() -> Result<()> {
@@ -148,13 +155,23 @@ fn service(action: ServiceAction) -> Result<()> {
                 println!("No matching running bundle was stopped");
             }
         }
-        ServiceAction::Start => print_snapshot(&background::start(&paths)?),
-        ServiceAction::Stop | ServiceAction::PrepareUpdate => {
+        ServiceAction::Start { paused } => {
+            print_snapshot(&background::start_with_pause(&paths, paused)?)
+        }
+        ServiceAction::Stop => {
             if background::stop_for_update(&paths)? {
                 println!("Matching Klicky process exit confirmed");
             } else {
                 println!("No matching running bundle; other instances were preserved");
             }
+        }
+        ServiceAction::PrepareUpdate => {
+            let state = background::prepare_update(&paths)?;
+            println!(
+                "KLICKY_UPDATE_V1 {} {}",
+                u8::from(state.restart),
+                u8::from(state.paused)
+            );
         }
         ServiceAction::Status => {
             println!(
@@ -168,8 +185,19 @@ fn service(action: ServiceAction) -> Result<()> {
             }
         }
         ServiceAction::UnregisterStartup => {
-            background::unregister_for_removal(paths)?;
-            println!("Owned login shortcut removed (or already absent)");
+            let status = background::unregister_for_removal(paths)?;
+            println!(
+                "KLICKY_STARTUP_V1 {}",
+                if status == super::startup::Status::Foreign {
+                    "FOREIGN"
+                } else {
+                    "ABSENT"
+                }
+            );
+        }
+        ServiceAction::RegisterStartup => {
+            background::startup(paths, true)?;
+            println!("KLICKY_STARTUP_V1 REGISTERED");
         }
     }
     Ok(())
@@ -229,6 +257,7 @@ fn print_outcome(outcome: Outcome) -> Result<()> {
             Ok(())
         }
         Outcome::Failure { code, message } => bail!("{code:?}: {message}"),
+        Outcome::UpdatePrepared { .. } => bail!("Unexpected installer preparation response"),
     }
 }
 fn print_snapshot(snapshot: &Snapshot) {
