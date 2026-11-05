@@ -2,6 +2,28 @@
 
 The Windows implementation targets Windows 11 x64 interactive desktop sessions. It is under qualification. A successful build or an internal dispatch timing does not establish physical keypress-to-audible latency. Bluetooth output can add noticeable delay; use laptop speakers or a wired output for the reference listening check.
 
+## Portable test bundle
+
+The [unsigned portable workflow](../.github/workflows/windows-portable.yml) builds test artifacts without publishing a release. Extract the complete ZIP into a writable folder at a stable location. Keep both executables, the `sounds` folder and notices together. Rust and Visual Studio are needed to build the bundle, not to run it.
+
+From the extracted folder, start with:
+
+```powershell
+.\klicky-desktop.exe --paused
+```
+
+Open its tray menu and choose Resume when ready to hear typing sounds. Choose Quit Klicky to exit, or run `.\klicky.exe stop`. Startup remains opt-in. The source-build command examples below also work in the extracted folder after replacing `.\target\release\` with `.\`.
+
+Each ZIP contains `BUILD-INFO.json` with the exact source revision, target, toolchain, direct DLL imports, file hashes and dependency/source inventory. `THIRD-PARTY.txt` explains the included notices and unchanged decoder sources. The adjacent `.sha256` file identifies the ZIP. These unsigned artifacts remain unqualified development previews.
+
+To build from a clean committed checkout with PowerShell 7, Rust 1.87 MSVC, Visual Studio C++ tools and a Windows SDK:
+
+```powershell
+pwsh -NoProfile -File .\scripts\build-windows-portable.ps1
+```
+
+Output goes to `target/windows-dist`. The builder uses static CRT linkage, checks executable metadata/manifests and rejects unexpected direct DLL imports. It does not overwrite an existing identified archive. A clean Windows 11 launch still requires qualification; import inspection cannot establish every runtime dependency or audible latency. No installer, automatic update or signing is provided by this ZIP.
+
 ## Build and run
 
 Install the Rust MSVC toolchain and Visual Studio C++ build tools, then build from the repository root:
