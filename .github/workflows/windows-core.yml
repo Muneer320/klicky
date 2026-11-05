@@ -1,0 +1,39 @@
+name: Windows portable core
+
+on:
+  push:
+    paths:
+      - src/**
+      - tests/**
+      - Cargo.toml
+      - Cargo.lock
+      - .github/workflows/windows-core.yml
+  pull_request:
+    paths:
+      - src/**
+      - tests/**
+      - Cargo.toml
+      - Cargo.lock
+      - .github/workflows/windows-core.yml
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: windows-core
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install declared minimum Rust
+        run: rustup toolchain install 1.87.0 --profile minimal --component rustfmt --component clippy
+      - name: Check formatting
+        run: cargo +1.87.0 fmt --check
+      - name: Check compilation
+        run: cargo +1.87.0 check --locked --all-targets
+      - name: Test portable code
+        run: cargo +1.87.0 test --locked
+      - name: Lint
+        run: cargo +1.87.0 clippy --locked --all-targets --all-features -- -D warnings
+      - name: Build development targets
+        run: cargo +1.87.0 build --locked --release
