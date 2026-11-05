@@ -550,6 +550,10 @@ fn poll_replies(hwnd: HWND) {
             .pending
             .retain(|pending| match pending.reply.try_recv() {
                 Ok(Outcome::Success { .. }) => false,
+                Ok(Outcome::UpdatePrepared { .. }) => {
+                    error = Some("Unexpected installer preparation response".into());
+                    false
+                }
                 Ok(Outcome::Failure { message, .. }) => {
                     error = Some(message);
                     false

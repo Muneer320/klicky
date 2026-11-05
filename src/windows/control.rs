@@ -20,7 +20,8 @@ use crossbeam_channel::{bounded, Receiver, Sender, TrySendError};
 
 use super::pipe::{io, PipeAddress, PipePool, CLIENT_ACCESS};
 use super::protocol::{
-    Command, ErrorCode, FrameBuffer, Outcome, ProtocolError, Request, Response, PROTOCOL_MAJOR,
+    Command, ErrorCode, FrameBuffer, Outcome, ProtocolError, Request, Response, UpdateState,
+    PROTOCOL_MAJOR,
 };
 use super::ServerProcess;
 
@@ -440,6 +441,22 @@ impl Client {
             return Err(ControlError::Timeout);
         }
         Ok(())
+    }
+
+    /// The preparation receipt is not success until the retained process exits.
+    pub fn prepare_update_for(
+        &self,
+        process: &ServerProcess,
+        deadline: Instant,
+    ) -> Result<UpdateState> {
+        let response = self.command_for(Command::PrepareUpdate {}, process, deadline)?;
+        let Outcome::UpdatePrepared { state } = response.outcome else {
+            return Err(ProtocolError::InvalidPayload("missing update preparation receipt").into());
+        };
+        if !process.wait_until(deadline).map_err(ControlError::Peer)? {
+            return Err(ControlError::Timeout);
+        }
+        Ok(state)
     }
 
     fn exchange(

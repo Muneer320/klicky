@@ -675,11 +675,20 @@ impl State {
             return;
         }
         let command = pending.request.command.clone();
-        if matches!(command, Command::Stop {}) {
+        if matches!(command, Command::Stop {} | Command::PrepareUpdate {}) {
+            let update = super::protocol::UpdateState {
+                restart: self.stopping.is_none(),
+                paused: self.paused,
+            };
             self.begin_stop();
             self.receipts
                 .retain(|receipt| matches!(receipt.try_recv(), Err(TryRecvError::Empty)));
-            if let Some(receipt) = pending.respond(self.success()) {
+            let outcome = if matches!(command, Command::PrepareUpdate {}) {
+                Outcome::UpdatePrepared { state: update }
+            } else {
+                self.success()
+            };
+            if let Some(receipt) = pending.respond(outcome) {
                 self.receipts.push(receipt);
             }
             return;
@@ -721,7 +730,9 @@ impl State {
                     }
                 }
             }
-            Command::Stop {} | Command::Status {} => unreachable!("handled above"),
+            Command::Stop {} | Command::PrepareUpdate {} | Command::Status {} => {
+                unreachable!("handled above")
+            }
         }
     }
 

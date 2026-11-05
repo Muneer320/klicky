@@ -18,10 +18,18 @@ const MAX_ERROR_BYTES: usize = 512;
 pub enum Command {
     // Empty struct variants enforce unknown-field rejection in Serde's tagged form.
     Stop {},
-    Switch { pack: String },
-    Volume { level: f32 },
+    /// Installer-only stop with an atomic account of the temporary user pause.
+    PrepareUpdate {},
+    Switch {
+        pack: String,
+    },
+    Volume {
+        level: f32,
+    },
     Status {},
-    Pause { paused: bool },
+    Pause {
+        paused: bool,
+    },
     RetryAudio {},
 }
 
@@ -105,6 +113,14 @@ pub struct Snapshot {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct UpdateState {
+    /// False if shutdown was already requested before preparation was handled.
+    pub restart: bool,
+    pub paused: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ErrorCode {
     Busy,
@@ -121,6 +137,7 @@ pub enum ErrorCode {
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Outcome {
     Success { snapshot: Snapshot },
+    UpdatePrepared { state: UpdateState },
     Failure { code: ErrorCode, message: String },
 }
 
@@ -162,6 +179,18 @@ impl Response {
         if &self.instance != expected {
             return Err(ProtocolError::InstanceMismatch);
         }
+        match (&request.command, &self.outcome) {
+            (
+                Command::PrepareUpdate {},
+                Outcome::UpdatePrepared { .. } | Outcome::Failure { .. },
+            ) => {}
+            (Command::PrepareUpdate {}, _) | (_, Outcome::UpdatePrepared { .. }) => {
+                return Err(ProtocolError::InvalidPayload(
+                    "unexpected update preparation response",
+                ));
+            }
+            _ => {}
+        }
         Ok(())
     }
 
@@ -169,6 +198,7 @@ impl Response {
         validate_header(self.protocol, self.request_id)?;
         self.instance.validate()?;
         match &self.outcome {
+            Outcome::UpdatePrepared { .. } => Ok(()),
             Outcome::Success { snapshot } => {
                 validate_pack(&snapshot.sound_pack)?;
                 validate_volume(snapshot.volume)
