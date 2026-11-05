@@ -58,7 +58,12 @@
         $process = Start-Process -FilePath $setup -ArgumentList @('/NORESTART', ('/LOG="' + $log + '"')) -PassThru
         $process.WaitForExit()
         if ($process.ExitCode -ne 0) { throw "Installer finished with code $($process.ExitCode). Details: $log" }
-        Write-Output 'Klicky is installed. Open it from Start, then choose Resume from its tray menu.'
+        $cli = Join-Path $env:LOCALAPPDATA 'Programs/Klicky/klicky.exe'
+        if (-not (Test-Path -LiteralPath $cli -PathType Leaf)) { throw "The installed CLI is missing: $cli" }
+        $launch = Start-Process -FilePath $cli -ArgumentList @('service', 'start') -WindowStyle Hidden -PassThru
+        if (-not $launch.WaitForExit(30000)) { throw 'Klicky startup was not confirmed within 30 seconds. Open it from Start for details.' }
+        if ($launch.ExitCode -ne 0) { throw 'Klicky installed, but startup reported an error. Open it from Start for details.' }
+        Write-Output 'Klicky is installed and running. Its tray menu changes sounds and volume. Choose Resume if you selected a paused launch.'
     }
     finally {
         # Delete only the known downloads, not a recursively computed directory.

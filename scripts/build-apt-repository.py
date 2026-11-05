@@ -114,7 +114,7 @@ def render_index(public_url: str, versions: list[str], fingerprint: str) -> str:
 
     template_path = Path(__file__).resolve(
     ).parent.parent / "packaging/apt/index.html"
-    template = template_path.read_text()
+    template = template_path.read_text(encoding="utf-8")
     items = "".join(
         f"<li>klicky {html.escape(version)}</li>" for version in versions
     )
@@ -130,6 +130,15 @@ def render_index(public_url: str, versions: list[str], fingerprint: str) -> str:
     for marker, value in replacements.items():
         template = template.replace(marker, value)
     return template
+
+
+def copy_site_assets(output: Path) -> None:
+    root = Path(__file__).resolve().parent.parent
+    shutil.copytree(root / "assets/website", output / "assets")
+    shutil.copy2(root / "assets/branding/social-preview.png",
+                 output / "assets/social-preview.png")
+    for name in ("install.sh", "install.ps1"):
+        shutil.copy2(root / "scripts" / name, output / name)
 
 
 def build_repository(
@@ -308,7 +317,9 @@ def build_repository(
         )
 
         versions = [version for _, version in packages_with_versions]
-        (publish / "index.html").write_text(render_index(public_url, versions, fingerprint))
+        (publish / "index.html").write_text(
+            render_index(public_url, versions, fingerprint), encoding="utf-8")
+        copy_site_assets(publish)
 
         output.mkdir(parents=True, exist_ok=True)
         for path in output.iterdir():

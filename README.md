@@ -31,19 +31,15 @@ The installer includes the app and all sound packs. **You do not need Rust or Vi
 <details>
 <summary><strong>macOS</strong></summary>
 
-The current macOS installer builds the app. You need [Rust 1.87+](https://rustup.rs/) and Apple's Command Line Tools (`xcode-select --install`) once.
-
-Then run in Terminal:
+Run in Terminal:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Muneer320/klicky/master/scripts/install.sh | bash
+curl -fsSL https://klicky.muneer320.tech/install.sh | bash
 ```
 
-It installs Klicky and its menu bar control, and sets them to open when you sign in. Allow **`~/.local/bin/klicky`** in **System Settings → Privacy & Security → Accessibility**, then run:
+It downloads, builds, installs and starts Klicky with its menu bar control, and enables login startup. Missing Rust/build tools are set up for you; approve Apple's tools dialog if it appears. First setup can take several minutes.
 
-```bash
-~/.local/bin/klicky service start
-```
+macOS requires Accessibility permission for **`~/.local/bin/klicky`**. If startup needs that permission, setup opens the settings pane and retries while you approve it. No second Terminal command is needed. To skip the menu bar helper, add `-s -- --no-menu` after `bash`.
 
 Use the menu bar control to turn sounds on or off. [Manual steps and removal](docs/INSTALLATION.md#macos)
 
@@ -55,10 +51,10 @@ Use the menu bar control to turn sounds on or off. [Manual steps and removal](do
 On **Ubuntu 24.04+ / compatible Debian amd64** or **Arch / Omarchy x86_64**, run:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Muneer320/klicky/master/scripts/install.sh | bash
+curl -fsSL https://klicky.muneer320.tech/install.sh | bash
 ```
 
-The installer chooses the signed APT repository or published Arch package, includes the sound packs, and enables Klicky at login. It asks for `sudo` for package/device setup; Klicky itself runs as your user. APT setup also needs `curl` and GnuPG installed.
+The installer chooses the signed APT repository or published Arch package, includes the sound packs, and enables Klicky at login. It asks for `sudo` for package/device setup; Klicky itself runs as your user. Use a terminal with `curl`; setup installs GnuPG if needed. Compatible Omarchy shells get the bar toggle automatically; add `-s -- --no-omarchy-toggle` after `bash` to skip it.
 
 Already set up the APT repository? Use:
 
@@ -72,7 +68,7 @@ For **Fedora, older distributions or other architectures**, use the [source-inst
 
 </details>
 
-Prefer to inspect the installer first? Download [install.sh](https://raw.githubusercontent.com/Muneer320/klicky/master/scripts/install.sh), read it, then run it with `bash`. Existing settings and custom sound packs are kept when upgrading or removing the app.
+Prefer to inspect the installer first? Download [install.sh](https://klicky.muneer320.tech/install.sh), read it, then run it with `bash`. Existing settings and custom sound packs are kept when upgrading or removing the app.
 
 ## Choose your sound
 

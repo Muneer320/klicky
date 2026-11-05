@@ -3,10 +3,10 @@
 For Ubuntu 24.04+ and compatible Debian-based **amd64** desktops:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Muneer320/klicky/master/scripts/install.sh | bash
+curl -fsSL https://klicky.muneer320.tech/install.sh | bash
 ```
 
-This verifies the repository's pinned signing key, adds a dedicated APT source, installs Klicky and starts its user service. Run it as your normal user; it asks for `sudo` when needed. You need `curl` and GnuPG. For future updates, stop Klicky before replacing its package:
+This verifies the repository's pinned signing key, adds a dedicated APT source, installs Klicky and starts its user service. Run it as your normal user; it asks for `sudo` when needed. Use a terminal with `curl`; setup installs GnuPG if needed. For future updates, stop Klicky before replacing its package:
 
 ```bash
 systemctl --user stop klicky.service

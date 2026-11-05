@@ -19,12 +19,12 @@ Extract the entire Klicky ZIP into a folder you intend to keep. Open `klicky-des
 <summary><strong>PowerShell installer for published Windows downloads</strong></summary>
 
 ```powershell
-irm https://raw.githubusercontent.com/Muneer320/klicky/master/scripts/install.ps1 | iex
+irm https://klicky.muneer320.tech/install.ps1 | iex
 ```
 
-This selects a published Windows installer from the project's GitHub releases, verifies its SHA-256 file and opens the wizard. If none has been published, it stops with the current download guide. It does not download an arbitrary CI build or change Windows security settings.
+This selects a published Windows installer from the project's GitHub releases, verifies its SHA-256 file and opens the wizard. If none has been published, it stops with the current download guide. It does not download an arbitrary CI build or change Windows security settings. When setup finishes, the helper starts the installed app automatically; no second command is needed. A paused launch selected in the wizard is respected.
 
-Prefer to read it first? [Download the script](https://raw.githubusercontent.com/Muneer320/klicky/master/scripts/install.ps1), inspect it and run it in PowerShell.
+Prefer to read it first? [Download the script](https://klicky.muneer320.tech/install.ps1), inspect it and run it in PowerShell.
 
 </details>
 
@@ -32,19 +32,21 @@ Prefer to read it first? [Download the script](https://raw.githubusercontent.com
 
 ## macOS
 
-The current installer builds from source, then installs the app and menu bar control for your user. Install [Rust 1.87+](https://rustup.rs/) and the Xcode Command Line Tools first:
+Run in Terminal:
 
 ```bash
-xcode-select --install
+curl -fsSL https://klicky.muneer320.tech/install.sh | bash
 ```
 
-After those are ready:
+Setup downloads the source, prepares missing Rust and Apple build tools, installs Klicky and its menu bar control, and starts them. It enables login startup too. Approve Apple's build-tools dialog if shown; the installer waits for it to finish. First setup can take several minutes. Apple may request administrator approval for its tools; Klicky itself is installed for your user.
+
+macOS requires you to allow `~/.local/bin/klicky` in **System Settings → Privacy & Security → Accessibility**. If startup fails, the installer opens that pane and shows the installed file in Finder. Add it with **+**, leave Terminal open, and setup retries for up to ten minutes. If an error persists after permission is granted, consult [troubleshooting](TROUBLESHOOTING.md#macos); setup reports the error rather than claiming success.
+
+To skip the menu bar helper:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Muneer320/klicky/master/scripts/install.sh | bash
+curl -fsSL https://klicky.muneer320.tech/install.sh | bash -s -- --no-menu
 ```
-
-Allow `~/.local/bin/klicky` in **System Settings → Privacy & Security → Accessibility**, then run `~/.local/bin/klicky service start`. The app and helper open at future logins. This does not need `sudo`.
 
 <details>
 <summary><strong>Build from an existing checkout, or skip the menu bar helper</strong></summary>
@@ -56,7 +58,7 @@ cd klicky
 ./scripts/install-macos-menu-bar.sh
 ```
 
-The second script is optional. For the download installer without the helper, save `install.sh` and run `bash install.sh --no-menu`.
+The second script is optional. Existing-checkout builds need Rust 1.87+ and the Xcode Command Line Tools; the download installer prepares missing tools for you.
 
 The installed binary is `~/.local/bin/klicky`; sound packs are in `~/Library/Application Support/klicky/sounds`. Grant Accessibility to the installed binary, rather than the copy under `target/release`.
 
@@ -67,23 +69,37 @@ The installed binary is `~/.local/bin/klicky`; sound packs are in `~/Library/App
 On Ubuntu 24.04+ / compatible Debian **amd64**, or Arch / Omarchy **x86_64**:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Muneer320/klicky/master/scripts/install.sh | bash
+curl -fsSL https://klicky.muneer320.tech/install.sh | bash
 ```
 
-APT systems need `curl` and GnuPG. The installer verifies Klicky's repository key, uses a dedicated `Signed-By` source and installs the package. Arch uses the published package and verifies its release checksum. Both enable the systemd user service and include all ten packs. Run the command as your desktop user, without prefixing it with `sudo`.
+Use a terminal with `curl`. APT setup installs GnuPG if needed. The installer verifies Klicky's repository key, uses a dedicated `Signed-By` source and installs the package. Arch uses the published package and verifies its release checksum. Both enable and start the systemd user service and include all ten packs. Compatible Omarchy shells also get the bar toggle. Run the command as your desktop user, without prefixing it with `sudo`.
+
+To skip the Omarchy toggle:
+
+```bash
+curl -fsSL https://klicky.muneer320.tech/install.sh | bash -s -- --no-omarchy-toggle
+```
+
+The toggle needs Omarchy's QML shell and its `shell.json`. Older or different shell setups need their own integration; the installer reports missing requirements without replacing an unrelated bar configuration.
 
 <details>
 <summary><strong>Install a package manually</strong></summary>
 
-Download the matching package from [v0.4.0](https://github.com/Muneer320/klicky/releases/tag/v0.4.0). From its download folder:
+Copy the command for your distribution. These download the package directly, without opening a release page:
 
 ```bash
 # Ubuntu / Debian
-sudo apt install ./klicky_0.4.0-1_amd64.deb
+curl -fL --retry 2 -o klicky.deb \
+  https://klicky.muneer320.tech/pool/main/k/klicky/klicky_0.4.0-1_amd64.deb
+sudo apt install ./klicky.deb
 
 # Arch / Omarchy
-sudo pacman -U ./klicky-0.4.0-1-x86_64.pkg.tar.zst
+curl -fL --retry 2 -o klicky.pkg.tar.zst \
+  https://github.com/Muneer320/klicky/releases/download/v0.4.0/klicky-0.4.0-1-x86_64.pkg.tar.zst
+sudo pacman -U ./klicky.pkg.tar.zst
 ```
+
+The one-command installer above handles repository-key or checksum verification for you. These manual downloads use HTTPS; signed APT is recommended for ongoing Debian/Ubuntu updates.
 
 Use only the command for your distribution. Then start Klicky now and at login:
 
@@ -131,7 +147,7 @@ cd klicky
 ./scripts/install-linux.sh
 ```
 
-The script builds and installs the binary, packs, keyboard-only udev rule and systemd user service. If you already saved the download installer, `bash install.sh --source` uses the same source path. Add the optional [Omarchy toggle](OMARCHY.md) afterward if wanted.
+The script builds and installs the binary, packs, keyboard-only udev rule and systemd user service. For an automatic source build, use `curl -fsSL https://klicky.muneer320.tech/install.sh | bash -s -- --source`. It prepares missing Rust and supported distribution build dependencies, then starts the service. The [Omarchy toggle](OMARCHY.md) is included on compatible Omarchy setups unless skipped.
 
 <details>
 <summary><strong>Manual Linux setup or a system without systemd</strong></summary>

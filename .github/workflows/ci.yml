@@ -46,7 +46,7 @@ jobs:
       - name: Check shell scripts
         if: runner.os == 'Linux'
         run: |
-          bash -n scripts/*.sh
+          for script in scripts/*.sh; do bash -n "$script"; done
           shellcheck scripts/*.sh
       - name: Check macOS menu bar helper
         if: runner.os == 'macOS'

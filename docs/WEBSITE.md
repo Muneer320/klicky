@@ -1,50 +1,40 @@
 # Website maintenance
 
-The public site and signed APT archive share `https://muneer320.github.io/klicky/`.
-The custom domain [klicky.muneer320.tech](https://klicky.muneer320.tech/) serves the same Pages deployment. Its `klicky` CNAME must point to `muneer320.github.io` in the zone served by the domain's delegated nameservers; a record saved at an inactive DNS provider has no effect. The custom domain and HTTPS also need to be configured in GitHub Pages settings.
-The page is rendered from [the HTML template](../packaging/apt/index.html) by
-[the repository builder](../scripts/build-apt-repository.py). There is no frontend
-framework, JavaScript bundle, external font, or production dependency to install.
+Klicky's product page and signed APT archive share GitHub Pages. The public address is [klicky.muneer320.tech](https://klicky.muneer320.tech/); the archive also uses `https://muneer320.github.io/klicky/`.
 
-## Design and behavior
+## Where things live
 
-The keycap, spring, and waveform are an original conceptual SVG illustration, not
-a screenshot, measured key-travel plot, or audio demo. Native `details` elements
-provide keyboard-accessible key and pack disclosures. CSS animates only the
-requested keypress; reduced-motion mode removes animation and transitions.
-The page supports light and dark color schemes.
+| Source | Purpose |
+|---|---|
+| [HTML template](../packaging/apt/index.html) | Product content, styles and native disclosures |
+| [Public media](../assets/website/audio) | Ten short sound-pack previews |
+| [Preview exporter](../tools/website/export-previews.py) | Rebuild listening examples with FFmpeg |
+| [Brand assets](../assets/branding) | Shared mark and social image |
+| [Repository builder](../scripts/build-apt-repository.py) | Signed archive, page, media and installer entry points |
+| [Preview/check tool](../scripts/check-website.py) | Local browser preview and responsive checks |
 
-The builder replaces `PUBLIC_URL`, `LATEST_VERSION`, `VERSIONS`, and `FINGERPRINT`
-template markers, escaping dynamic metadata. Keep the four relative archive links
-intact: `klicky.sources`, both public key formats, and `dists/stable/InRelease`.
-Do not point them at the domain root: GitHub Pages serves them under `/klicky/`.
+There is no frontend framework, JavaScript bundle, external font or analytics service. Audio uses native browser controls, loads on demand and never autoplays. The animated keycap is a silent conceptual illustration. Reduced-motion mode removes animation; light and dark appearances follow the system.
 
-The builder's `render_sources` function is the authoritative Deb822 definition;
-`klicky.sources` is generated into the publication output, not copied from a
-second static file.
+The builder escapes its four template markers: `PUBLIC_URL`, `LATEST_VERSION`, `VERSIONS` and `FINGERPRINT`. Keep the relative archive links intact: `klicky.sources`, both public-key formats and `dists/stable/InRelease`. They work under both the custom domain and the `/klicky/` project path.
 
-## Local checks
+`render_sources` owns the Deb822 definition. `copy_site_assets` publishes only the website asset directory, social PNG and the two installer scripts. Do not copy build outputs, planning files or unrelated repository directories into the public site.
 
-For an interactive local preview with Python alone:
+## Preview and check
 
 ```bash
 python -B scripts/check-website.py --serve
 ```
 
-Open the printed local `/klicky/` URL. Stop with Ctrl+C. The preview serves the
-page only; use the published site to inspect archive downloads.
+Open the printed URL. The preview serves the real template, media and installer script downloads. It does not run installers or create placeholder APT packages. Stop with Ctrl+C.
 
-From the repository root:
+Basic checks:
 
 ```bash
-PYTHONUTF8=1 python -B scripts/check-docs.py
-PYTHONUTF8=1 python -B -m unittest scripts/test_apt_repository.py
+python -B scripts/check-docs.py
+python -B -m unittest scripts/test_apt_repository.py
 ```
 
-On PowerShell, set `$env:PYTHONUTF8 = '1'` first and run the Python commands
-without the environment prefix.
-
-Optional browser checks require the Python Playwright package and its Chromium:
+For browser checks, install Python Playwright and Chromium once:
 
 ```bash
 python -m pip install playwright
@@ -52,39 +42,20 @@ python -m playwright install chromium
 python -B scripts/check-website.py
 ```
 
-The browser check renders the actual template in memory and serves it locally at
-`/klicky/`. It checks viewport overflow, fragment links, keyboard disclosure
-controls, focus visibility, reduced motion, and console errors. Screenshots are
-written under ignored `target/website-review/`. It does not sign an archive,
-deploy anything, or substitute dummy archive downloads. Unit tests check the
-archive-link contract; the Linux APT integration test checks the actual builder.
+This checks phone/tablet/desktop layouts in both appearances, fragment links, focus, native disclosures, reduced motion and console errors. Screenshots go to ignored `target/website-review`. Supplying a local axe-core bundle at `target/website-review/axe.min.js` also enables its accessibility audit. The tool is never shipped with the site.
 
-If a local axe-core browser bundle is supplied at
-`target/website-review/axe.min.js`, the browser check also runs its WCAG A/AA
-rules. The audit used axe-core 4.10.3. It is a local test tool only and is never
-included in the published page. Automated checks do not replace screen-reader
-and visual review.
-
-For a formatting check without adding project dependencies:
+To rebuild sound examples:
 
 ```bash
-npx --yes prettier@3.6.2 --check packaging/apt/index.html
+python tools/website/export-previews.py
 ```
 
-There is no separate TypeScript, frontend build, or application lint task. The
-production build is `build-apt-repository.py`; use the existing Linux integration
-test with a real `.deb` when changing the template or builder.
+Use `--ffmpeg /path/to/ffmpeg` if needed. These are offline sample sequences, not physical typing measurements. The source clips remain in `sounds`; the examples use the same 85% normalization target, 6x gain ceiling and a demonstration volume of 80%. No recordings are made.
 
-## Publication is a separate action
+## Publishing safely
 
-Changing this template does not deploy the page. The existing APT workflow builds
-and deploys the entire archive, including this page. See the
-[APT publication guide](APT_REPOSITORY.md#publication) before an explicitly
-approved deployment. Do not dispatch it merely to preview a design: it replaces
-the public repository with the selected release's package.
+The Pages/APT workflow runs after reviewed changes to its listed master-branch paths. It verifies published package history, rebuilds the complete signed archive and retains `CNAME`. Do not deploy the HTML alone or replace the archive with a generic static-site workflow. See [APT maintenance](MAINTAINING_APT.md) for signing and recovery.
 
-At the next release, review the page's explicit v0.3.0 links, source-versus-release
-callout, and installation guidance alongside the README. Dynamic package metadata
-does not automatically update this editorial copy.
+The custom-domain CNAME must point to `muneer320.github.io` at the domain's active DNS provider, with the same domain configured in GitHub Pages and HTTPS enabled.
 
-The live page and current template were compared on 5 November 2026 and matched after the four documented substitutions. The signed archive index advertises both `0.3.0-1` and `0.4.0-1`; the older editorial copy is separate from that index. Website editorial updates, including Windows preview links, require a reviewed Pages/APT publication. Updating platform Markdown does not authorize that production deployment.
+The installer endpoints are `https://klicky.muneer320.tech/install.sh` and `/install.ps1`. Publishing these scripts does not publish application releases: the Windows helper needs an identified public installer/checksum pair. Keep download status and install instructions synchronized when a release is approved. The APT workflow skips prereleases, so a platform preview does not replace the stable Linux archive.

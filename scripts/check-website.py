@@ -5,30 +5,49 @@ Renders the real APT template at /klicky/ without signing or publishing anything
 Screenshots go to ignored target/website-review/. No production dependencies.
 """
 import importlib.util
+import mimetypes
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Thread
+from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parent.parent
 spec = importlib.util.spec_from_file_location("apt", ROOT / "scripts/build-apt-repository.py")
 apt = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(apt)
 PAGE = apt.render_index(
-    "https://muneer320.github.io/klicky", ["0.3.0-1"],
+    "https://muneer320.github.io/klicky", ["0.3.0-1", "0.4.0-1"],
     "DBB67AE478D2FFCEC6637B559899E554D3580D8F",
 ).encode("utf-8")
 
 
 class Preview(BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.path != "/klicky/":
-            self.send_error(404)
-            return
+        path = unquote(urlsplit(self.path).path)
+        content = PAGE
+        content_type = "text/html; charset=utf-8"
+        if path != "/klicky/":
+            asset = None
+            if path in ("/klicky/install.sh", "/klicky/install.ps1"):
+                asset = ROOT / "scripts" / path.rsplit("/", 1)[1]
+            elif path == "/klicky/assets/social-preview.png":
+                asset = ROOT / "assets/branding/social-preview.png"
+            elif path.startswith("/klicky/assets/"):
+                folder = (ROOT / "assets/website").resolve()
+                candidate = (folder / path.removeprefix("/klicky/assets/")).resolve()
+                if candidate.is_relative_to(folder):
+                    asset = candidate
+            if asset is None or not asset.is_file():
+                self.send_error(404)
+                return
+            content = asset.read_bytes()
+            content_type = mimetypes.guess_type(asset)[0] or "application/octet-stream"
         self.send_response(200)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(content)))
         self.end_headers()
-        self.wfile.write(PAGE)
+        self.wfile.write(content)
 
     def log_message(self, *args):
         pass
@@ -43,7 +62,7 @@ def main():
     try:
         if "--serve" in sys.argv:
             print(f"Preview: http://127.0.0.1:{server.server_port}/klicky/", flush=True)
-            print("Press Ctrl+C to stop. Archive downloads are not served by this preview.", flush=True)
+            print("Press Ctrl+C to stop. Media and installer scripts are served; archive downloads are not.", flush=True)
             try:
                 thread.join()
             except KeyboardInterrupt:
