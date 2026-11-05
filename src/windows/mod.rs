@@ -1,7 +1,9 @@
 //! Windows control-plane components. The application host is integrated separately.
 pub mod audio;
+pub(crate) mod cli;
 mod config;
 pub mod control;
+pub mod desktop;
 mod files;
 pub mod input;
 mod lifecycle;
@@ -10,6 +12,7 @@ pub mod pipe;
 mod process;
 pub mod protocol;
 pub mod runtime;
+mod session;
 pub mod transactions;
 
 pub use config::ConfigStore;

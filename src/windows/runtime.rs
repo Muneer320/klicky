@@ -194,6 +194,10 @@ impl Host {
     pub fn has_exited(&self) -> bool {
         self.worker.as_ref().is_none_or(JoinHandle::is_finished)
     }
+    /// True only after the native thread was waited and joined, including TLS exit.
+    pub fn shutdown_complete(&self) -> bool {
+        self.worker.is_none()
+    }
     pub fn join(&mut self, deadline: Instant) -> Result<()> {
         let Some(worker) = self.worker.as_ref() else {
             return Ok(());

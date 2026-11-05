@@ -39,6 +39,11 @@ sequenceDiagram
 | `src/media_keys.rs` | Supplementary macOS media-key event tap |
 | `src/soundpack.rs` | OGG decoding, per-key slicing, capped peak normalization, PCM caching |
 | `src/player.rs` | Persistent Rodio mixer, low-latency output configuration, overlapping playback |
+| `src/windows/runtime.rs` | Bounded Windows coordinator, transactional activation and confirmed component shutdown |
+| `src/windows/desktop.rs` | Native notification-area frontend, asynchronous controls and message loop |
+| `src/windows/session.rs` | Initial unlocked-session verification and lock, disconnect, power and logoff gating |
+| `src/windows/cli.rs` | Windows CLI using verified control transport and ownership-guarded offline configuration |
+| `src/bin/klicky-desktop.rs` | Windows GUI subsystem entrypoint; see the [development preview guide](WINDOWS.md) |
 
 ## Input backends
 
