@@ -8,6 +8,22 @@ permissions:
   contents: read
 
 jobs:
+  powershell:
+    name: PowerShell syntax
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Parse PowerShell scripts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($file in Get-ChildItem scripts -Filter '*.ps1') {
+            $tokens = $null
+            $errors = $null
+            $null = [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$errors)
+            if ($errors.Count -ne 0) { throw "$($file.Name): $errors" }
+          }
+
   check:
     name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}

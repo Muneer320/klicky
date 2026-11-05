@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import fnmatch
+import os
 import re
 import sys
 import xml.etree.ElementTree as ET
@@ -12,10 +14,11 @@ MARKDOWN_LINK = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
 
 
 def repository_files(pattern: str):
-    for path in ROOT.rglob(pattern):
-        if SKIP_PARTS.intersection(path.parts) or path.name == "AGENTS.md":
-            continue
-        yield path
+    for folder, directories, filenames in os.walk(ROOT):
+        directories[:] = sorted(name for name in directories if name not in SKIP_PARTS)
+        for name in sorted(filenames):
+            if name != "AGENTS.md" and fnmatch.fnmatch(name, pattern):
+                yield Path(folder) / name
 
 
 def check_em_dashes(errors: list[str]) -> None:
