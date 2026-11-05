@@ -554,6 +554,10 @@ fn poll_replies(hwnd: HWND) {
                     error = Some("Unexpected installer preparation response".into());
                     false
                 }
+                Ok(Outcome::Diagnostics { .. }) => {
+                    error = Some("Unexpected diagnostics response".into());
+                    false
+                }
                 Ok(Outcome::Failure { message, .. }) => {
                     error = Some(message);
                     false

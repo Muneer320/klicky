@@ -36,6 +36,7 @@ pub(super) fn start_with_pause(paths: &Paths, paused: bool) -> Result<Snapshot> 
                     Outcome::UpdatePrepared { .. } => {
                         bail!("Unexpected installer preparation response")
                     }
+                    Outcome::Diagnostics { .. } => bail!("Unexpected diagnostics response"),
                 };
                 match snapshot.state {
                     EngineState::Failed => bail!("Klicky started but initialization failed; use the tray to inspect and recover"),

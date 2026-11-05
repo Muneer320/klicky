@@ -42,6 +42,8 @@ enum Commands {
     Volume { level: f32 },
     /// Show responsive live state, without creating configuration
     Status,
+    /// Read aggregate input/playback counters from the running Windows app
+    Diagnostics,
     /// Pause key sounds for this session
     Pause,
     /// Resume key sounds when the desktop and audio are available
@@ -124,6 +126,26 @@ pub fn run() -> Result<()> {
             }
             Err(error) => Err(error.into()),
         },
+        Commands::Diagnostics => {
+            let reply = Client::current()?
+                .command(Command::Diagnostics {}, deadline())
+                .context("Diagnostics require a running app that supports this command; older previews do not")?;
+            match reply.response.outcome {
+                Outcome::Diagnostics { snapshot, counters } => {
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&serde_json::json!({
+                            "process_id": reply.response.instance.pid,
+                            "process_creation_time": reply.response.instance.creation_time,
+                            "snapshot": snapshot,
+                            "counters": counters,
+                        }))?
+                    );
+                    Ok(())
+                }
+                outcome => print_outcome(outcome),
+            }
+        }
         Commands::Switch { name } => change(Command::Switch { pack: name }),
         Commands::Volume { level } => change(Command::Volume { level }),
         Commands::Pause => live(Command::Pause { paused: true }),
@@ -258,6 +280,7 @@ fn print_outcome(outcome: Outcome) -> Result<()> {
         }
         Outcome::Failure { code, message } => bail!("{code:?}: {message}"),
         Outcome::UpdatePrepared { .. } => bail!("Unexpected installer preparation response"),
+        Outcome::Diagnostics { .. } => bail!("Unexpected diagnostics response"),
     }
 }
 fn print_snapshot(snapshot: &Snapshot) {
