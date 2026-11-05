@@ -5,6 +5,7 @@ use anyhow::{bail, Context, Result};
 
 #[cfg(target_os = "macos")]
 use crate::media_keys;
+use crate::playback::{is_function_key, key_playback_volume};
 use crate::{config, ipc, lifecycle, listener, player, soundpack};
 
 /// Run the foreground sound engine under exclusive instance ownership.
@@ -228,21 +229,6 @@ fn set_config_volume(
     save(&next)?;
     *config = next;
     Ok(level)
-}
-
-fn key_playback_volume(volume: f32, key_name: &str) -> f32 {
-    if !is_function_key(key_name) {
-        return volume;
-    }
-    if volume <= 0.0 {
-        0.0
-    } else {
-        (volume + 0.2).min(1.0)
-    }
-}
-
-fn is_function_key(key_name: &str) -> bool {
-    key_name.starts_with('F') && key_name.len() <= 3 && key_name[1..].parse::<u32>().is_ok()
 }
 
 #[cfg(test)]

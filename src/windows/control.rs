@@ -207,7 +207,11 @@ impl Server {
         Ok(())
     }
 
-    fn request_shutdown(&mut self) -> Result<()> {
+    pub fn has_exited(&self) -> bool {
+        self.workers.iter().all(JoinHandle::is_finished)
+    }
+
+    pub fn request_shutdown(&mut self) -> Result<()> {
         self.broadcast.take();
         unsafe { SetEvent(HANDLE(self.stop.as_raw_handle()))? };
         Ok(())
