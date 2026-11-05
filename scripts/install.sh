@@ -97,7 +97,7 @@ start_macos() {
 build_source() {
   if [[ $platform == Darwin ]]; then
     prepare_macos
-  elif ! command -v pkg-config >/dev/null 2>&1 || ! pkg-config --exists alsa; then
+  elif ! command -v cc >/dev/null 2>&1 || ! command -v pkg-config >/dev/null 2>&1 || ! pkg-config --exists alsa; then
     need sudo
     printf 'Installing the compiler and ALSA development dependencies for this source build.\n'
     if command -v apt-get >/dev/null 2>&1; then
@@ -127,6 +127,13 @@ build_source() {
 install_omarchy() {
   [[ $omarchy == 1 ]] || return 0
   if [[ -d "$HOME/.config/omarchy" ]] || command -v omarchy-shell >/dev/null 2>&1; then
+    if [[ ! -f "$HOME/.config/omarchy/shell.json" ]] ||
+       ! command -v python3 >/dev/null 2>&1 ||
+       ! command -v omarchy-shell >/dev/null 2>&1 ||
+       ! command -v omarchy-restart-shell >/dev/null 2>&1; then
+      printf 'Klicky is running. The bar toggle was skipped because this Omarchy setup does not have the supported QML shell/configuration.\n' >&2
+      return 0
+    fi
     printf 'Installing the Omarchy bar toggle.\n'
     fetch_source
     bash "$work_dir/source/scripts/install-omarchy-toggle.sh"
