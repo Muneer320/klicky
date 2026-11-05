@@ -1,12 +1,12 @@
-# Linux packaging
+# Packaging and distribution
 
 Klicky publishes native packages for Arch Linux and Debian-compatible distributions.
 
 Current package automation targets x86_64 Arch Linux and amd64 Debian-compatible systems. Other architectures are not published until they have clean-environment package builds and hardware validation.
 
-## Windows test packages
+## Windows preview packages
 
-The [Windows guide](WINDOWS.md) describes the Windows 11 x64 portable ZIP and per-user installer preview, exact-source build identity, pinned compiler, notices, upgrade interlock and recovery. The [read-only artifact workflow](../.github/workflows/windows-portable.yml) builds unsigned candidates without release publication. Linux packaging and tag-driven publication below remain separate; Windows is not added to the production release workflow by the artifact builder. WinGet publication needs an approved stable immutable installer URL, exact SHA-256 and accepted versioned manifests before its proposed command becomes usable.
+The [published Windows preview](https://github.com/Muneer320/klicky/releases/tag/windows-preview-2026-11-06) contains an unsigned installer and portable ZIP. The [Windows guide](WINDOWS.md) describes the Windows 11 x64 portable ZIP and per-user installer preview, exact-source build identity, pinned compiler, notices, upgrade interlock and recovery. The [read-only artifact workflow](../.github/workflows/windows-portable.yml) builds unsigned candidates without release publication. Linux packaging and tag-driven publication below remain separate; Windows is not added to the production release workflow by the artifact builder. WinGet publication needs an approved stable immutable installer URL, exact SHA-256 and accepted versioned manifests before its proposed command becomes usable.
 
 ## Installed layout
 
@@ -118,9 +118,9 @@ The regular package workflow also builds both formats on pushes and pull request
 
 Klicky has a public, signed APT repository at [muneer320.github.io/klicky](https://muneer320.github.io/klicky/), using suite `stable`, component `main`, and architecture `amd64`.
 
-Follow the [APT repository guide](APT_REPOSITORY.md) to verify the dedicated signing-key fingerprint and install the Deb822 source with `Signed-By`. Once configured, use `sudo apt update` and `sudo apt install klicky`. This installs a published release package, not the current source tree. The index checked on 5 November 2026 contains `0.3.0-1` and `0.4.0-1`, with `0.4.0-1` latest. The redesigned homepage is live; some editorial release references still need a separately reviewed publication. Use `systemctl --user` for service controls across both retained versions.
+Follow the [APT repository guide](APT_REPOSITORY.md) to install through the signed source. Stop the user service before replacing an installed package; the [update guide](INSTALLATION.md#updates-and-removal) includes the commands. Packages contain published release code rather than the current source tree. The archive retains `0.3.0-1` and `0.4.0-1`, with `0.4.0-1` as its candidate. The redesigned homepage and installation/removal helpers are live. Use `systemctl --user` for service controls across both retained versions.
 
-[APT publication](APT_REPOSITORY.md#publication) consumes a release `.deb` and `SHA256SUMS`, retains packages from the live signed index, signs regenerated repository metadata, and deploys the website and archive together to GitHub Pages. It runs for qualifying pushes to `master`, release-published events, and manual dispatches. Because the tag-driven release workflow publishes with `GITHUB_TOKEN`, maintainers must still explicitly dispatch APT publication after that workflow finishes; its release event does not automatically start another workflow.
+[APT publication](MAINTAINING_APT.md#publication) consumes a release `.deb` and `SHA256SUMS`, retains packages from the live signed index, signs regenerated repository metadata, and deploys the website and archive together to GitHub Pages. It runs for qualifying pushes to `master`, release-published events, and manual dispatches. Because the tag-driven release workflow publishes with `GITHUB_TOKEN`, maintainers must still explicitly dispatch APT publication after that workflow finishes; its release event does not automatically start another workflow.
 
 Publication requires the configured signing secrets and GitHub Pages deployment permissions. The workflow stops if it cannot authenticate and recover every package version from the currently published APT index. See the guide for prerequisites, publication steps, test coverage, and key rotation.
 

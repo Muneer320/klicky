@@ -75,7 +75,7 @@ PYTHONUTF8=1 python3 -B scripts/check-docs.py
 cargo build --release
 ```
 
-For APT changes, run `python3 -B -m unittest scripts/test_apt_repository.py` and, on Linux with GnuPG and reprepro, `python3 -B scripts/test_apt_repository_integration.py PACKAGE.deb`. See [APT validation coverage](docs/MAINTAINING_APT.md#validation-coverage) for what these checks establish. For website changes, follow the [website checks](docs/WEBSITE.md#local-checks). In PowerShell, set `$env:PYTHONUTF8 = '1'` before running Python.
+For APT changes, run `python3 -B -m unittest scripts/test_apt_repository.py` and, on Linux with GnuPG and reprepro, `python3 -B scripts/test_apt_repository_integration.py PACKAGE.deb`. See [APT validation coverage](docs/MAINTAINING_APT.md#validation-coverage) for what these checks establish. For website changes, follow the [website checks](docs/WEBSITE.md#preview-and-check). In PowerShell, set `$env:PYTHONUTF8 = '1'` before running Python.
 
 ## Commits
 
