@@ -49,6 +49,8 @@ pub struct Diagnostics {
 #[derive(Clone, Debug, PartialEq)]
 pub struct View {
     pub snapshot: Snapshot,
+    /// User pause intent, independent of session gating or audio availability.
+    pub paused: bool,
     pub busy: bool,
     pub last_error: Option<String>,
     pub finished: bool,
@@ -125,6 +127,7 @@ impl Host {
                     sound_pack: config.sound_pack,
                     volume: config.volume,
                 },
+                paused: options.paused,
                 busy: true,
                 last_error: None,
                 finished: false,
@@ -974,6 +977,7 @@ impl State {
         self.dirty = false;
         let view = View {
             snapshot: self.snapshot(),
+            paused: self.paused,
             busy: self.active.is_some() || self.packs.as_ref().is_some_and(Worker::is_busy),
             last_error: self
                 .failure
