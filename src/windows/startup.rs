@@ -20,8 +20,12 @@ use ::windows::Win32::System::Com::{
     CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED,
 };
 use ::windows::Win32::UI::Shell::{
-    FOLDERID_Startup, IShellLinkW, SHCreateMemStream, ShellLink, KF_FLAG_DONT_VERIFY, SLGP_RAWPATH,
+    FOLDERID_Startup, IShellLinkDataList, IShellLinkW, SHCreateMemStream, ShellLink,
+    KF_FLAG_DONT_VERIFY, SLDF_ALLOW_LINK_TO_LINK, SLDF_HAS_DARWINID, SLDF_HAS_EXP_ICON_SZ,
+    SLDF_HAS_EXP_SZ, SLDF_PREFER_ENVIRONMENT_PATH, SLDF_RUNAS_USER, SLDF_RUN_IN_SEPARATE,
+    SLDF_RUN_WITH_SHIMLAYER, SLGP_RAWPATH,
 };
+use ::windows::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
 use anyhow::{bail, Context, Result};
 
 use super::{bundle, files, Paths};
@@ -123,27 +127,45 @@ impl Startup {
         let mut description = [0u16; 512];
         let mut arguments = vec![0u16; 32768];
         let mut target = vec![0u16; 32768];
+        let mut directory = vec![0u16; 32768];
+        let mut icon = vec![0u16; 32768];
+        let mut icon_index = 0;
+        let data: IShellLinkDataList = link.cast()?;
+        let flags = unsafe { data.GetFlags()? };
+        let custom_flags = SLDF_RUNAS_USER.0
+            | SLDF_RUN_IN_SEPARATE.0
+            | SLDF_RUN_WITH_SHIMLAYER.0
+            | SLDF_HAS_DARWINID.0
+            | SLDF_HAS_EXP_SZ.0
+            | SLDF_HAS_EXP_ICON_SZ.0
+            | SLDF_ALLOW_LINK_TO_LINK.0
+            | SLDF_PREFER_ENVIRONMENT_PATH.0;
         unsafe {
             link.GetDescription(&mut description)?;
             link.GetArguments(&mut arguments)?;
             link.GetPath(&mut target, std::ptr::null_mut(), SLGP_RAWPATH.0 as u32)?;
+            link.GetWorkingDirectory(&mut directory)?;
+            link.GetIconLocation(&mut icon, &mut icon_index)?;
         }
         if units(&description)? != DESCRIPTION.encode_utf16().collect::<Vec<_>>()
             || !units(&arguments)?.is_empty()
+            || !units(&icon)?.is_empty()
+            || icon_index != 0
+            || unsafe { link.GetHotkey()? } != 0
+            || unsafe { link.GetShowCmd()? } != SW_SHOWNORMAL
+            || flags & custom_flags as u32 != 0
         {
             return Ok(false);
         }
+        let directory = PathBuf::from(OsString::from_wide(units(&directory)?));
         let target = PathBuf::from(OsString::from_wide(units(&target)?));
-        Ok(target.is_absolute()
-            && target
-                .file_name()
-                .and_then(|name| name.to_str())
-                .is_some_and(|name| name.eq_ignore_ascii_case(bundle::DESKTOP_EXE))
-            && target
-                .parent()
-                .context("startup target has no parent")?
-                .canonicalize()?
-                == self.paths.bundle_dir())
+        // Match the locations we wrote, without following a modified working
+        // directory/target onto a junction or unavailable network share.
+        Ok(
+            shell_path(&directory) == shell_path(self.paths.bundle_dir())
+                && shell_path(&target)
+                    == shell_path(&self.paths.bundle_dir().join(bundle::DESKTOP_EXE)),
+        )
     }
     fn create(&self) -> Result<Status> {
         let target = bundle::desktop_path(&self.paths)?;
@@ -158,6 +180,9 @@ impl Startup {
             link.SetPath(PCWSTR(target.as_ptr()))?;
             link.SetWorkingDirectory(PCWSTR(directory.as_ptr()))?;
             link.SetArguments(w!(""))?;
+            link.SetHotkey(0)?;
+            link.SetShowCmd(SW_SHOWNORMAL)?;
+            link.SetIconLocation(w!(""), 0)?;
             link.SetDescription(PCWSTR(
                 DESCRIPTION
                     .encode_utf16()
