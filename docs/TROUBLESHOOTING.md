@@ -38,6 +38,15 @@ Close Klicky in other signed-in sessions and retry. Do not force-replace a runni
 
 </details>
 
+<details>
+<summary><strong>Windows Security blocks Klicky</strong></summary>
+
+Stop setup if Windows Security reports a threat. Keep protection enabled; do not add an exclusion or restore a quarantined file just to finish installation. An unsigned-app reputation warning and an antivirus threat detection require different investigations.
+
+Note the Klicky build and detection name, and contact the maintainer through the [security reporting guide](../SECURITY.md). Keep full protection-history logs private. A suspected incorrect detection can be submitted to [Microsoft for analysis](https://www.microsoft.com/en-us/wdsi/filesubmission); it needs confirmation before being treated as a false positive.
+
+</details>
+
 ## macOS
 
 <details>

@@ -11,6 +11,7 @@ The project follows [Semantic Versioning](https://semver.org/).
 - Windows 11 x64 development preview with passive Raw Input, native tray controls, protected local IPC, opt-in login startup and supervised audio recovery
 - Unsigned Windows portable and per-user installer test artifacts with build identity, bundled notices and guarded update/removal
 - Read-only Windows diagnostics for aggregate input and playback counters
+- Native macOS installation, menu helper and removal checks on Intel and Apple Silicon CI runners
 
 ### Changed
 
@@ -19,6 +20,12 @@ The project follows [Semantic Versioning](https://semver.org/).
 - Added one-command installation entry points with default macOS/Omarchy desktop controls and automatic startup
 - Added one-command uninstallers that remove installed desktop controls and optionally purge personal data
 - Refreshed the product website and social image, with playable previews of all ten bundled packs
+
+### Fixed
+
+- Recognize macOS launchd's unloaded-service response so first startup and removal can proceed
+- Preserve existing macOS sound files without treating skipped copies as failed upgrades
+- Mark the Unix download installers and uninstaller executable for use from a checkout
 
 ## 0.4.0 - 2026-10-11
 
