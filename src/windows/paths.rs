@@ -54,6 +54,10 @@ impl Paths {
             .join(format!("session-{}", self.session))
     }
 
+    pub fn session_id(&self) -> u32 {
+        self.session
+    }
+
     pub fn sound_roots(&self) -> Result<Vec<PathBuf>> {
         let bundled = match std::env::var_os("KLICKY_SYSTEM_SOUNDS_DIR") {
             Some(path) => {
@@ -132,6 +136,14 @@ impl Paths {
 
     pub(super) fn ensure_data_dir(&self) -> Result<()> {
         files::ensure_directory(&self.data)
+    }
+
+    pub(super) fn ensure_runtime_dir(&self) -> Result<PathBuf> {
+        self.ensure_data_dir()?;
+        files::ensure_directory(&self.data.join("run"))?;
+        let directory = self.runtime_dir();
+        files::ensure_directory(&directory)?;
+        Ok(directory)
     }
 
     pub(super) fn writer_lock(&self) -> PathBuf {

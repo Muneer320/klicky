@@ -43,29 +43,36 @@ pub(super) fn sharing_violation(error: &io::Error) -> bool {
     matches!(error.raw_os_error(), Some(32 | 33))
 }
 
+/// One attempt, with no wait for an existing holder. Filesystem I/O is synchronous.
+pub(super) fn try_lock(path: &Path) -> Result<Option<File>> {
+    match OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .share_mode(0)
+        .custom_flags(FILE_FLAG_OPEN_REPARSE_POINT.0)
+        .open(path)
+    {
+        Ok(file) => {
+            check_metadata(&file.metadata()?, path, false)?;
+            Ok(Some(file))
+        }
+        Err(error) if sharing_violation(&error) => Ok(None),
+        Err(error) => Err(error).with_context(|| format!("acquire lock {}", path.display())),
+    }
+}
+
 /// Persistent file, exclusive handle: closing/crashing releases ownership.
 /// Never unlink a lock file to bypass another holder.
 pub(super) fn lock(path: &Path, deadline: Instant) -> Result<File> {
     loop {
-        match OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .truncate(false)
-            .share_mode(0)
-            .custom_flags(FILE_FLAG_OPEN_REPARSE_POINT.0)
-            .open(path)
-        {
-            Ok(file) => {
-                check_metadata(&file.metadata()?, path, false)?;
-                return Ok(file);
-            }
-            Err(error) if sharing_violation(&error) && Instant::now() < deadline => {
-                thread::sleep(RETRY_INTERVAL);
-            }
-            Err(error) => {
-                return Err(error).with_context(|| format!("acquire lock {}", path.display()));
-            }
+        if let Some(file) = try_lock(path)? {
+            return Ok(file);
         }
+        if Instant::now() >= deadline {
+            bail!("timed out waiting for lock {}", path.display());
+        }
+        thread::sleep(RETRY_INTERVAL);
     }
 }
