@@ -110,4 +110,8 @@ Input is passive Raw Input. Klicky does not suppress keys or synthesize typing. 
 
 ## Qualification limits
 
+For intermittent missing sounds, run `klicky.exe diagnostics` from a preview that supports it. It reads the running app's aggregate input and playback counters as JSON, without pausing, restarting, recording keys or accessing the microphone. Older installed previews do not support this command and must be updated together with the CLI.
+
+Compare reports from the same process ID and creation time before and after the problem. Input `stale` and `overflow` count rejected input; `engine_stale` counts presses rejected after input delivery; `obsolete_epoch` counts presses invalidated by state changes; `voice_drops` counts rejected playback at the voice limit. Repeats are intentionally suppressed. Counters are approximate concurrent snapshots, not physical-to-audible measurements. `input: null` means the input backend is not present. Keep reports local unless you choose to share them in a bug report.
+
 These development binaries are not a Windows release. Physical-input-to-audible measurements, matched Linux baseline comparisons, long-running resource tests, additional Windows hardware and installation/upgrade validation remain release gates. Listening results on one speaker route do not qualify all outputs. Unsigned test artifacts can show Windows reputation warnings; no signing or automatic publication is configured by these entrypoints.

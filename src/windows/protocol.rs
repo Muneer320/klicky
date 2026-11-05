@@ -27,6 +27,7 @@ pub enum Command {
         level: f32,
     },
     Status {},
+    Diagnostics {},
     Pause {
         paused: bool,
     },
@@ -112,6 +113,29 @@ pub struct Snapshot {
     pub volume: f32,
 }
 
+/// Aggregate counters only; no key identities, text or per-event timestamps.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InputDiagnostics {
+    pub sent: u64,
+    pub repeats: u64,
+    pub stale: u64,
+    pub overflow: u64,
+    pub overruns: u64,
+    pub device_changes: u64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DiagnosticCounters {
+    /// None when the input backend is not present, including late shutdown.
+    pub input: Option<InputDiagnostics>,
+    pub dispatched: u64,
+    pub engine_stale: u64,
+    pub obsolete_epoch: u64,
+    pub voice_drops: u64,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct UpdateState {
@@ -136,9 +160,20 @@ pub enum ErrorCode {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Outcome {
-    Success { snapshot: Snapshot },
-    UpdatePrepared { state: UpdateState },
-    Failure { code: ErrorCode, message: String },
+    Success {
+        snapshot: Snapshot,
+    },
+    Diagnostics {
+        snapshot: Snapshot,
+        counters: DiagnosticCounters,
+    },
+    UpdatePrepared {
+        state: UpdateState,
+    },
+    Failure {
+        code: ErrorCode,
+        message: String,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -183,10 +218,16 @@ impl Response {
             (
                 Command::PrepareUpdate {},
                 Outcome::UpdatePrepared { .. } | Outcome::Failure { .. },
-            ) => {}
+            )
+            | (Command::Diagnostics {}, Outcome::Diagnostics { .. } | Outcome::Failure { .. }) => {}
             (Command::PrepareUpdate {}, _) | (_, Outcome::UpdatePrepared { .. }) => {
                 return Err(ProtocolError::InvalidPayload(
                     "unexpected update preparation response",
+                ));
+            }
+            (Command::Diagnostics {}, _) | (_, Outcome::Diagnostics { .. }) => {
+                return Err(ProtocolError::InvalidPayload(
+                    "unexpected diagnostics response",
                 ));
             }
             _ => {}
@@ -199,7 +240,7 @@ impl Response {
         self.instance.validate()?;
         match &self.outcome {
             Outcome::UpdatePrepared { .. } => Ok(()),
-            Outcome::Success { snapshot } => {
+            Outcome::Success { snapshot } | Outcome::Diagnostics { snapshot, .. } => {
                 validate_pack(&snapshot.sound_pack)?;
                 validate_volume(snapshot.volume)
             }

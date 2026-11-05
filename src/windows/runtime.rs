@@ -17,7 +17,9 @@ use super::audio::{self, Output, Supervisor};
 use super::control::{PendingCommand, Server};
 use super::input::{self, Input, Press};
 use super::pipe::PipePool;
-use super::protocol::{Command, EngineState, ErrorCode, Outcome, Snapshot};
+use super::protocol::{
+    Command, DiagnosticCounters, EngineState, ErrorCode, InputDiagnostics, Outcome, Snapshot,
+};
 use super::transactions::{Change, Phase, Ticket, Worker};
 use super::{InstanceOwner, Paths};
 use crate::{Config, SoundPack};
@@ -700,6 +702,33 @@ impl State {
             pending.respond(self.success());
             return;
         }
+        if matches!(command, Command::Diagnostics {}) {
+            let input = self.input.as_ref().map(|input| {
+                let counters = input.counters();
+                InputDiagnostics {
+                    sent: counters.sent.load(Ordering::Relaxed),
+                    repeats: counters.repeats.load(Ordering::Relaxed),
+                    stale: counters.stale.load(Ordering::Relaxed),
+                    overflow: counters.overflow.load(Ordering::Relaxed),
+                    overruns: counters.overruns.load(Ordering::Relaxed),
+                    device_changes: counters.device_changes.load(Ordering::Relaxed),
+                }
+            });
+            pending.respond(Outcome::Diagnostics {
+                snapshot: self.snapshot(),
+                counters: DiagnosticCounters {
+                    input,
+                    dispatched: self.diagnostics.dispatched,
+                    engine_stale: self.diagnostics.stale,
+                    obsolete_epoch: self.diagnostics.obsolete_epoch,
+                    voice_drops: self
+                        .diagnostics
+                        .voice_drops
+                        .saturating_add(self.output.as_ref().map_or(0, Output::voice_drops)),
+                },
+            });
+            return;
+        }
         if self.stopping.is_some() {
             pending.respond(failure(ErrorCode::Unavailable, "Klicky is stopping"));
             return;
@@ -733,7 +762,10 @@ impl State {
                     }
                 }
             }
-            Command::Stop {} | Command::PrepareUpdate {} | Command::Status {} => {
+            Command::Stop {}
+            | Command::PrepareUpdate {}
+            | Command::Status {}
+            | Command::Diagnostics {} => {
                 unreachable!("handled above")
             }
         }
