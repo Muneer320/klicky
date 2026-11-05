@@ -41,6 +41,7 @@ sequenceDiagram
 | `src/player.rs` | Persistent Rodio mixer, low-latency output configuration, overlapping playback |
 | `src/windows/runtime.rs` | Bounded Windows coordinator, transactional activation and confirmed component shutdown |
 | `src/windows/desktop.rs` | Native notification-area frontend, asynchronous controls and message loop |
+| `src/windows/desktop/startup_worker.rs` | Owned asynchronous shortcut work and native exit confirmation before frontend teardown |
 | `src/windows/session.rs` | Initial unlocked-session verification and lock, disconnect, power and logoff gating |
 | `src/windows/cli.rs` | Windows CLI using verified control transport and ownership-guarded offline configuration |
 | `src/windows/bundle.rs` | Cross-session bundle reader lease retained through process exit |

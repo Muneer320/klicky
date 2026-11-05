@@ -16,7 +16,7 @@ Select your intended output in Windows before starting. After the tray tooltip s
 
 The console-free entrypoint is `klicky-desktop.exe`. Both entrypoints run the same engine and enforce one owner per logon session. Use `--paused` to open the tray without key sounds. `--benchmark` prints aggregate callback-entry-to-mixer timings at exit; it does not measure audible latency or record key names. Neither entrypoint accesses the microphone or reconstructs typed text.
 
-The tray menu offers sound packs, volume in 10% steps, Pause, Resume, Retry audio, Refresh sound packs and Quit. The CLI also accepts exact volume values:
+The tray menu offers sound packs, volume in 10% steps, Pause, Resume, Retry audio, Refresh sound packs and Quit. Its **Start with Windows** submenu adds or removes login startup, refreshes registration status and opens Windows Startup settings. Registration does not override Windows approval. Startup work runs separately from playback and pack discovery; Quit waits for in-flight startup work before releasing the bundle. The CLI also accepts exact volume values:
 
 ```powershell
 .\target\release\klicky.exe status
