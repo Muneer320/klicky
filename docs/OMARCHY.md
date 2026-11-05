@@ -97,6 +97,8 @@ journalctl --user --since "5 minutes ago" | grep -E "klicky.qml|QQml|Loader"
 
 ## Remove the toggle
 
+The [one-command uninstaller](INSTALLATION.md#uninstall) removes the app and toggle together. To keep the app and remove only its bar control:
+
 Remove the `klicky` entry from `bar.layout.center` in:
 
 ```text

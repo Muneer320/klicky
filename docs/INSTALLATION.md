@@ -4,7 +4,13 @@
 
 ## Windows
 
-**Windows 11 x64.** Download the installer from [Releases](https://github.com/Muneer320/klicky/releases). Before a public Windows preview is attached there, use the latest [Windows build artifact](https://github.com/Muneer320/klicky/actions/workflows/windows-portable.yml), extract its ZIP, and open the file ending in `-setup.exe`.
+**Windows 11 x64.** Run in PowerShell:
+
+```powershell
+irm https://klicky.muneer320.tech/install.ps1 | iex
+```
+
+The helper downloads and verifies the published installer, opens setup and starts the installed app. For a file download instead, use the [Windows installer](https://github.com/Muneer320/klicky/releases/download/windows-preview-2026-11-06/klicky-0.4.0-windows-x64-preview-7640d242bbc1-setup.exe).
 
 Follow the wizard, choose your login-startup preference, then open Klicky from Start. Choose **Resume** from the tray menu to hear sounds. Rust, Visual Studio and separate sound downloads are not needed. Windows downloads currently use unsigned preview builds.
 
@@ -22,7 +28,7 @@ Extract the entire Klicky ZIP into a folder you intend to keep. Open `klicky-des
 irm https://klicky.muneer320.tech/install.ps1 | iex
 ```
 
-This selects a published Windows installer from the project's GitHub releases, verifies its SHA-256 file and opens the wizard. If none has been published, it stops with the current download guide. It does not download an arbitrary CI build or change Windows security settings. When setup finishes, the helper starts the installed app automatically; no second command is needed. A paused launch selected in the wizard is respected.
+This selects a published Windows installer from the project's GitHub releases, verifies its SHA-256 file and opens the wizard. It uses published assets and does not change Windows security settings. When setup finishes, the helper starts the installed app automatically; no second command is needed. A paused launch selected in the wizard is respected.
 
 Prefer to read it first? [Download the script](https://klicky.muneer320.tech/install.ps1), inspect it and run it in PowerShell.
 
@@ -173,6 +179,57 @@ systemctl --user enable --now klicky.service
 ```
 
 Without systemd/udev, provide keyboard-device access and use your session's startup mechanism to run `~/.local/bin/klicky start`. `KLICKY_SKIP_UDEV=1` skips rule installation in the source installer when access is already managed elsewhere. `KLICKY_SYSTEM_SOUNDS_DIR` supplies an additional pack root.
+
+</details>
+
+## Uninstall
+
+Choose your system. The removal command stops Klicky, disables its login startup and removes the app plus its installed menu/tray/bar controls. **Settings and custom sound packs are kept by default.**
+
+<details>
+<summary><strong>Linux or macOS</strong></summary>
+
+```bash
+curl -fsSL https://klicky.muneer320.tech/uninstall.sh | bash
+```
+
+To also delete Klicky's settings and custom sounds:
+
+```bash
+curl -fsSL https://klicky.muneer320.tech/uninstall.sh | bash -s -- --purge
+```
+
+Linux removal handles the APT/Arch package or source binary, user service, Klicky's device rule and APT source/key. On Omarchy it removes only the Klicky bar entry/module, keeping the rest of your bar configuration. Other signed-in users must stop their packaged copies before package removal.
+
+macOS removal unloads the daemon and menu helper, removes their LaunchAgents and binaries, and removes the installed menu images. Apple Accessibility permission can be removed in System Settings afterward. General-purpose Rust and Apple build tools stay installed.
+
+</details>
+
+<details>
+<summary><strong>Windows installer setup</strong></summary>
+
+```powershell
+irm https://klicky.muneer320.tech/uninstall.ps1 | iex
+```
+
+This opens the registered Klicky uninstaller, which stops the app and removes its installed tray app, Start shortcut and owned login shortcut. Complete the wizard; no second command is needed.
+
+To also remove settings, custom sounds and Klicky installer data:
+
+```powershell
+& ([scriptblock]::Create((irm https://klicky.muneer320.tech/uninstall.ps1))) -Purge
+```
+
+Use `-WhatIf` in place of `-Purge` to preview without changing anything. If removal is cancelled or fails, personal data is kept. Close remaining portable copies before purging; linked/junction data folders are reported for inspection rather than followed.
+
+Windows **Settings → Apps → Installed apps → Klicky → Uninstall** remains available as well.
+
+</details>
+
+<details>
+<summary><strong>Windows portable copy</strong></summary>
+
+In the portable app's tray menu, turn off its login startup and choose Quit, then delete the extracted bundle. Keep unrelated files in the parent folder. The installer-removal helper does not search your drives or delete development/portable folders it cannot identify safely. After closing all copies, its `-Purge` command above can remove the shared Klicky settings too.
 
 </details>
 

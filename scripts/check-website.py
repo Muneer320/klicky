@@ -29,7 +29,8 @@ class Preview(BaseHTTPRequestHandler):
         content_type = "text/html; charset=utf-8"
         if path != "/klicky/":
             asset = None
-            if path in ("/klicky/install.sh", "/klicky/install.ps1"):
+            if path in ("/klicky/install.sh", "/klicky/install.ps1",
+                        "/klicky/uninstall.sh", "/klicky/uninstall.ps1"):
                 asset = ROOT / "scripts" / path.rsplit("/", 1)[1]
             elif path == "/klicky/assets/social-preview.png":
                 asset = ROOT / "assets/branding/social-preview.png"

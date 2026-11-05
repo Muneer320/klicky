@@ -4,7 +4,13 @@ Use Klicky on a **Windows 11 x64 desktop**. Its tray menu changes sounds and vol
 
 ## Install and start
 
-Download a Windows installer from [Releases](https://github.com/Muneer320/klicky/releases). If no public preview is attached yet, use the latest [Windows build artifact](https://github.com/Muneer320/klicky/actions/workflows/windows-portable.yml), extract the artifact ZIP and run `*-setup.exe`.
+Run in PowerShell:
+
+```powershell
+irm https://klicky.muneer320.tech/install.ps1 | iex
+```
+
+Or download the [published Windows installer](https://github.com/Muneer320/klicky/releases/download/windows-preview-2026-11-06/klicky-0.4.0-windows-x64-preview-7640d242bbc1-setup.exe). The helper verifies the download, opens the wizard and starts Klicky when it finishes.
 
 The wizard installs the app and all ten packs for your user. It needs no elevation, Rust or Visual Studio. Open Klicky from Start, then choose **Resume** from the tray. Login startup is optional. [Other installation methods](https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#windows)
 

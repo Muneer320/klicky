@@ -137,7 +137,7 @@ def copy_site_assets(output: Path) -> None:
     shutil.copytree(root / "assets/website", output / "assets")
     shutil.copy2(root / "assets/branding/social-preview.png",
                  output / "assets/social-preview.png")
-    for name in ("install.sh", "install.ps1"):
+    for name in ("install.sh", "install.ps1", "uninstall.sh", "uninstall.ps1"):
         shutil.copy2(root / "scripts" / name, output / name)
 
 

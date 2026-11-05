@@ -18,11 +18,15 @@ Choose your operating system below. The app runs locally, without an account or 
 <details>
 <summary><strong>Windows 11 · x64</strong></summary>
 
-1. Download the **Windows installer** from [Releases](https://github.com/Muneer320/klicky/releases). Until a public preview is attached there, get the latest **klicky-windows-x64-unsigned-preview** from [Windows build artifacts](https://github.com/Muneer320/klicky/actions/workflows/windows-portable.yml) and extract the downloaded ZIP.
-2. Run the file ending in **`-setup.exe`**. Choose whether Klicky should start when you sign in.
-3. Open Klicky from Start and choose **Resume** from its tray menu. The same menu changes sounds and volume.
+Run in PowerShell:
 
-The installer includes the app and all sound packs. **You do not need Rust or Visual Studio.** Windows downloads currently use unsigned preview builds. A portable ZIP is available too; extract the entire bundle and open `klicky-desktop.exe`.
+```powershell
+irm https://klicky.muneer320.tech/install.ps1 | iex
+```
+
+The helper downloads the published installer, verifies its SHA-256 file and opens setup. Choose your login-startup preference; it starts Klicky when setup finishes. Use the tray menu for sounds, volume and Pause/Resume.
+
+**No Rust or Visual Studio needed.** Windows downloads are currently unsigned previews. Prefer a file? [Download the installer](https://github.com/Muneer320/klicky/releases/download/windows-preview-2026-11-06/klicky-0.4.0-windows-x64-preview-7640d242bbc1-setup.exe), or use the portable ZIP from the [Windows preview](https://github.com/Muneer320/klicky/releases/tag/windows-preview-2026-11-06). Extract the complete portable bundle and open `klicky-desktop.exe`.
 
 [Windows guide](docs/WINDOWS.md) · [Installation options](docs/INSTALLATION.md#windows)
 
@@ -172,7 +176,21 @@ Yes. Use Pause in the Windows tray, the macOS menu toggle, or `klicky service st
 <details>
 <summary><strong>How do I update or uninstall?</strong></summary>
 
-Update through the package manager you used, rerun the source installer, or run a newer Windows installer. On Windows, remove Klicky from **Settings → Apps → Installed apps**. Configuration and custom sounds are kept. [All update and removal steps](docs/INSTALLATION.md#updates-and-removal)
+Update through your package manager, rerun the source installer, or run a newer Windows installer. [Update instructions](docs/INSTALLATION.md#updates-and-removal)
+
+For a one-command uninstall on **Linux/macOS**:
+
+```bash
+curl -fsSL https://klicky.muneer320.tech/uninstall.sh | bash
+```
+
+For an installer setup on **Windows**, run in PowerShell:
+
+```powershell
+irm https://klicky.muneer320.tech/uninstall.ps1 | iex
+```
+
+These stop Klicky and remove its installed desktop controls too. Settings and custom sounds are kept. [Add `--purge` / `-Purge` to remove personal data, or remove a portable copy](docs/INSTALLATION.md#uninstall).
 
 </details>
 

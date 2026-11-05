@@ -17,6 +17,7 @@ The project follows [Semantic Versioning](https://semver.org/).
 - Extracted shared library boundaries while preserving the Linux/macOS engine and platform backends
 - Simplified the README and added expandable installation, FAQ and troubleshooting guides
 - Added one-command installation entry points with default macOS/Omarchy desktop controls and automatic startup
+- Added one-command uninstallers that remove installed desktop controls and optionally purge personal data
 - Refreshed the product website and social image, with playable previews of all ten bundled packs
 
 ## 0.4.0 - 2026-10-11

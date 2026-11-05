@@ -9,7 +9,7 @@
     if ($build -lt 22000) { throw 'Windows 11 or newer is required.' }
 
     $headers = @{ Accept = 'application/vnd.github+json'; 'X-GitHub-Api-Version' = '2022-11-28' }
-    $releases = @(Invoke-RestMethod -Uri 'https://api.github.com/repos/Muneer320/klicky/releases?per_page=30' -Headers $headers)
+    $releases = Invoke-RestMethod -Uri 'https://api.github.com/repos/Muneer320/klicky/releases?per_page=30' -Headers $headers -TimeoutSec 30
     $installer = $null
     $checksum = $null
     foreach ($release in $releases) {
@@ -42,8 +42,8 @@
     $sidecar = Join-Path $working $checksum.name
     try {
         Write-Output 'Downloading Klicky from its GitHub release.'
-        Invoke-WebRequest -UseBasicParsing -Uri $installer.browser_download_url -OutFile $setup
-        Invoke-WebRequest -UseBasicParsing -Uri $checksum.browser_download_url -OutFile $sidecar
+        Invoke-WebRequest -UseBasicParsing -Uri $installer.browser_download_url -OutFile $setup -TimeoutSec 180
+        Invoke-WebRequest -UseBasicParsing -Uri $checksum.browser_download_url -OutFile $sidecar -TimeoutSec 30
         $expected = (Get-Content -LiteralPath $sidecar -Raw).Trim()
         $pattern = '^([0-9a-fA-F]{64})  ' + [regex]::Escape($installer.name) + '$'
         if ($expected -cnotmatch $pattern) { throw 'The release checksum file is invalid.' }

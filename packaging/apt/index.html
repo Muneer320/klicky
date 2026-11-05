@@ -1241,14 +1241,9 @@
                 </p>
                 <pre><code>irm https://klicky.muneer320.tech/install.ps1 | iex</code></pre>
                 <p class="small">
-                  The command becomes available when the public Windows preview
-                  is published. Until then, the
-                  <a
-                    href="https://github.com/Muneer320/klicky/blob/master/docs/WINDOWS.md"
-                    >Windows guide</a
-                  >
-                  links to the current build artifacts. GitHub artifact
-                  downloads require signing in.
+                  The Windows preview is unsigned. The helper downloads the
+                  published installer and verifies its checksum before opening
+                  setup. No account or GitHub sign-in is needed to download it.
                 </p>
                 <p>
                   Choose your login-startup preference in setup. Open Klicky
@@ -1260,7 +1255,7 @@
                 <a
                   href="https://github.com/Muneer320/klicky/releases"
                   class="button"
-                  >Published downloads ↗</a
+                  >Download installer ↗</a
                 ><a
                   href="https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#windows"
                   >Portable and manual options</a
@@ -1458,10 +1453,20 @@
             <p>
               Run a newer Windows installer, use your Linux package manager, or
               rerun the source installer. Stop the Linux service before
-              replacing its package. Your settings and custom packs are kept.
+              replacing its package.
+            </p>
+            <p>To remove Klicky and its installed controls on Linux/macOS:</p>
+            <pre><code>curl -fsSL https://klicky.muneer320.tech/uninstall.sh | bash</code></pre>
+            <p>
+              For a Windows installer setup, run in PowerShell and finish the
+              wizard:
+            </p>
+            <pre><code>irm https://klicky.muneer320.tech/uninstall.ps1 | iex</code></pre>
+            <p>
+              Personal settings and custom sounds are kept.
               <a
-                href="https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#updates-and-removal"
-                >Update and removal commands</a
+                href="https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#uninstall"
+                >Purge flags, portable removal and update instructions</a
               >.
             </p>
           </details>
