@@ -38,7 +38,7 @@ MinVersion=10.0.22000
 SetupIconFile=klicky.ico
 UninstallDisplayIcon={app}\klicky-desktop.exe
 UninstallDisplayName=Klicky Windows development preview
-UninstallLogMode=overwrite
+UninstallLogMode=append
 CloseApplications=no
 RestartApplications=no
 RestartIfNeededByRun=no
@@ -64,7 +64,7 @@ Name: startup; Description: "Start Klicky when I sign in (Windows may independen
 Source: "{#PayloadDirectory}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{userprograms}\Klicky"; Filename: "{app}\klicky-desktop.exe"; Parameters: "--paused"; WorkingDir: "{app}"
+Name: "{userprograms}\Klicky"; Filename: "{app}\klicky-desktop.exe"; Parameters: "--paused"; WorkingDir: "{app}"; Check: CreateStartShortcut
 
 [Run]
 Filename: "{app}\klicky-desktop.exe"; Parameters: "--paused"; Description: "Open Klicky paused"; Flags: postinstall nowait skipifsilent unchecked; Check: OfferLaunch
@@ -79,12 +79,26 @@ const
   ReparsePoint = $400;
   DirectoryAttribute = $10;
   InvalidAttributes = $FFFFFFFF;
+  UninstallKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#KlickyAppId}_is1';
+type
+  TNativeFindData = record
+    Attributes: LongWord;
+    CreationTime, LastAccessTime, LastWriteTime: TFileTime;
+    SizeHigh, SizeLow, Reserved0, Reserved1: LongWord;
+    Name: array[0..259] of Word;
+    AlternateName: array[0..13] of Word;
+  end;
 var
   BundleHandle: THandle;
   Prepared, Committed, WasRunning, WasPaused, HadInstall, RemovalStarted, PostInstallWarning: Boolean;
   BackupDirectory: String;
   BackupFiles, BackupHashes: TStringList;
   BackupBytes: Int64;
+  SnapshotEntries: Integer;
+  HadUninstallKey: Boolean;
+  UninstallKeyHash: String;
+  HadStartShortcut: Boolean;
+  StartShortcutHash: String;
 
 function CreateFileW(Name: String; Access, Share: LongWord; Security: NativeUInt;
   Disposition, Flags: LongWord; Template: THandle): THandle;
@@ -97,6 +111,74 @@ function GetFileSize(Handle: THandle; var High: LongWord): LongWord;
   external 'GetFileSize@kernel32.dll stdcall';
 function CreateDirectoryW(Name: String; Security: NativeUInt): Boolean;
   external 'CreateDirectoryW@kernel32.dll stdcall';
+function NativeFindFirst(Name: String; var Data: TNativeFindData): THandle;
+  external 'FindFirstFileW@kernel32.dll stdcall';
+function NativeFindNext(Handle: THandle; var Data: TNativeFindData): Boolean;
+  external 'FindNextFileW@kernel32.dll stdcall';
+
+function AttributesIfPresent(const Path: String): LongWord;
+var
+  Error: Integer;
+begin
+  Result := GetFileAttributesW(Path);
+  if Result = InvalidAttributes then begin
+    Error := DLLGetLastError;
+    if (Error <> 2) and (Error <> 3) then
+      RaiseException('Cannot inspect the managed path: ' + SysErrorMessage(Error));
+  end;
+end;
+
+procedure CopyFindData(const Data: TNativeFindData; var Found: TFindRec);
+var
+  I: Integer;
+begin
+  Found.Name := '';
+  for I := 0 to 259 do begin
+    if Data.Name[I] = 0 then Break;
+    Found.Name := Found.Name + Chr(Data.Name[I]);
+  end;
+  Found.Attributes := Data.Attributes;
+  Found.SizeHigh := Data.SizeHigh;
+  Found.SizeLow := Data.SizeLow;
+end;
+
+function FindFirstChecked(const Pattern: String; var Found: TFindRec): Boolean;
+var
+  Data: TNativeFindData;
+  Error: Integer;
+begin
+  Found.FindHandle := NativeFindFirst(Pattern, Data);
+  if Found.FindHandle = THandle(-1) then begin
+    Error := DLLGetLastError;
+    Found.FindHandle := 0;
+    if (Error <> 2) and (Error <> 18) then
+      RaiseException('Cannot enumerate the managed folder: ' + SysErrorMessage(Error));
+    Result := False;
+  end else begin
+    CopyFindData(Data, Found);
+    Result := True;
+  end;
+end;
+
+function FindNextChecked(var Found: TFindRec): Boolean;
+var
+  Data: TNativeFindData;
+  Error: Integer;
+begin
+  Result := NativeFindNext(Found.FindHandle, Data);
+  if Result then CopyFindData(Data, Found)
+  else begin
+    Error := DLLGetLastError;
+    if Error <> 18 then RaiseException('The managed folder scan failed: ' + SysErrorMessage(Error));
+  end;
+end;
+
+function CreateStartShortcut: Boolean;
+begin
+  { Existing entries need no rewrite: the target path is stable across upgrades.
+    Skipping them also keeps Inno rollback from deleting a prior shortcut. }
+  Result := AttributesIfPresent(ExpandConstant('{userprograms}\Klicky.lnk')) = InvalidAttributes;
+end;
 
 function FreshInstall: Boolean;
 begin
@@ -107,7 +189,7 @@ procedure CheckPath(const Path: String; Directory: Boolean);
 var
   Attributes: LongWord;
 begin
-  Attributes := GetFileAttributesW(Path);
+  Attributes := AttributesIfPresent(Path);
   if (Attributes = InvalidAttributes) or ((Attributes and ReparsePoint) <> 0) or
      (((Attributes and DirectoryAttribute) <> 0) <> Directory) then
     RaiseException('Klicky requires an ordinary local path: ' + Path);
@@ -116,7 +198,7 @@ end;
 procedure CheckParents(Path: String);
 begin
   while Length(Path) > 3 do begin
-    if GetFileAttributesW(Path) <> InvalidAttributes then CheckPath(Path, True);
+    if AttributesIfPresent(Path) <> InvalidAttributes then CheckPath(Path, True);
     Path := ExtractFileDir(Path);
   end;
 end;
@@ -224,9 +306,11 @@ begin
   if Depth > 12 then RaiseException('Too many nested folders in the installed bundle.');
   Source := AddBackslash(ExpandConstant('{app}')) + Relative;
   CheckPath(RemoveBackslashUnlessRoot(Source), True);
-  if FindFirst(AddBackslash(Source) + '*', Found) then try
+  if FindFirstChecked(AddBackslash(Source) + '*', Found) then try
     repeat
       if (Found.Name <> '.') and (Found.Name <> '..') then begin
+        SnapshotEntries := SnapshotEntries + 1;
+        if SnapshotEntries > 8192 then RaiseException('The managed bundle exceeds the directory-entry backup limit.');
         Name := AddBackslash(Relative) + Found.Name;
         if Relative = '' then Name := Found.Name;
         if (Found.Attributes and ReparsePoint) <> 0 then
@@ -248,10 +332,91 @@ begin
           BackupHashes.Add(Hash);
         end;
       end;
-    until not FindNext(Found);
+    until not FindNextChecked(Found);
   finally
     FindClose(Found);
   end;
+end;
+
+function RunRegistry(const Arguments: String): Boolean;
+var
+  Code: Integer;
+begin
+  Result := Exec(ExpandConstant('{sys}\reg.exe'), Arguments, '', SW_HIDE,
+    ewWaitUntilTerminated, Code) and (Code = 0);
+end;
+
+procedure BackupUninstallKey;
+var
+  Path: String;
+begin
+  HadUninstallKey := RegKeyExists(HKCU64, UninstallKey);
+  if not HadUninstallKey then Exit;
+  Path := AddBackslash(BackupDirectory) + 'uninstall.reg';
+  if not RunRegistry('export "HKCU\' + UninstallKey + '" "' + Path + '" /y /reg:64') then
+    RaiseException('Cannot back up the previous Installed Apps registration.');
+  UninstallKeyHash := GetSHA256OfFile(Path);
+end;
+
+function RestoreUninstallKey: Boolean;
+var
+  Path, Verified: String;
+begin
+  Result := True;
+  if not HadUninstallKey then begin
+    if RegKeyExists(HKCU64, UninstallKey) then Result := RegDeleteKeyIncludingSubkeys(HKCU64, UninstallKey);
+    Exit;
+  end;
+  Path := AddBackslash(BackupDirectory) + 'uninstall.reg';
+  Verified := AddBackslash(BackupDirectory) + 'uninstall-restored.reg';
+  CheckPath(Path, False);
+  if CompareText(GetSHA256OfFile(Path), UninstallKeyHash) <> 0 then begin
+    Result := False;
+    Exit;
+  end;
+  if RegKeyExists(HKCU64, UninstallKey) and not RegDeleteKeyIncludingSubkeys(HKCU64, UninstallKey) then begin
+    Result := False;
+    Exit;
+  end;
+  Result := RunRegistry('import "' + Path + '" /reg:64') and
+    RunRegistry('export "HKCU\' + UninstallKey + '" "' + Verified + '" /y /reg:64');
+  if Result then Result := CompareText(GetSHA256OfFile(Verified), UninstallKeyHash) = 0;
+end;
+
+procedure BackupStartShortcut;
+var
+  Path, Destination: String;
+begin
+  Path := ExpandConstant('{userprograms}\Klicky.lnk');
+  CheckParents(ExtractFileDir(Path));
+  HadStartShortcut := AttributesIfPresent(Path) <> InvalidAttributes;
+  if not HadStartShortcut then Exit;
+  CheckPath(Path, False);
+  Destination := AddBackslash(BackupDirectory) + 'start-menu.lnk';
+  StartShortcutHash := GetSHA256OfFile(Path);
+  if not CopyFile(Path, Destination, True) or
+     (CompareText(GetSHA256OfFile(Destination), StartShortcutHash) <> 0) then
+    RaiseException('Cannot back up the previous Start menu entry.');
+end;
+
+function RestoreStartShortcut: Boolean;
+var
+  Path, Source: String;
+begin
+  Path := ExpandConstant('{userprograms}\Klicky.lnk');
+  CheckParents(ExtractFileDir(Path));
+  Result := AttributesIfPresent(Path) = InvalidAttributes;
+  if not HadStartShortcut then Exit;
+  if not Result then begin
+    CheckPath(Path, False);
+    Result := CompareText(GetSHA256OfFile(Path), StartShortcutHash) = 0;
+    if Result then Exit;
+  end;
+  Source := AddBackslash(BackupDirectory) + 'start-menu.lnk';
+  CheckPath(Source, False);
+  Result := (CompareText(GetSHA256OfFile(Source), StartShortcutHash) = 0) and
+    ForceDirectories(ExtractFileDir(Path)) and CopyFile(Source, Path, False);
+  if Result then Result := CompareText(GetSHA256OfFile(Path), StartShortcutHash) = 0;
 end;
 
 procedure MakeBackup;
@@ -271,6 +436,8 @@ begin
   SnapshotDirectory('', 0);
   BackupFiles.SaveToFile(AddBackslash(BackupDirectory) + 'RECOVERY-FILES.txt');
   BackupHashes.SaveToFile(AddBackslash(BackupDirectory) + 'RECOVERY-SHA256.txt');
+  BackupUninstallKey;
+  BackupStartShortcut;
   Log('Verified previous bundle recovery copy: ' + BackupDirectory);
 end;
 
@@ -298,6 +465,13 @@ begin
       Result := False;
     end;
   end;
+  try
+    if not RestoreUninstallKey then Result := False;
+    if not RestoreStartShortcut then Result := False;
+  except
+    Log(GetExceptionMessage);
+    Result := False;
+  end;
 end;
 
 procedure RestartPrevious;
@@ -323,11 +497,11 @@ var
   Found: TFindRec;
 begin
   if not DirExists(ExpandConstant('{app}')) then Exit;
-  if FindFirst(ExpandConstant('{app}\*'), Found) then try
+  if FindFirstChecked(ExpandConstant('{app}\*'), Found) then try
     repeat
       if (Found.Name <> '.') and (Found.Name <> '..') and (Found.Name <> MarkerName) then
         RaiseException('The destination is not an empty installer-owned Klicky folder. Portable copies are preserved.');
-    until not FindNext(Found);
+    until not FindNextChecked(Found);
   finally
     FindClose(Found);
   end;

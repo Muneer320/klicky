@@ -6,11 +6,11 @@ The Klicky APT repository publishes signed amd64 packages at:
 https://muneer320.github.io/klicky
 ```
 
-It is a public GitHub Pages repository with suite `stable`, component `main`, and architecture `amd64`. The currently published package is `0.3.0-1`, from the `v0.3.0` release. It does not include the current source tree's `klicky service` commands; use `systemctl --user` as shown below.
+It is a public GitHub Pages repository with suite `stable`, component `main`, and architecture `amd64`. The live package index checked on 5 November 2026 contains `0.3.0-1` and `0.4.0-1`; the latest is `0.4.0-1`. The older package lacks `klicky service`; the explicit `systemctl --user` commands below work for both releases. These are Linux packages, independently of the Windows development preview.
 
 ## Install the repository
 
-You need `curl`, GnuPG, and an amd64 Debian-compatible system that provides the package's dependencies. The published `0.3.0-1` package requires `libasound2t64 (>= 1.0.29)`, `libc6 (>= 2.34)`, `systemd`, and `udev`; it is not compatible with every older Debian or Ubuntu release. The suite name `stable` is Klicky's repository channel, not a Debian release codename.
+You need `curl`, GnuPG, and an amd64 Debian-compatible system that provides the package's dependencies. The latest indexed `0.4.0-1` package requires `libasound2t64 (>= 1.0.29)`, `libc6 (>= 2.39)`, `systemd`, and `udev`; it is not compatible with every older Debian or Ubuntu release. The suite name `stable` is Klicky's repository channel, not a Debian release codename.
 
 Download the public key without granting trust yet:
 

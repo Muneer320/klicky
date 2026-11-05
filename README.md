@@ -1,13 +1,13 @@
 # Klicky
 
-> Mechanical keyboard sounds for Linux and macOS, played from prepared audio the moment a key event arrives.
+> Mechanical keyboard sounds for Linux and macOS, with a Windows 11 x64 development preview.
 
 [![CI](https://github.com/Muneer320/klicky/actions/workflows/ci.yml/badge.svg)](https://github.com/Muneer320/klicky/actions/workflows/ci.yml)
 [![Linux release](https://img.shields.io/badge/Linux_release-v0.4.0-2ea44f)](https://github.com/Muneer320/klicky/releases/tag/v0.4.0)
 [![Rust 1.87+](https://img.shields.io/badge/Rust-1.87%2B-dea584)](Cargo.toml)
 [![MIT license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-Klicky turns ordinary typing into mechanical keyboard sounds. Pick from **10 bundled sound packs**, adjust volume while it runs, and start it automatically when you log in. Linux reads keyboard events below Wayland and X11; macOS uses native global input with an optional menu bar toggle.
+Klicky turns ordinary typing into mechanical keyboard sounds. Pick from **10 bundled sound packs**, adjust volume while it runs, and start it automatically when you log in. Linux reads keyboard events below Wayland and X11; macOS uses native global input with an optional menu bar toggle. The Windows preview uses passive Raw Input and a native notification-area menu.
 
 **Jump to:** [Install](#install) · [Quick start](#quick-start) · [Controls](#controls) · [Sound packs](#sound-packs) · [How it works](#how-it-works) · [Performance](#performance) · [Troubleshooting](#troubleshooting)
 
@@ -15,21 +15,21 @@ Klicky turns ordinary typing into mechanical keyboard sounds. Pick from **10 bun
 
 | ⚡ Prepared playback | 🎛️ Personalize it | ⌨️ Native input |
 |---|---|---|
-| Decoded PCM slices and one persistent mixer | 10 packs, live volume, login service | Linux `evdev`; macOS global listener |
+| Decoded PCM slices and one persistent mixer | 10 packs, live volume, opt-in login startup | Linux `evdev`; macOS global listener; Windows Raw Input preview |
 
 ## At a glance
 
 | | Linux | macOS | Windows |
 |---|---|---|---|
-| Input | `evdev` on Wayland or X11 | Global listener + media-key event tap | Unsupported |
-| Background service | systemd user unit | LaunchAgent | N/A |
-| Desktop toggle | Omarchy bar, optional | Menu bar, optional | N/A |
-| Install | `v0.4.0` packages or current source | Current source only | N/A |
+| Input | `evdev` on Wayland or X11 | Global listener + media-key event tap | Passive Raw Input preview |
+| Background service | systemd user unit | LaunchAgent | Per-user desktop app; optional login shortcut |
+| Desktop toggle | Omarchy bar, optional | Menu bar, optional | Native tray menu |
+| Install | `v0.4.0` packages or current source | Current source only | Unsigned test artifacts or source |
 
-**Linux/Omarchy and macOS have both been physically tested.** There is **no downloadable macOS release asset**.
+**Linux/Omarchy and macOS have both been physically tested.** Windows remains under qualification. There is **no published macOS or Windows release asset**; Windows CI artifacts are development previews.
 
 > [!NOTE]
-> **Privacy:** Klicky observes global keyboard events to make sounds. Normal mode does not store typed text, log key names, or make network requests. Benchmark mode prints mapped key names. [Security details](#security).
+> **Privacy:** Klicky observes global keyboard events to make sounds. Normal mode does not store typed text, log key names, or make network requests. Linux/macOS benchmark mode prints mapped key names; Windows diagnostics contain aggregate timings without key names. [Security details](#security).
 
 ## Install
 
@@ -40,6 +40,7 @@ Choose **one** installation path:
 | Arch Linux, Omarchy, Ubuntu, Debian | [Published `v0.4.0` package](#released-linux-packages) |
 | Linux, including Fedora | [Current source](#build-from-source-on-linux) |
 | macOS | [Current source](#build-and-install-on-macos) |
+| Windows 11 x64 | [Development preview](#windows-development-preview) |
 
 > [!IMPORTANT]
 > **Release versus current source:** published `v0.4.0` Linux packages include `klicky service` for managing the systemd user unit.
@@ -161,9 +162,31 @@ The optional menu bar control is installed separately from the same checkout. It
 
 It installs `~/.local/bin/klicky-menu` and a login LaunchAgent. See [Desktop toggles](#desktop-toggles) for its controls and restart command; [macOS function keys](docs/function-keys-sound.md) covers the separate media-key input path.
 
+### Windows development preview
+
+Unsigned portable ZIPs and installer candidates are available as [CI test artifacts](https://github.com/Muneer320/klicky/actions/workflows/windows-portable.yml), not stable releases. Installation and physical keypress-to-audible qualification are still in progress. WinGet and Homebrew entries are not published.
+
+For a portable test, extract the entire ZIP, keep its files together and run from that folder:
+
+```powershell
+.\klicky-desktop.exe --paused
+```
+
+Choose **Resume** from Klicky's tray menu when ready to hear sounds. Start with Windows is opt-in. Choose **Quit Klicky** to exit. Use laptop speakers or a wired output for reference listening; Bluetooth can add distracting delay.
+
+To build from source, install Rust 1.87 MSVC, Visual Studio C++ build tools and a Windows SDK, then run from the checkout:
+
+```powershell
+cargo build --locked --release
+$env:KLICKY_SYSTEM_SOUNDS_DIR = (Resolve-Path .\sounds).Path
+.\target\release\klicky-desktop.exe --paused
+```
+
+See the [Windows guide](docs/WINDOWS.md) for installer candidates, package builds, controls, file locations, recovery and qualification limits.
+
 ## Quick start
 
-The source installers above already enable Klicky at login. After installing, try a sound and check the running state:
+The Linux and macOS source installers above already enable Klicky at login. After installing, try a sound and check the running state:
 
 ```bash
 klicky list                       # See installed packs
@@ -178,7 +201,7 @@ On macOS, use `~/.local/bin/klicky` if `klicky` is not on your `PATH`. The relea
 
 Installing puts the binary and sounds on disk. **Enable** starts Klicky now and at future logins; **start/stop** affects this session; **disable** stops it and removes login startup. These are user services, so they start after login rather than at the boot screen.
 
-### Current source CLI
+### Linux and macOS source CLI
 
 | Sound | What it does |
 |---|---|
@@ -202,6 +225,10 @@ Installing puts the binary and sounds on disk. **Enable** starts Klicky now and 
 With a running daemon, sound-control success currently confirms request delivery, not daemon-side loading or persistence. If a pack does not change or a setting does not survive restart, inspect the daemon output or service logs.
 
 Stop a managed service before starting Klicky in the foreground. Do not use benchmark mode while entering passwords or other sensitive text; see [Benchmark methodology](docs/BENCHMARKS.md).
+
+### Windows preview controls
+
+The native tray menu controls packs, volume, Pause/Resume, audio retry and login startup. The Windows CLI also provides `status`, `list`, `switch`, `volume`, `pause`, `resume`, `retry-audio` and `stop`. Run it as `.\klicky.exe` from an extracted bundle, or use the installed executable's full path. Its confirmed commands and process-exit semantics are documented in the [Windows guide](docs/WINDOWS.md); the Unix status format above does not apply.
 
 ### Published `v0.4.0` Linux package
 
@@ -257,8 +284,9 @@ volume = 0.8
 |---|---|---|
 | Linux | `$XDG_CONFIG_HOME/klicky/` (default `~/.config/klicky/`) | Source unit: `$XDG_CONFIG_HOME/systemd/user/klicky.service` (default `~/.config/systemd/user/klicky.service`); package unit: `/usr/lib/systemd/user/klicky.service` |
 | macOS | `~/Library/Application Support/klicky/` | `~/Library/LaunchAgents/dev.klicky.daemon.plist`; optional menu agent: `dev.klicky.menu.plist` in the same directory |
+| Windows | `%LOCALAPPDATA%\Klicky\` | Optional shortcut in the per-user Windows Startup folder |
 
-Each config directory contains `config.toml` and `sounds/`. PID and control socket files are named `klicky.pid` and `klicky.sock` inside a private `klicky/` directory under the OS runtime directory, if available, or in the config directory's `run/` folder. On the Mac tested for this README, they were under `~/Library/Application Support/klicky/run/`.
+Each config directory contains `config.toml` and `sounds/`. Linux and macOS use `klicky.pid` and `klicky.sock` inside a private runtime directory or the config directory's `run/` folder. Windows uses session-specific ownership and a protected local named pipe. See [Architecture](docs/ARCHITECTURE.md) for the platform-specific lifecycle.
 
 Linux packages also search `/usr/share/klicky/sounds/`. A user pack with the same name takes precedence.
 
@@ -266,26 +294,28 @@ Two environment overrides are available for specific setups:
 
 | Variable | Effect |
 |---|---|
-| `KLICKY_SYSTEM_SOUNDS_DIR` | Use this directory as the additional sound-pack root instead of Linux's default system directory |
+| `KLICKY_SYSTEM_SOUNDS_DIR` | Override the additional sound-pack root; Windows requires an absolute path and otherwise uses `sounds` beside the executable |
 | `KLICKY_SKIP_UDEV=1` | Tell `scripts/install-linux.sh` to skip installing the udev rule; you must provide keyboard-device access yourself |
 
 ## How it works
 
-The keyboard path and the control path meet in one user-session daemon:
+The keyboard path and the control path meet in one user-session process:
 
 ```mermaid
 flowchart LR
   KEY[Keyboard] --> LINUX[Linux evdev]
   KEY --> MAC[macOS rdev + media tap]
+  KEY --> WIN[Windows Raw Input]
   LINUX --> EVENT[Mapped key event]
   MAC --> EVENT
+  WIN --> EVENT
   EVENT --> DAEMON[Daemon]
-  CLI[CLI] --> IPC[Local Unix socket] --> DAEMON
-  SERVICE[systemd / LaunchAgent] -. starts .-> DAEMON
+  CLI[CLI] --> IPC[Unix socket or Windows named pipe] --> DAEMON
+  SERVICE[systemd / LaunchAgent / Windows startup] -. starts .-> DAEMON
   DAEMON --> PCM[Prepared PCM slices] --> MIX[Persistent Rodio mixer] --> OUT[Audio output]
 ```
 
-### Why it feels immediate
+### Prepared playback
 
 | Step | What Klicky does |
 |---|---|
@@ -311,6 +341,8 @@ One documented run used 55 physical keypresses on Arch Linux, Hyprland, and Pipe
 
 > [!NOTE]
 > **This is not physical key-to-speaker latency.** The clock stops when sound is queued. On that machine, the audio node separately negotiated 256 frames at 44.1 kHz (about 5.8 ms of buffer time). [Benchmarks](docs/BENCHMARKS.md) has the method and limits.
+
+These historical Linux dispatch results do not qualify the Windows preview. Calibrated physical-to-audible measurements and matched existing-platform comparisons remain open.
 
 ## Troubleshooting
 
@@ -358,7 +390,11 @@ Use another Terminal for `~/.local/bin/klicky stop`, then run `~/.local/bin/klic
 
 Current macOS LaunchAgents restart unsuccessful exits with a **30-second launch throttle**. Repeated startup failures keep retrying at that rate until stopped; `klicky stop`, `service stop`, and `service disable` cancel pending retries after confirmed shutdown. Stop preserves login startup; disable removes it. This recovery policy still needs validation in a real launchd session.
 
-### Installation mismatch
+### Windows: no sound or delayed playback
+
+Check the tray state, selected pack, volume and Windows default multimedia output. Resume a paused app or choose **Retry audio** after changing outputs. Bluetooth delay may come from the output route. The preview gates playback while the desktop is locked or inactive and drops obsolete input instead of replaying it. See [Windows troubleshooting and limits](docs/WINDOWS.md).
+
+### Linux/macOS installation mismatch
 
 If `service` is unknown, you are running an older Klicky binary without service management support. Upgrade to the `v0.4.0` package or build from current source. Check `command -v klicky`: a source-installed `~/.local/bin/klicky` can override `/usr/bin/klicky`. Their units and sound directories differ; see the [package migration step](#released-linux-packages).
 
@@ -366,7 +402,7 @@ In current source builds and `v0.4.0` packages, `running: yes` and `responsive: 
 
 ## Develop and contribute
 
-The main code paths are `src/listener/` for platform input, `src/soundpack.rs` for decoding and caching, `src/player.rs` for audio output, `src/ipc.rs` for local commands, and `src/service.rs` for user-service control. Packaging assets live in `packaging/`; install helpers live in `scripts/`.
+Linux/macOS input lives in `src/listener/`, with CLI and daemon coordination in `src/cli.rs` and `src/engine.rs`. `src/windows/` contains the Windows coordinator, input, audio supervision, desktop UI and protected control transport. Sound preparation and mixer-facing types are shared. Packaging assets live in `packaging/`; build and install helpers live in `scripts/`.
 
 After installing the platform build prerequisites above, run:
 
@@ -379,15 +415,15 @@ python3 scripts/check-docs.py
 cargo build --release
 ```
 
-CI checks Rust on Ubuntu and macOS, checks the Swift menu bar helper on macOS, and builds Linux packages separately. Compilation does not replace a physical keyboard and audio check for behavior changes.
+CI checks Rust on Windows, Ubuntu and macOS, checks the Swift menu bar helper on macOS, and builds Linux packages and unsigned Windows test packages separately. Compilation does not replace physical keyboard/audio or installer lifecycle qualification.
 
 Read [Contributing](CONTRIBUTING.md) before changing the CLI, sound-pack format, permissions, audio engine, or platform support claims. Include your verification commands and hardware details when reporting input or audio behavior.
 
 ## Security
 
-Klicky observes global key-down events, including while you enter sensitive information. Linux's installer uses a keyboard-only `uaccess` rule to grant the active desktop user device access; macOS requires Accessibility permission. The daemon runs as the logged-in user, not root. Its local Unix control socket and runtime files are owner-only.
+Klicky observes global key-down events, including while you enter sensitive information. Linux's installer uses a keyboard-only `uaccess` rule to grant the active desktop user device access; macOS requires Accessibility permission. Windows uses passive Raw Input in the user's interactive session. Klicky runs as the logged-in user. Unix control files are owner-only; the Windows control pipe verifies the current logon identity and server process.
 
-The current code does not store typed text or make network requests. Normal mode does not log key names; `start --benchmark` prints mapped key names and timing, so stop that mode before entering secrets. These claims describe Klicky's code, not the trustworthiness of modified binaries or third-party sound packs. See the [security policy](SECURITY.md) for reporting.
+The current code does not store typed text or make network requests. Normal mode does not log key names. Linux/macOS `start --benchmark` prints mapped key names and timing; Windows prints aggregate diagnostics without key names. These claims describe Klicky's code, not the trustworthiness of modified binaries or third-party sound packs. See the [security policy](SECURITY.md) for reporting.
 
 ## Documentation
 
@@ -399,6 +435,7 @@ Go deeper by task:
 | Inspect the numbers | [Benchmarks](docs/BENCHMARKS.md) | Test method and measurement limits |
 | Add a sound | [Sound packs](docs/SOUND_PACKS.md) | Format and custom packs |
 | Build a Linux package | [Packaging](docs/PACKAGING.md) | Package contents and builds |
+| Test Windows | [Windows preview](docs/WINDOWS.md) | Portable/installer candidates, controls and qualification limits |
 | Use the signed APT repo | [APT repository](docs/APT_REPOSITORY.md) | Repository setup |
 | Change the Omarchy bar | [Omarchy](docs/OMARCHY.md) | Toggle and removal |
 | Understand macOS media keys | [Function keys](docs/function-keys-sound.md) | Media-key input path |
@@ -444,3 +481,5 @@ rm -f "$HOME/Library/LaunchAgents/dev.klicky.menu.plist" \
 
 These macOS commands retain configuration and sound packs in `~/Library/Application Support/klicky/`.
 You can also remove Klicky's Accessibility entry in System Settings after uninstalling it.
+
+For an installed Windows preview, use **Settings > Apps > Installed apps > Klicky**. Removal preserves `%LOCALAPPDATA%\Klicky` configuration and custom packs. For a portable copy, remove its owned login startup and confirm exit before deleting the bundle; follow the [Windows guide](docs/WINDOWS.md).
