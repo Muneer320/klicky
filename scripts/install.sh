@@ -70,7 +70,10 @@ install_apt() {
   check_source_conflict
   archive='https://muneer320.github.io/klicky'
   download "$archive/klicky-archive-keyring.gpg" "$work_dir/keyring.gpg"
-  fingerprint=$(gpg --batch --show-keys --with-colons "$work_dir/keyring.gpg" | awk -F: '$1 == "fpr" {print $10; exit}')
+  key_info=$(gpg --batch --show-keys --with-colons "$work_dir/keyring.gpg")
+  primary_keys=$(printf '%s\n' "$key_info" | awk -F: '$1 == "pub" {count++} END {print count + 0}')
+  [[ $primary_keys == 1 ]] || die 'The repository keyring must contain exactly one signing key. Nothing was trusted.'
+  fingerprint=$(printf '%s\n' "$key_info" | awk -F: '$1 == "fpr" {print $10; exit}')
   [[ $fingerprint == DBB67AE478D2FFCEC6637B559899E554D3580D8F ]] || die 'The repository signing key does not match. Nothing was trusted.'
   printf 'Types: deb\nURIs: %s\nSuites: stable\nComponents: main\nArchitectures: amd64\nSigned-By: /etc/apt/keyrings/klicky-archive-keyring.gpg\n' "$archive" > "$work_dir/klicky.sources"
   printf 'Adding the signed Klicky repository and installing the package.\n'
