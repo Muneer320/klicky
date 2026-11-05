@@ -1,4 +1,5 @@
 //! Local current-logon endpoints. Binding is not engine readiness.
+pub(super) mod io;
 use std::mem::size_of;
 use std::os::windows::io::{AsHandle, AsRawHandle, BorrowedHandle, FromRawHandle, OwnedHandle};
 
@@ -235,8 +236,12 @@ impl Descriptor {
 }
 
 fn current_logon_sid() -> Result<String> {
+    process_logon_sid(unsafe { GetCurrentProcess() })
+}
+
+pub(super) fn process_logon_sid(process: HANDLE) -> Result<String> {
     let mut token = HANDLE::default();
-    unsafe { OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token)? };
+    unsafe { OpenProcessToken(process, TOKEN_QUERY, &mut token)? };
     let token = unsafe { OwnedHandle::from_raw_handle(token.0) };
     let mut needed = 0;
     match unsafe {

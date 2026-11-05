@@ -65,6 +65,11 @@ impl ServerProcess {
         if server_session != current_session {
             bail!("pipe server belongs to another Windows session");
         }
+        if super::pipe::process_logon_sid(HANDLE(handle.as_raw_handle()))?
+            != super::pipe::process_logon_sid(unsafe { GetCurrentProcess() })?
+        {
+            bail!("pipe server belongs to another Windows logon");
+        }
         Ok(Self {
             handle,
             identity: identity.clone(),

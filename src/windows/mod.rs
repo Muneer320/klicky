@@ -1,5 +1,6 @@
 //! Windows control-plane components. The application host is integrated separately.
 mod config;
+pub mod control;
 mod files;
 mod lifecycle;
 mod paths;

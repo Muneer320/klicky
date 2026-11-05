@@ -55,7 +55,7 @@ impl Request {
         Ok(request)
     }
 
-    fn validate(&self) -> Result<(), ProtocolError> {
+    pub(super) fn validate(&self) -> Result<(), ProtocolError> {
         validate_header(self.protocol, self.request_id)?;
         match &self.command {
             Command::Switch { pack } => validate_pack(pack),
