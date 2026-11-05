@@ -677,7 +677,7 @@ impl State {
         let command = pending.request.command.clone();
         if matches!(command, Command::Stop {} | Command::PrepareUpdate {}) {
             let update = super::protocol::UpdateState {
-                restart: self.stopping.is_none(),
+                restart: !self.shared.stop.swap(true, Ordering::AcqRel) && self.stopping.is_none(),
                 paused: self.paused,
             };
             self.begin_stop();
