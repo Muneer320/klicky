@@ -1,0 +1,8 @@
+{
+  "name": "klicky-brand-assets",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Development-only exports from Klicky's shared SVG mark",
+  "scripts": { "build": "node export.mjs" },
+  "devDependencies": { "@resvg/resvg-js": "2.6.2" }
+}

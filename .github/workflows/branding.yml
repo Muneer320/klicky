@@ -1,0 +1,31 @@
+name: Brand asset consistency
+
+on:
+  push:
+    paths:
+      - assets/branding/**
+      - tools/branding/**
+      - packaging/windows/klicky.ico
+      - .github/workflows/branding.yml
+  pull_request:
+    paths:
+      - assets/branding/**
+      - tools/branding/**
+      - packaging/windows/klicky.ico
+      - .github/workflows/branding.yml
+
+permissions:
+  contents: read
+
+jobs:
+  exports:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install locked asset renderer without lifecycle scripts
+        run: npm ci --prefix tools/branding --ignore-scripts --no-audit --no-fund
+      - name: Verify committed platform assets match the vector master
+        run: |
+          npm run --prefix tools/branding build
+          git diff --exit-code -- assets/branding packaging/windows/klicky.ico

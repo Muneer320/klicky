@@ -4,7 +4,7 @@ The Windows implementation targets Windows 11 x64 interactive desktop sessions. 
 
 ## Portable test bundle
 
-The [unsigned portable workflow](../.github/workflows/windows-portable.yml) builds test artifacts without publishing a release. Extract the complete ZIP into a writable folder at a stable location. Keep both executables, the `sounds` folder and notices together. Rust and Visual Studio are needed to build the bundle, not to run it.
+The [unsigned portable workflow](https://github.com/Muneer320/klicky/blob/master/.github/workflows/windows-portable.yml) builds test artifacts without publishing a release. Extract the complete ZIP into a writable folder at a stable location. Keep both executables, the `sounds` folder and notices together. Rust and Visual Studio are needed to build the bundle, not to run it.
 
 From the extracted folder, start with:
 
@@ -58,7 +58,7 @@ $env:KLICKY_SYSTEM_SOUNDS_DIR = (Resolve-Path .\sounds).Path
 
 Windows builds require the Windows SDK resource compiler alongside the C++ tools. Both executables embed a Klicky icon, per-executable version information and an application manifest. The manifest requests normal user privileges, per-monitor DPI awareness and long-path support. Windows resources are mandatory: a missing resource compiler fails the build. Linux and macOS builds do not compile these resources.
 
-The Windows file metadata labels these binaries as development previews; it does not represent a published Windows release. To regenerate the original icon with Python's standard library, run `python scripts/generate-windows-icon.py`.
+The Windows file metadata labels these binaries as development previews; it does not represent a published Windows release. The Windows icon is exported from the shared [Klicky brand mark](https://github.com/Muneer320/klicky/blob/master/docs/BRANDING.md). Asset regeneration is a separate development task; building or running Klicky does not require Node.js.
 
 Select your intended output in Windows before starting. After the tray tooltip says Ready, type in an editor. The command above ends automatically after 30 seconds. Without `--seconds`, Klicky stays in the notification area until you choose Quit Klicky, press Ctrl+C in its console, or run `klicky stop`. It does not require elevation or an input driver.
 
