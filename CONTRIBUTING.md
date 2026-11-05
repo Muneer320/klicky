@@ -19,7 +19,7 @@ All repository changes must be developed on a feature branch and submitted throu
 
 ## Development setup
 
-Use the README's build prerequisites for [Linux](README.md#build-from-source-on-linux), [macOS](README.md#build-and-install-on-macos) or the [Windows preview](README.md#windows-development-preview). Install Rust 1.87 or newer; distribution-provided Rust packages may be older. Windows uses the MSVC toolchain and Windows SDK resource compiler. Building and running the automated tests does not require installing a login service or granting keyboard access.
+Use the README's build prerequisites for [Linux](docs/INSTALLATION.md#linux-from-source), [macOS](docs/INSTALLATION.md#macos) or the [Windows preview](docs/WINDOWS.md). Install Rust 1.87 or newer; distribution-provided Rust packages may be older. Windows uses the MSVC toolchain and Windows SDK resource compiler. Building and running the automated tests does not require installing a login service or granting keyboard access.
 
 Clone the repository, then run the [checks below](#tests):
 
@@ -75,7 +75,7 @@ PYTHONUTF8=1 python3 -B scripts/check-docs.py
 cargo build --release
 ```
 
-For APT changes, run `python3 -B -m unittest scripts/test_apt_repository.py` and, on Linux with GnuPG and reprepro, `python3 -B scripts/test_apt_repository_integration.py PACKAGE.deb`. See [APT validation coverage](docs/APT_REPOSITORY.md#validation-coverage) for what these checks establish. For website changes, follow the [website checks](docs/WEBSITE.md#local-checks). In PowerShell, set `$env:PYTHONUTF8 = '1'` before running Python.
+For APT changes, run `python3 -B -m unittest scripts/test_apt_repository.py` and, on Linux with GnuPG and reprepro, `python3 -B scripts/test_apt_repository_integration.py PACKAGE.deb`. See [APT validation coverage](docs/MAINTAINING_APT.md#validation-coverage) for what these checks establish. For website changes, follow the [website checks](docs/WEBSITE.md#local-checks). In PowerShell, set `$env:PYTHONUTF8 = '1'` before running Python.
 
 ## Commits
 
