@@ -11,6 +11,8 @@ on:
       - scripts/build-apt-repository.py
       - scripts/install.sh
       - scripts/install.ps1
+      - scripts/uninstall.sh
+      - scripts/uninstall.ps1
       - scripts/test_apt_repository_integration.py
   release:
     types: [published]

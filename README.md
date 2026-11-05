@@ -172,7 +172,21 @@ Yes. Use Pause in the Windows tray, the macOS menu toggle, or `klicky service st
 <details>
 <summary><strong>How do I update or uninstall?</strong></summary>
 
-Update through the package manager you used, rerun the source installer, or run a newer Windows installer. On Windows, remove Klicky from **Settings → Apps → Installed apps**. Configuration and custom sounds are kept. [All update and removal steps](docs/INSTALLATION.md#updates-and-removal)
+Update through your package manager, rerun the source installer, or run a newer Windows installer. [Update instructions](docs/INSTALLATION.md#updates-and-removal)
+
+For a one-command uninstall on **Linux/macOS**:
+
+```bash
+curl -fsSL https://klicky.muneer320.tech/uninstall.sh | bash
+```
+
+For an installer setup on **Windows**, run in PowerShell:
+
+```powershell
+irm https://klicky.muneer320.tech/uninstall.ps1 | iex
+```
+
+These stop Klicky and remove its installed desktop controls too. Settings and custom sounds are kept. [Add `--purge` / `-Purge` to remove personal data, or remove a portable copy](docs/INSTALLATION.md#uninstall).
 
 </details>
 

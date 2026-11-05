@@ -176,6 +176,57 @@ Without systemd/udev, provide keyboard-device access and use your session's star
 
 </details>
 
+## Uninstall
+
+Choose your system. The removal command stops Klicky, disables its login startup and removes the app plus its installed menu/tray/bar controls. **Settings and custom sound packs are kept by default.**
+
+<details>
+<summary><strong>Linux or macOS</strong></summary>
+
+```bash
+curl -fsSL https://klicky.muneer320.tech/uninstall.sh | bash
+```
+
+To also delete Klicky's settings and custom sounds:
+
+```bash
+curl -fsSL https://klicky.muneer320.tech/uninstall.sh | bash -s -- --purge
+```
+
+Linux removal handles the APT/Arch package or source binary, user service, Klicky's device rule and APT source/key. On Omarchy it removes only the Klicky bar entry/module, keeping the rest of your bar configuration. Other signed-in users must stop their packaged copies before package removal.
+
+macOS removal unloads the daemon and menu helper, removes their LaunchAgents and binaries, and removes the installed menu images. Apple Accessibility permission can be removed in System Settings afterward. General-purpose Rust and Apple build tools stay installed.
+
+</details>
+
+<details>
+<summary><strong>Windows installer setup</strong></summary>
+
+```powershell
+irm https://klicky.muneer320.tech/uninstall.ps1 | iex
+```
+
+This opens the registered Klicky uninstaller, which stops the app and removes its installed tray app, Start shortcut and owned login shortcut. Complete the wizard; no second command is needed.
+
+To also remove settings, custom sounds and Klicky installer data:
+
+```powershell
+& ([scriptblock]::Create((irm https://klicky.muneer320.tech/uninstall.ps1))) -Purge
+```
+
+Use `-WhatIf` in place of `-Purge` to preview without changing anything. If removal is cancelled or fails, personal data is kept. Close remaining portable copies before purging; linked/junction data folders are reported for inspection rather than followed.
+
+Windows **Settings → Apps → Installed apps → Klicky → Uninstall** remains available as well.
+
+</details>
+
+<details>
+<summary><strong>Windows portable copy</strong></summary>
+
+In the portable app's tray menu, turn off its login startup and choose Quit, then delete the extracted bundle. Keep unrelated files in the parent folder. The installer-removal helper does not search your drives or delete development/portable folders it cannot identify safely. After closing all copies, its `-Purge` command above can remove the shared Klicky settings too.
+
+</details>
+
 ## Updates and removal
 
 Choose the method you used to install. Settings and custom sounds are kept unless you explicitly purge them.

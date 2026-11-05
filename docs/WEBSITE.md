@@ -17,7 +17,7 @@ There is no frontend framework, JavaScript bundle, external font or analytics se
 
 The builder escapes its four template markers: `PUBLIC_URL`, `LATEST_VERSION`, `VERSIONS` and `FINGERPRINT`. Keep the relative archive links intact: `klicky.sources`, both public-key formats and `dists/stable/InRelease`. They work under both the custom domain and the `/klicky/` project path.
 
-`render_sources` owns the Deb822 definition. `copy_site_assets` publishes only the website asset directory, social PNG and the two installer scripts. Do not copy build outputs, planning files or unrelated repository directories into the public site.
+`render_sources` owns the Deb822 definition. `copy_site_assets` publishes only the website asset directory, social PNG and the install/uninstall scripts. Do not copy build outputs, planning files or unrelated repository directories into the public site.
 
 ## Preview and check
 
@@ -58,4 +58,4 @@ The Pages/APT workflow runs after reviewed changes to its listed master-branch p
 
 The custom-domain CNAME must point to `muneer320.github.io` at the domain's active DNS provider, with the same domain configured in GitHub Pages and HTTPS enabled.
 
-The installer endpoints are `https://klicky.muneer320.tech/install.sh` and `/install.ps1`. Publishing these scripts does not publish application releases: the Windows helper needs an identified public installer/checksum pair. Keep download status and install instructions synchronized when a release is approved. The APT workflow skips prereleases, so a platform preview does not replace the stable Linux archive.
+The installation endpoints are `https://klicky.muneer320.tech/install.sh` and `/install.ps1`; removal uses `/uninstall.sh` and `/uninstall.ps1`. Publishing these scripts does not publish application releases: the Windows helper needs an identified public installer/checksum pair. Keep download status and install instructions synchronized when a release is approved. The APT workflow skips prereleases, so a platform preview does not replace the stable Linux archive.

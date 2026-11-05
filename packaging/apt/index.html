@@ -1458,10 +1458,20 @@
             <p>
               Run a newer Windows installer, use your Linux package manager, or
               rerun the source installer. Stop the Linux service before
-              replacing its package. Your settings and custom packs are kept.
+              replacing its package.
+            </p>
+            <p>To remove Klicky and its installed controls on Linux/macOS:</p>
+            <pre><code>curl -fsSL https://klicky.muneer320.tech/uninstall.sh | bash</code></pre>
+            <p>
+              For a Windows installer setup, run in PowerShell and finish the
+              wizard:
+            </p>
+            <pre><code>irm https://klicky.muneer320.tech/uninstall.ps1 | iex</code></pre>
+            <p>
+              Personal settings and custom sounds are kept.
               <a
-                href="https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#updates-and-removal"
-                >Update and removal commands</a
+                href="https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#uninstall"
+                >Purge flags, portable removal and update instructions</a
               >.
             </p>
           </details>
