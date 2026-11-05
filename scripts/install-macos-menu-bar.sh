@@ -22,7 +22,10 @@ if ! command -v swiftc >/dev/null 2>&1; then
   exit 1
 fi
 
-mkdir -p "$bin_dir" "$agent_dir"
+brand_dir="$HOME/Library/Application Support/klicky/branding"
+mkdir -p "$bin_dir" "$agent_dir" "$brand_dir"
+install -m644 "$repo_root/assets/branding/klicky-menu-template.png" "$brand_dir/"
+install -m644 "$repo_root/assets/branding/klicky-menu-template@2x.png" "$brand_dir/"
 swiftc "$repo_root/packaging/macos/KlickyMenu.swift" -o "$bin_dir/klicky-menu"
 binary_xml=$(printf '%s' "$bin_dir/klicky-menu" | sed -e 's/\&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' -e 's/"/\&quot;/g' -e "s/'/\&apos;/g")
 if launchctl print "$domain/$label" >/dev/null 2>&1; then

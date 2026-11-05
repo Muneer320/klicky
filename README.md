@@ -1,5 +1,7 @@
 # Klicky
 
+<img src="assets/branding/klicky.svg" width="96" height="96" alt="Klicky keycap and sound mark">
+
 > Mechanical keyboard sounds for Linux and macOS, with a Windows 11 x64 development preview.
 
 [![CI](https://github.com/Muneer320/klicky/actions/workflows/ci.yml/badge.svg)](https://github.com/Muneer320/klicky/actions/workflows/ci.yml)
@@ -431,6 +433,7 @@ Go deeper by task:
 
 | I want to… | Guide | What is there |
 |---|---|---|
+| Use the project logo | [Brand assets](docs/BRANDING.md) | Shared vector, monochrome and platform icon exports |
 | Understand the design | [Architecture](docs/ARCHITECTURE.md) | Modules, concurrency, platform boundaries |
 | Inspect the numbers | [Benchmarks](docs/BENCHMARKS.md) | Test method and measurement limits |
 | Add a sound | [Sound packs](docs/SOUND_PACKS.md) | Format and custom packs |

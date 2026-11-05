@@ -12,7 +12,24 @@ final class KlickyMenu: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        item.button?.title = "⌨"
+        let iconPath = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Application Support/klicky/branding/klicky-menu-template.png").path
+        if let standard = NSBitmapImageRep(contentsOfFile: iconPath) {
+            let size = NSSize(width: 18, height: 18)
+            let image = NSImage(size: size)
+            standard.size = size
+            image.addRepresentation(standard)
+            let retinaPath = (iconPath as NSString).deletingPathExtension + "@2x.png"
+            if let retina = NSBitmapImageRep(contentsOfFile: retinaPath) {
+                retina.size = size
+                image.addRepresentation(retina)
+            }
+            image.isTemplate = true
+            item.button?.image = image
+            item.button?.imagePosition = .imageOnly
+        } else {
+            item.button?.title = "⌨"
+        }
         item.button?.toolTip = "Klicky"
 
         let menu = NSMenu()
