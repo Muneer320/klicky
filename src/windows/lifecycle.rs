@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 
-use super::{files, Paths};
+use super::{files, process, protocol::InstanceIdentity, Paths};
 
 /// Exclusive per-user/session ownership, not an input/audio readiness signal.
 /// Hold through component teardown. Drop/crash releases the handle; keep the file.
@@ -11,6 +11,7 @@ use super::{files, Paths};
 pub struct InstanceOwner {
     directory: PathBuf,
     _lease: File,
+    identity: InstanceIdentity,
 }
 
 impl InstanceOwner {
@@ -24,10 +25,16 @@ impl InstanceOwner {
         Ok(Some(Self {
             directory,
             _lease: lease,
+            identity: process::current_identity()?,
         }))
     }
 
     pub fn directory(&self) -> &Path {
         &self.directory
+    }
+
+    /// Stable for this lease; a fresh lease has a fresh nonce, even in one process.
+    pub fn identity(&self) -> &InstanceIdentity {
+        &self.identity
     }
 }
