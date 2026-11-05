@@ -14,13 +14,15 @@ final class KlickyMenu: NSObject, NSApplicationDelegate {
         item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         let iconPath = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Application Support/klicky/branding/klicky-menu-template.png").path
-        if let standard = NSBitmapImageRep(contentsOfFile: iconPath) {
+        if let data = try? Data(contentsOf: URL(fileURLWithPath: iconPath)),
+           let standard = NSBitmapImageRep(data: data) {
             let size = NSSize(width: 18, height: 18)
             let image = NSImage(size: size)
             standard.size = size
             image.addRepresentation(standard)
             let retinaPath = (iconPath as NSString).deletingPathExtension + "@2x.png"
-            if let retina = NSBitmapImageRep(contentsOfFile: retinaPath) {
+            if let data = try? Data(contentsOf: URL(fileURLWithPath: retinaPath)),
+               let retina = NSBitmapImageRep(data: data) {
                 retina.size = size
                 image.addRepresentation(retina)
             }
