@@ -1,4 +1,5 @@
 //! Native tray frontend. Filesystem work and command waits stay off its callbacks.
+mod startup_worker;
 use std::cell::RefCell;
 use std::os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle};
 use std::sync::{Arc, Mutex, OnceLock};
@@ -20,7 +21,9 @@ use super::paths::same_name;
 use super::protocol::{Command, EngineState, Outcome};
 use super::runtime::{Controller, Host, Options, View};
 use super::session::Session;
+use super::startup::Status as StartupStatus;
 use super::Paths;
+use startup_worker::{Request as StartupRequest, Worker as StartupWorker};
 
 const TRAY_MESSAGE: u32 = WM_APP + 1;
 // shellapi.h defines this expression; the generated Windows bindings omit it.
@@ -35,6 +38,10 @@ const RESUME: u32 = 2;
 const RETRY: u32 = 3;
 const QUIT: u32 = 4;
 const REFRESH: u32 = 5;
+const LOGIN_ENABLE: u32 = 6;
+const LOGIN_DISABLE: u32 = 7;
+const LOGIN_CHECK: u32 = 8;
+const LOGIN_SETTINGS: u32 = 9;
 
 /// Run in the interactive user's process. Capture starts only after WTS verification.
 pub fn run(options: Options) -> Result<()> {
@@ -168,6 +175,9 @@ struct State {
     controller: Controller,
     session: Session,
     worker: Worker,
+    startup: StartupWorker,
+    startup_status: Option<StartupStatus>,
+    startup_error: Option<String>,
     view: View,
     packs: Vec<String>,
     packs_error: Option<String>,
@@ -182,12 +192,14 @@ struct State {
 }
 
 struct Window {
+    controller: Controller,
     hwnd: HWND,
     state: Option<Box<RefCell<State>>>,
     instance: HINSTANCE,
 }
 impl Drop for Window {
     fn drop(&mut self) {
+        self.controller.request_stop();
         unsafe {
             let _ = Shell_NotifyIconW(NIM_DELETE, &icon_data(self.hwnd));
             SetWindowLongPtrW(self.hwnd, GWLP_USERDATA, 0);
@@ -234,16 +246,21 @@ fn run_ui(paths: Paths, controller: Controller) -> Result<()> {
         }
     };
     let mut window = Window {
+        controller: controller.clone(),
         hwnd,
         state: None,
         instance,
     };
     let session = Session::register(hwnd, paths.session_id())?;
-    let worker = Worker::spawn(paths)?;
+    let worker = Worker::spawn(paths.clone())?;
+    let startup = StartupWorker::spawn(paths)?;
     let state = Box::new(RefCell::new(State {
         controller: controller.clone(),
         session,
         worker,
+        startup,
+        startup_status: None,
+        startup_error: None,
         view: controller.take_view()?,
         packs: Vec::new(),
         packs_error: None,
@@ -271,20 +288,32 @@ fn run_ui(paths: Paths, controller: Controller) -> Result<()> {
         let state = state_ref(hwnd).borrow();
         HANDLE(state.worker.results.event.as_raw_handle())
     };
-    let handles = [
+    let initial_handles = [
         HANDLE(controller.changed_handle().as_raw_handle()),
         metadata_event,
     ];
     let mut message = MSG::default();
     loop {
         update_view(hwnd)?;
+        poll_startup(hwnd)?;
         {
             let state = state_ref(hwnd).borrow();
-            if state.view.finished {
+            if state.view.finished && state.startup.shutdown_complete() {
                 if let Some(error) = &state.fatal {
                     bail!("{error}");
                 }
                 return Ok(());
+            }
+            if state.view.finished || state.view.snapshot.state == EngineState::Stopping {
+                state.startup.request_stop();
+            }
+        }
+        let mut handles = initial_handles.to_vec();
+        {
+            let state = state_ref(hwnd).borrow();
+            handles.push(state.startup.changed_handle());
+            if let Some(thread) = state.startup.thread_handle() {
+                handles.push(thread);
             }
         }
         let result = unsafe {
@@ -311,6 +340,42 @@ fn run_ui(paths: Paths, controller: Controller) -> Result<()> {
             }
         }
     }
+}
+
+fn poll_startup(hwnd: HWND) -> Result<()> {
+    let mut state = state_ref(hwnd).borrow_mut();
+    if let Some(update) = state.startup.take()? {
+        if let Some(status) = update.status {
+            match status {
+                Ok(status) => {
+                    state.startup_status = Some(status);
+                    state.startup_error = None;
+                }
+                Err(error) => {
+                    state.startup_status = None;
+                    state.startup_error = Some(error);
+                }
+            }
+        }
+        if let Some(error) = update.error {
+            state.startup_error = Some(error);
+        }
+    }
+    if state.startup.thread_handle().is_some() {
+        let stopping = state.startup.stopping();
+        match state.startup.try_join() {
+            Ok(true) if !stopping => {
+                state.fatal = Some("Login startup worker stopped unexpectedly".into());
+                state.controller.request_stop();
+            }
+            Err(error) => {
+                state.fatal = Some(format!("{error:#}"));
+                state.controller.request_stop();
+            }
+            _ => (),
+        }
+    }
+    Ok(())
 }
 
 // The box belongs to Window, stays pinned through the message loop, and is detached
@@ -620,7 +685,7 @@ impl Drop for Menu {
 
 fn show_menu(hwnd: HWND) -> Result<()> {
     // Snapshot and release every Rust borrow before TrackPopupMenuEx's nested loop.
-    let (view, packs, error, busy, menu_open, refreshing) = {
+    let (view, packs, error, busy, menu_open, refreshing, login_status, login_busy) = {
         let state = state_ref(hwnd).borrow();
         (
             state.view.clone(),
@@ -629,10 +694,13 @@ fn show_menu(hwnd: HWND) -> Result<()> {
                 .operation_error
                 .clone()
                 .or(state.view.last_error.clone())
+                .or(state.startup_error.clone())
                 .or(state.packs_error.clone()),
             state.pending.iter().any(|pending| pending.mutation) || state.view.busy,
             state.menu_open,
             state.refreshing,
+            state.startup_status,
+            state.startup.busy(),
         )
     };
     if menu_open {
@@ -644,6 +712,9 @@ fn show_menu(hwnd: HWND) -> Result<()> {
         &format!("Klicky: {}", label(view.snapshot.state)),
         MF_GRAYED,
     )?;
+    if view.finished {
+        menu.item(0, "Finishing startup work before closing", MF_GRAYED)?;
+    }
     if let Some(error) = error {
         menu.item(0, &menu_text(&error), MF_GRAYED)?;
     }
@@ -688,6 +759,58 @@ fn show_menu(hwnd: HWND) -> Result<()> {
         "Refresh sound packs",
         if refreshing { MF_GRAYED } else { MF_ENABLED },
     )?;
+    let login = Menu::new()?;
+    let login_label = if login_busy {
+        "Checking or updating startup..."
+    } else {
+        match login_status {
+            Some(StartupStatus::Absent) => "Not added to startup",
+            Some(StartupStatus::Registered) => "Added; Windows controls startup approval",
+            Some(StartupStatus::Foreign) => "Different or edited startup entry; preserved",
+            None => "Startup status unavailable",
+        }
+    };
+    login.item(0, login_label, MF_GRAYED)?;
+    let login_disabled =
+        login_busy || view.snapshot.state == EngineState::Stopping || view.finished;
+    let conflict = login_status == Some(StartupStatus::Foreign);
+    login.item(
+        LOGIN_ENABLE,
+        "Add Klicky to startup",
+        if login_disabled || conflict || login_status == Some(StartupStatus::Registered) {
+            MF_GRAYED
+        } else {
+            MF_ENABLED
+        },
+    )?;
+    login.item(
+        LOGIN_DISABLE,
+        "Remove Klicky from startup",
+        if login_disabled || conflict || login_status == Some(StartupStatus::Absent) {
+            MF_GRAYED
+        } else {
+            MF_ENABLED
+        },
+    )?;
+    login.item(
+        LOGIN_CHECK,
+        "Refresh startup status",
+        if login_disabled {
+            MF_GRAYED
+        } else {
+            MF_ENABLED
+        },
+    )?;
+    login.item(
+        LOGIN_SETTINGS,
+        "Windows startup settings",
+        if login_disabled {
+            MF_GRAYED
+        } else {
+            MF_ENABLED
+        },
+    )?;
+    menu.submenu("Start with Windows", login, MF_ENABLED)?;
     menu.item(QUIT, "Quit Klicky", MF_ENABLED)?;
     let mut point = POINT::default();
     unsafe {
@@ -716,6 +839,19 @@ fn show_menu(hwnd: HWND) -> Result<()> {
         let _ = PostMessageW(Some(hwnd), WM_NULL, WPARAM(0), LPARAM(0));
     }
     state_ref(hwnd).borrow_mut().menu_open = false;
+    let login_request = match selected {
+        LOGIN_ENABLE => Some(StartupRequest::Set(true)),
+        LOGIN_DISABLE => Some(StartupRequest::Set(false)),
+        LOGIN_CHECK => Some(StartupRequest::Check),
+        LOGIN_SETTINGS => Some(StartupRequest::Settings),
+        _ => None,
+    };
+    if let Some(request) = login_request {
+        let mut state = state_ref(hwnd).borrow_mut();
+        state.startup.submit(request)?;
+        state.startup_error = None;
+        return Ok(());
+    }
     if selected == REFRESH {
         let mut state = state_ref(hwnd).borrow_mut();
         if !state.refreshing {

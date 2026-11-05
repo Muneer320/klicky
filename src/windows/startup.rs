@@ -30,6 +30,24 @@ use anyhow::{bail, Context, Result};
 
 use super::{bundle, files, Paths};
 
+pub(super) fn open_settings() -> Result<()> {
+    let _com = Com::new()?;
+    use ::windows::Win32::UI::Shell::{
+        ShellExecuteExW, SEE_MASK_FLAG_NO_UI, SEE_MASK_NOASYNC, SHELLEXECUTEINFOW,
+    };
+    let mut launch = SHELLEXECUTEINFOW {
+        cbSize: size_of::<SHELLEXECUTEINFOW>() as u32,
+        fMask: SEE_MASK_FLAG_NO_UI | SEE_MASK_NOASYNC,
+        lpVerb: w!("open"),
+        lpFile: w!("ms-settings:startupapps"),
+        nShow: SW_SHOWNORMAL.0,
+        ..Default::default()
+    };
+    unsafe { ShellExecuteExW(&mut launch) }
+        .context("Windows Startup settings could not be opened")?;
+    Ok(())
+}
+
 const DESCRIPTION: &str = "Klicky per-user login startup; owner klicky.windows.v1";
 const MAX_LINK_BYTES: u64 = 64 * 1024;
 
