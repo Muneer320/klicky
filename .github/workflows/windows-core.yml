@@ -7,6 +7,9 @@ on:
       - tests/**
       - Cargo.toml
       - Cargo.lock
+      - build.rs
+      - packaging/windows/**
+      - scripts/generate-windows-icon.py
       - .github/workflows/windows-core.yml
   pull_request:
     paths:
@@ -14,6 +17,9 @@ on:
       - tests/**
       - Cargo.toml
       - Cargo.lock
+      - build.rs
+      - packaging/windows/**
+      - scripts/generate-windows-icon.py
       - .github/workflows/windows-core.yml
 
 permissions:
