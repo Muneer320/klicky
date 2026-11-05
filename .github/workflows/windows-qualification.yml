@@ -1,0 +1,55 @@
+name: Windows qualification tooling
+
+on:
+  push:
+    paths:
+      - tools/windows-qualification/**
+      - src/player.rs
+      - src/soundpack.rs
+      - Cargo.lock
+      - .github/workflows/windows-qualification.yml
+  pull_request:
+    paths:
+      - tools/windows-qualification/**
+      - src/player.rs
+      - src/soundpack.rs
+      - Cargo.lock
+      - .github/workflows/windows-qualification.yml
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      CARGO_TARGET_DIR: ${{ github.workspace }}/target/windows-qualification
+      KLICKY_QUALIFICATION_REVISION: ${{ github.sha }}
+      KLICKY_QUALIFICATION_TREE_STATE: clean
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Linux audio headers
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+      - name: Install declared minimum Rust
+        run: rustup toolchain install 1.87.0 --profile minimal --component rustfmt --component clippy
+      - name: Check formatting
+        run: cargo +1.87.0 fmt --manifest-path tools/windows-qualification/Cargo.toml --check
+      - name: Check compilation
+        run: cargo +1.87.0 check --locked --all-targets --manifest-path tools/windows-qualification/Cargo.toml
+      - name: Lint
+        run: cargo +1.87.0 clippy --locked --all-targets --manifest-path tools/windows-qualification/Cargo.toml -- -D warnings
+      - name: Build qualification executable
+        run: cargo +1.87.0 build --locked --release --manifest-path tools/windows-qualification/Cargo.toml
+      - name: Check analysis CLI
+        run: python tools/windows-qualification/analyze.py --help
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'Windows'
+        with:
+          name: klicky-windows-qualification-x64
+          path: target/windows-qualification/release/klicky-qualify.exe
+          if-no-files-found: error

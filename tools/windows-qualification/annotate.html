@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; media-src blob:; base-uri 'none'; form-action 'none'">
+<title>Klicky local waveform annotation</title>
+<style>
+  :root { color-scheme: light dark; font: 16px system-ui; }
+  body { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; }
+  canvas { width: 100%; border: 1px solid; cursor: crosshair; }
+  button, input, select { margin: .4rem; padding: .35rem; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; border-bottom: 1px solid; padding: .4rem; }
+  #status { min-height: 2rem; }
+</style>
+<h1>Local waveform annotation</h1>
+<p>Open a controlled PCM16 WAV. Mark the physical key impact and generated sound on the same recording. Acoustic impact is not electrical actuation. No file is uploaded; this page has no network access.</p>
+<label>Recording <input id="file" type="file" accept=".wav,audio/wav"></label>
+<audio id="audio" controls></audio>
+<p id="status" role="status" aria-live="polite">No recording selected.</p>
+<canvas id="overview" width="1000" height="100" aria-label="Recording overview; click to choose a detailed region"></canvas>
+<div>
+  <button id="previous" disabled>Previous region</button>
+  <label>Start, seconds <input id="start" type="number" min="0" step=".01" value="0" disabled></label>
+  <label>Window, milliseconds <select id="width" disabled><option>100</option><option selected>250</option><option>500</option><option>1000</option></select></label>
+  <button id="next" disabled>Next region</button>
+</div>
+<p>Detail: select a marker, then click its onset. Values use original WAV frames, without audio resampling.</p>
+<label><input type="radio" name="marker" value="reference" checked>Key impact/reference</label>
+<label><input type="radio" name="marker" value="audible">Generated sound onset</label>
+<label>Waveform channel <select id="channel" disabled><option value="0">1</option><option value="1">2</option></select></label>
+<canvas id="detail" width="1000" height="220" aria-label="Detailed waveform for onset selection"></canvas>
+<p id="selection">No pair selected.</p>
+<button id="add" disabled>Add accepted pair</button>
+<label>Exclusion reason <input id="reason" maxlength="200"></label><button id="exclude" disabled>Add excluded event</button>
+<button id="undo" disabled>Undo last event</button><button id="save" disabled>Save annotations CSV</button>
+<table><thead><tr><th>Event</th><th>Reference frame</th><th>Audible frame</th><th>Difference, ms</th><th>Accepted</th><th>Reason</th></tr></thead><tbody id="rows"></tbody></table>
+<script>
+'use strict';
+const el = id => document.getElementById(id);
+let pcm, rate, channels, frames, dataOffset, recording, blobUrl, selectedChannel = 0;
+let reference = null, audible = null;
+const pairs = [];
+const label = (view, offset, length) => String.fromCharCode(...new Uint8Array(view.buffer, offset, length));
+function load(buffer) {
+  if (buffer.byteLength > 512 * 1024 * 1024) throw Error('Recording exceeds the 512 MiB annotation limit.');
+  const view = new DataView(buffer);
+  if (buffer.byteLength < 44 || label(view, 0, 4) !== 'RIFF' || label(view, 8, 4) !== 'WAVE') throw Error('Expected RIFF PCM16 WAV.');
+  let format, bytes, offset = 12;
+  while (offset + 8 <= buffer.byteLength) {
+    const size = view.getUint32(offset + 4, true), kind = label(view, offset, 4), body = offset + 8;
+    if (body + size > buffer.byteLength) throw Error('Truncated WAV chunk.');
+    if (kind === 'fmt ') {
+      if (size < 16) throw Error('Short format chunk.');
+      format = view.getUint16(body, true);
+      channels = view.getUint16(body + 2, true);
+      rate = view.getUint32(body + 4, true);
+      if (view.getUint16(body + 14, true) !== 16) throw Error('Use PCM16 WAV.');
+    }
+    if (kind === 'data') { dataOffset = body; bytes = size; }
+    offset = body + size + (size & 1);
+  }
+  if (format !== 1 || ![1, 2].includes(channels) || !rate || bytes === undefined || bytes % (channels * 2)) throw Error('Use mono or stereo PCM16 WAV.');
+  frames = bytes / (channels * 2);
+  if (!frames) throw Error('Recording is empty.');
+  pcm = view;
+}
+function sample(frame) {
+  return pcm.getInt16(dataOffset + (frame * channels + selectedChannel) * 2, true) / 32768;
+}
+function region() {
+  return { begin: Math.min(frames - 1, Math.max(0, Math.round(Number(el('start').value) * rate))),
+           count: Math.max(1, Math.round(Number(el('width').value) * rate / 1000)) };
+}
+function draw(canvas, begin, count) {
+  const ctx = canvas.getContext('2d'), width = canvas.width, height = canvas.height;
+  ctx.clearRect(0, 0, width, height); ctx.strokeStyle = '#458579'; ctx.beginPath();
+  for (let x = 0; x < width; x++) {
+    const left = begin + Math.floor(x * count / width), right = Math.min(frames, begin + Math.max(1, Math.floor((x + 1) * count / width)));
+    let low = 1, high = -1;
+    for (let frame = left; frame < right; frame++) { const v = sample(frame); low = Math.min(low, v); high = Math.max(high, v); }
+    if (left < frames) { ctx.moveTo(x, height / 2 - high * height * .45); ctx.lineTo(x, height / 2 - low * height * .45); }
+  }
+  ctx.stroke();
+  if (canvas.id === 'detail') {
+    for (const [value, color] of [[reference, '#b85f32'], [audible, '#5865ce']]) {
+      if (value !== null && value >= begin && value < begin + count) {
+        const x = (value - begin) * width / count; ctx.strokeStyle = color; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+      }
+    }
+  }
+}
+function detail() {
+  if (!pcm) return;
+  const {begin, count} = region(); draw(el('detail'), begin, count);
+  el('selection').textContent = `Reference frame: ${reference ?? 'unset'}; audible frame: ${audible ?? 'unset'}; visible start ${(begin / rate).toFixed(4)} s.`;
+  el('add').disabled = reference === null || audible === null;
+}
+el('file').addEventListener('change', async event => {
+  try {
+    const file = event.target.files[0]; if (!file) return;
+    if (pairs.length && !confirm('Discard unsaved annotations before opening another recording?')) return;
+    pcm = null; load(await file.arrayBuffer()); recording = file.name;
+    pairs.length = 0; reference = audible = null; el('rows').replaceChildren(); el('start').value = 0;
+    if (blobUrl) URL.revokeObjectURL(blobUrl); blobUrl = URL.createObjectURL(file); el('audio').src = blobUrl;
+    selectedChannel = 0; el('channel').value = '0'; el('channel').options[1].disabled = channels < 2;
+    for (const id of ['start', 'width', 'previous', 'next', 'exclude', 'save', 'channel']) el(id).disabled = false;
+    el('undo').disabled = true;
+    el('status').textContent = `${recording}: ${frames} frames, ${rate} Hz, ${channels} channel(s). Acoustic comparison only until calibrated.`;
+    draw(el('overview'), 0, frames); detail();
+  } catch (error) {
+    pcm = null; pairs.length = 0; reference = audible = null; el('rows').replaceChildren();
+    for (const id of ['start', 'width', 'previous', 'next', 'exclude', 'save', 'add', 'undo', 'channel']) el(id).disabled = true;
+    el('audio').removeAttribute('src');
+    if (blobUrl) { URL.revokeObjectURL(blobUrl); blobUrl = undefined; }
+    for (const id of ['overview', 'detail']) el(id).getContext('2d').clearRect(0, 0, el(id).width, el(id).height);
+    el('status').textContent = error.message;
+  }
+});
+el('overview').addEventListener('click', event => {
+  if (!pcm) return;
+  const rect = event.target.getBoundingClientRect(); el('start').value = Math.max(0, (event.clientX - rect.left) / rect.width * frames / rate - .05).toFixed(4); detail();
+});
+el('detail').addEventListener('click', event => {
+  if (!pcm) return;
+  const rect = event.target.getBoundingClientRect(), {begin, count} = region();
+  const frame = Math.min(frames - 1, begin + Math.round((event.clientX - rect.left) / rect.width * count));
+  if (document.querySelector('input[name=marker]:checked').value === 'reference') reference = frame; else audible = frame;
+  detail();
+});
+for (const id of ['start', 'width']) el(id).addEventListener('change', detail);
+el('channel').addEventListener('change', () => { selectedChannel = Number(el('channel').value); draw(el('overview'), 0, frames); detail(); });
+for (const [id, sign] of [['previous', -1], ['next', 1]]) el(id).addEventListener('click', () => {
+  if (!pcm) return; el('start').value = Math.min((frames - 1) / rate, Math.max(0, Number(el('start').value) + sign * Number(el('width').value) / 1000)).toFixed(4); detail();
+});
+function add(accepted, reason) {
+  if (!pcm) return;
+  if (accepted === 'yes' && (reference === null || audible === null)) return;
+  const pair = [pairs.length + 1, reference ?? '', audible ?? '', accepted, reason]; pairs.push(pair);
+  const row = document.createElement('tr');
+  for (const value of [pair[0], pair[1], pair[2], accepted === 'yes' ? ((audible - reference) * 1000 / rate).toFixed(3) : '', accepted, reason]) {
+    const cell = document.createElement('td'); cell.textContent = value; row.append(cell);
+  }
+  el('rows').append(row); el('undo').disabled = false; reference = audible = null; detail();
+}
+el('add').addEventListener('click', () => add('yes', ''));
+el('exclude').addEventListener('click', () => { const reason = el('reason').value.trim(); if (!reason) { el('reason').focus(); return; } add('no', reason); el('reason').value = ''; });
+el('undo').addEventListener('click', () => { pairs.pop(); el('rows').lastChild?.remove(); el('undo').disabled = !pairs.length; });
+el('save').addEventListener('click', () => {
+  if (!pairs.length) return;
+  const quote = value => `"${String(value).replaceAll('"', '""')}"`;
+  const csv = 'event_id,reference_frame,audible_frame,accepted,reason\n' + pairs.map(pair => pair.map(quote).join(',')).join('\n') + '\n';
+  const url = URL.createObjectURL(new Blob([csv], {type: 'text/csv'})), anchor = document.createElement('a');
+  anchor.href = url; anchor.download = `${recording.replace(/\.wav$/i, '')}-annotations.csv`; anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+</script>
+</html>
