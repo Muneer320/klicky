@@ -40,7 +40,7 @@ Never commit private keys, passphrases, or revocation certificates.
 
 ## Publication
 
-[The APT workflow](../.github/workflows/apt-repository.yml) publishes through the existing GitHub Pages artifact and deploy job. It runs for a published stable GitHub release, a manual dispatch, or a push to the workflow's listed `master` paths (including the website, public media and install/uninstall scripts). Drafts and prereleases are excluded. Pull requests do not receive signing secrets or deploy.
+[The APT workflow](../.github/workflows/apt-repository.yml) publishes through the existing GitHub Pages artifact and deploy job. It runs for a published stable GitHub release, a manual dispatch, or a push to the workflow's listed `master` paths (including the website, public media and install/uninstall scripts). Its release-event path excludes drafts and prereleases. For manual dispatch, choose an already published stable release: the job validates the numeric tag and assets without independently rechecking its draft/prerelease flags. Pull requests do not receive signing secrets or deploy.
 
 **The tag-driven release workflow does not automatically chain into APT publication.** [The release workflow](../.github/workflows/release.yml) publishes using `GITHUB_TOKEN`; GitHub suppresses subsequent release-event workflow runs from that token. See [GitHub's workflow-trigger rules](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow).
 

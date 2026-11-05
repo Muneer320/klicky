@@ -22,7 +22,7 @@ Check the actual release assets before changing download instructions. A source 
 
 ## Linux stable packages
 
-The [release workflow](../.github/workflows/release.yml) runs on `v*` tag pushes and requires the exact `vMAJOR.MINOR.PATCH` version from Cargo metadata. It builds Debian/Arch packages, uploads `SHA256SUMS`, and publishes a non-prerelease marked latest.
+The [release workflow](../.github/workflows/release.yml) runs on `v*` tag pushes and checks that the tag equals `v` plus Cargo's package version. It builds Debian/Arch packages, uploads `SHA256SUMS`, and publishes a non-prerelease marked latest.
 
 **Do not use a `v*` tag for an experimental preview.** The current workflow is a stable Linux publisher, not a generic prerelease workflow. Push an approved stable tag only after the preparation PR is merged and release checks pass.
 
@@ -32,7 +32,7 @@ After the assets finish uploading, publish the signed APT archive using the [APT
 
 Use the [Windows package workflow](../.github/workflows/windows-portable.yml) or the identified local build scripts described in the [Windows guide](WINDOWS.md). Confirm both executables, packs, notices, embedded source identity and installer/ZIP SHA-256 sidecars.
 
-An approved platform preview uses a distinct non-`v*` tag, is marked **prerelease**, and is **not latest**. Attach the identified installer, complete portable ZIP and their exact sidecars. The APT workflow excludes prereleases so this does not replace stable Linux packages. CI artifacts alone are temporary downloads, not permanent release links.
+An approved platform preview uses a distinct non-`v*` tag, is marked **prerelease**, and is **not latest**. Attach the identified installer, complete portable ZIP and their exact sidecars. The APT release-event path excludes prereleases so this does not replace stable Linux packages. CI artifacts alone are temporary downloads, not permanent release links.
 
 The Windows helper selects an identified published installer/checksum pair. Verify its real GitHub release response and download/hash behavior before announcing the command; avoid launching a second app during network-only checks. Signing status and supported Windows architecture belong in the release notes.
 
