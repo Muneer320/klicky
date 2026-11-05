@@ -1,5 +1,6 @@
-//! Windows control-plane components. The application host is integrated separately.
+//! Native Windows input, audio, desktop and per-user application lifecycle.
 pub mod audio;
+mod bundle;
 pub(crate) mod cli;
 mod config;
 pub mod control;
@@ -12,7 +13,9 @@ pub mod pipe;
 mod process;
 pub mod protocol;
 pub mod runtime;
+mod service;
 mod session;
+mod startup;
 pub mod transactions;
 
 pub use config::ConfigStore;

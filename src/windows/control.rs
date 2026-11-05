@@ -400,31 +400,43 @@ impl Client {
         response.validate_for(&status, &response.instance)?;
         let process = ServerProcess::verify(pipe.as_handle(), &response.instance)
             .map_err(ControlError::Peer)?;
-        let identity = process.identity().clone();
         io::write_all(pipe.as_handle(), &RECEIPT, deadline, None)?;
         check_remote(&response)?;
         drop(pipe);
         if matches!(command, Command::Status {}) {
             return Ok(Reply { response, process });
         }
-        let request = Request::new(request_id(), command);
-        let pipe = self.connect(deadline)?;
-        let _verified =
-            ServerProcess::verify(pipe.as_handle(), &identity).map_err(ControlError::Peer)?;
-        let response = self.exchange(&pipe, &request, deadline)?;
-        response.validate_for(&request, &identity)?;
-        io::write_all(pipe.as_handle(), &RECEIPT, deadline, None)?;
-        check_remote(&response)?;
+        let response = self.command_for(command, &process, deadline)?;
         Ok(Reply { response, process })
     }
 
+    /// Bind a later mutation to a previously verified process, including across
+    /// a bundle-path check. A replacement process must never receive that command.
+    pub fn command_for(
+        &self,
+        command: Command,
+        process: &ServerProcess,
+        deadline: Instant,
+    ) -> Result<Response> {
+        let request = Request::new(request_id(), command);
+        let pipe = self.connect(deadline)?;
+        let _verified = ServerProcess::verify(pipe.as_handle(), process.identity())
+            .map_err(ControlError::Peer)?;
+        let response = self.exchange(&pipe, &request, deadline)?;
+        response.validate_for(&request, process.identity())?;
+        io::write_all(pipe.as_handle(), &RECEIPT, deadline, None)?;
+        check_remote(&response)?;
+        Ok(response)
+    }
+
     pub fn stop(&self, deadline: Instant) -> Result<()> {
-        let reply = self.command(Command::Stop {}, deadline)?;
-        if !reply
-            .process
-            .wait_until(deadline)
-            .map_err(ControlError::Peer)?
-        {
+        let reply = self.command(Command::Status {}, deadline)?;
+        self.stop_for(&reply.process, deadline)
+    }
+
+    pub fn stop_for(&self, process: &ServerProcess, deadline: Instant) -> Result<()> {
+        self.command_for(Command::Stop {}, process, deadline)?;
+        if !process.wait_until(deadline).map_err(ControlError::Peer)? {
             return Err(ControlError::Timeout);
         }
         Ok(())
