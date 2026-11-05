@@ -11,6 +11,8 @@ use clap::{Parser, Subcommand, ValueEnum};
 use serde::Serialize;
 
 #[path = "../../../src/soundpack.rs"]
+// The standalone baseline uses load(), not Windows transaction preparation.
+#[allow(dead_code)]
 mod soundpack;
 
 // Compile the production PCM source and mixer unchanged. Alternative buffer

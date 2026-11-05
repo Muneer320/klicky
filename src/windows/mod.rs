@@ -8,6 +8,7 @@ mod paths;
 pub mod pipe;
 mod process;
 pub mod protocol;
+pub mod transactions;
 
 pub use config::ConfigStore;
 pub use lifecycle::InstanceOwner;
