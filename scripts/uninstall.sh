@@ -84,8 +84,10 @@ else
   if [[ -x $local_binary ]]; then "$local_binary" stop
   elif [[ -x /usr/bin/klicky ]]; then /usr/bin/klicky stop
   fi
+  reload_user_service=0
   if command -v systemctl >/dev/null 2>&1 && systemctl --user cat klicky.service >/dev/null 2>&1; then
     systemctl --user disable --now klicky.service
+    reload_user_service=1
   fi
   remove_omarchy
   if command -v dpkg-query >/dev/null 2>&1 &&
@@ -96,8 +98,8 @@ else
   elif command -v pacman >/dev/null 2>&1 && pacman -Q klicky >/dev/null 2>&1; then
     sudo pacman -R --noconfirm klicky
   fi
-  rm -f -- "$unit" "$local_binary"
-  if command -v systemctl >/dev/null 2>&1; then systemctl --user daemon-reload; fi
+  rm -f -- "$unit" "$local_binary" "${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/default.target.wants/klicky.service"
+  if [[ $reload_user_service == 1 ]]; then systemctl --user daemon-reload; fi
   if [[ -f /etc/udev/rules.d/70-klicky.rules ]]; then
     sudo rm -f /etc/udev/rules.d/70-klicky.rules
     sudo udevadm control --reload-rules

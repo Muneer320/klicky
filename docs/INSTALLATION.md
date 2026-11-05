@@ -4,7 +4,13 @@
 
 ## Windows
 
-**Windows 11 x64.** Download the installer from [Releases](https://github.com/Muneer320/klicky/releases). Before a public Windows preview is attached there, use the latest [Windows build artifact](https://github.com/Muneer320/klicky/actions/workflows/windows-portable.yml), extract its ZIP, and open the file ending in `-setup.exe`.
+**Windows 11 x64.** Run in PowerShell:
+
+```powershell
+irm https://klicky.muneer320.tech/install.ps1 | iex
+```
+
+The helper downloads and verifies the published installer, opens setup and starts the installed app. For a file download instead, use the [Windows installer](https://github.com/Muneer320/klicky/releases/download/windows-preview-2026-11-06/klicky-0.4.0-windows-x64-preview-7640d242bbc1-setup.exe).
 
 Follow the wizard, choose your login-startup preference, then open Klicky from Start. Choose **Resume** from the tray menu to hear sounds. Rust, Visual Studio and separate sound downloads are not needed. Windows downloads currently use unsigned preview builds.
 
@@ -22,7 +28,7 @@ Extract the entire Klicky ZIP into a folder you intend to keep. Open `klicky-des
 irm https://klicky.muneer320.tech/install.ps1 | iex
 ```
 
-This selects a published Windows installer from the project's GitHub releases, verifies its SHA-256 file and opens the wizard. If none has been published, it stops with the current download guide. It does not download an arbitrary CI build or change Windows security settings. When setup finishes, the helper starts the installed app automatically; no second command is needed. A paused launch selected in the wizard is respected.
+This selects a published Windows installer from the project's GitHub releases, verifies its SHA-256 file and opens the wizard. It uses published assets and does not change Windows security settings. When setup finishes, the helper starts the installed app automatically; no second command is needed. A paused launch selected in the wizard is respected.
 
 Prefer to read it first? [Download the script](https://klicky.muneer320.tech/install.ps1), inspect it and run it in PowerShell.
 
