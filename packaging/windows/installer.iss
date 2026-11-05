@@ -457,6 +457,9 @@ begin
       if FileExists(Destination) then CheckPath(Destination, False);
       if CompareText(GetSHA256OfFile(Source), BackupHashes[I]) <> 0 then
         Result := False
+      else if FileExists(Destination) and
+         (CompareText(GetSHA256OfFile(Destination), BackupHashes[I]) = 0) then
+        Log('Previous file already verified; preserving ' + BackupFiles[I])
       else if not ForceDirectories(ExtractFileDir(Destination)) or
          not CopyFile(Source, Destination, False) or
          (CompareText(GetSHA256OfFile(Destination), BackupHashes[I]) <> 0) then Result := False;
