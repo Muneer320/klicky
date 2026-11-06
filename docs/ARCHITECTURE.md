@@ -5,23 +5,18 @@ Klicky uses one resident process per user session. Linux/macOS retain their Unix
 ## Data flow
 
 ```mermaid
-sequenceDiagram
-    participant Keyboard
-    participant Input as Platform input backend
-    participant Channel as Key event channel
-    participant Daemon as Main daemon loop
-    participant Cache as PCM cache
-    participant Mixer as Rodio mixer
-    participant OS as OS audio backend
-
-    Keyboard->>Input: Physical key-down event
-    Input->>Input: Map platform code to pack key name
-    Input->>Channel: KeyEvent(name, timestamp)
-    Channel->>Daemon: Receive event
-    Daemon->>Cache: Lookup predecoded samples
-    Cache-->>Daemon: Shared PCM slice
-    Daemon->>Mixer: Add source with configured volume
-    Mixer->>OS: Fill persistent output stream
+flowchart LR
+    L[Linux evdev] --> U[Unix daemon]
+    M[macOS event taps] --> U
+    W[Windows Raw Input] --> C[Windows coordinator]
+    P[OGG + JSON pack] --> S[Shared decoding / slicing / normalization]
+    S --> PCM[Prepared PCM]
+    PCM --> U
+    PCM --> C
+    U --> R[Rodio persistent output]
+    C --> A[Rodio mixer / Windows CPAL renderer]
+    R --> O[Speakers or headphones]
+    A --> O
 ```
 
 ## Module map
@@ -32,7 +27,8 @@ sequenceDiagram
 | `src/lib.rs` | Shared types and compile-time platform entrypoints |
 | `src/cli.rs` | Linux/macOS CLI dispatch |
 | `src/engine.rs` | Linux/macOS daemon lifecycle, IPC handling, event draining and benchmark output |
-| `src/config.rs` | Config, sound-pack, PID, and socket paths |
+| `src/config.rs` | Shared configuration fields and defaults |
+| `src/config/unix.rs` | Unix configuration persistence, pack roots and runtime paths |
 | `src/lifecycle.rs` | Persistent ownership lock, runtime cleanup, bounded shutdown and IPC readiness |
 | `src/service.rs` | systemd user service and macOS LaunchAgent management |
 | `src/ipc.rs` | JSON commands over a Unix domain socket |
@@ -119,6 +115,8 @@ Windows keeps the Rodio mixer but uses a Windows-only CPAL 0.18.2 renderer and a
 
 ## Concurrency
 
+### Linux/macOS
+
 ```mermaid
 flowchart TB
     MAIN[Main daemon loop]
@@ -137,6 +135,20 @@ flowchart TB
 ```
 
 The Linux/macOS main loop drains IPC and key-event channels, then sleeps for 500 microseconds. Input callbacks only map a key, capture an `Instant`, and send a channel message. Windows instead uses an event-driven coordinator with bounded work batches; its UI, startup worker, pack worker, input thread and audio renderer have explicit shutdown coordination.
+
+### Windows
+
+```mermaid
+flowchart LR
+    INPUT[Raw Input thread] -->|bounded key events| CORE[Event-driven coordinator]
+    TRAY[Tray / CLI via local pipe] -->|bounded controls| CORE
+    CORE -->|prepare and persist| PACK[Pack worker]
+    PACK -->|prepared activation| CORE
+    CORE -->|voices| MIX[Rodio mixer / CPAL renderer]
+    SESSION[Desktop / session changes] --> CORE
+```
+
+Pack preparation and settings persistence stay outside the coordinator/audio callback. Session gating and generation changes invalidate obsolete input; output supervision handles route/stream recovery. The native frontend, startup worker, input and renderer participate in confirmed shutdown.
 
 ## Runtime files
 

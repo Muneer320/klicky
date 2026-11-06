@@ -220,3 +220,4 @@ case "$platform" in
 esac
 if [[ $platform == Linux ]]; then install_omarchy; fi
 printf '\nKlicky is installed and started. Use its desktop control, or try klicky list and klicky volume 0.5.\n'
+printf 'A little sound for every keystroke.\n'

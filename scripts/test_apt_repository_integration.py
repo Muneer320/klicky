@@ -141,6 +141,13 @@ def main() -> None:
 
         required_files = [
             "index.html",
+            "guide.html",
+            "sitemap.xml",
+            "robots.txt",
+            "assets/site.css",
+            "assets/site.js",
+            "assets/branding/klicky.svg",
+            "assets/social-preview.jpg",
             "klicky.sources",
             "klicky-archive-keyring.gpg",
             "klicky-archive-keyring.asc",
@@ -162,7 +169,7 @@ def main() -> None:
             fingerprint[index: index + 4] for index in range(0, len(fingerprint), 4)
         )
         for content in (
-            "<title>Klicky / Give your keys a voice</title>",
+            "<title>Klicky / A little sound for every keystroke</title>",
             "sudo apt install klicky",
             grouped_fingerprint,
         ):

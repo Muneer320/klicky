@@ -1,6 +1,6 @@
 # Install, update or remove Klicky
 
-[Back to README](../README.md) · [Troubleshooting](TROUBLESHOOTING.md)
+[Back to README](../README.md) · [Visual field guide](https://klicky.muneer320.tech/guide.html#installation) · [Troubleshooting](TROUBLESHOOTING.md)
 
 ## Windows
 

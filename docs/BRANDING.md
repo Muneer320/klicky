@@ -1,29 +1,61 @@
 # Klicky brand assets
 
-Klicky's mark pairs a mechanical keycap with two sound pulses. The cutout is transparent so the mark works on light and dark surfaces. Keep the proportions and clear space; do not add glow or shadows to small application icons.
+**There's someone under your keys.**
 
-The master is [klicky.svg](../assets/branding/klicky.svg). The artwork is distributed under the project's [MIT license](../LICENSE).
+Klicky is the tiny fictional creature behind the keyboard-sound app. Its warm cream body, broad violet sound-wave ears, three forehead keycaps and curled antenna are the recognizable anchors. Keep them consistent across detailed illustrations and small icons. [Read the character story](CHARACTER.md).
+
+## Asset library
 
 | Asset | Use |
 |---|---|
-| [Vector mark](../assets/branding/klicky.svg) | Project pages, documentation and scalable application artwork |
-| [512px PNG](../assets/branding/klicky.png) | Raster consumers |
-| [Monochrome vector](../assets/branding/klicky-monochrome.svg) | Single-color interfaces; inherits `currentColor` |
-| [Menu template](../assets/branding/klicky-menu-template.png) and [2x](../assets/branding/klicky-menu-template@2x.png) | macOS menu bar; AppKit applies the system appearance |
-| [Social preview](../assets/branding/social-preview.png) and [vector master](../assets/branding/social-preview.svg) | 1280 × 640 repository and website sharing image; solid background, outlined lettering |
-| [Windows ICO](../packaging/windows/klicky.ico) | Embedded executable, tray and installer identity; nine sizes from 16 to 256px |
+| [Colour mark](../assets/branding/klicky.svg) / [512px PNG](../assets/branding/klicky.png) | Website navigation, documentation, app identity |
+| [Monochrome mark](../assets/branding/klicky-monochrome.svg) | Single-colour artwork; uses `currentColor` |
+| [Light-surface lockup](../assets/branding/klicky-lockup.svg) / [dark-surface lockup](../assets/branding/klicky-lockup-dark.svg) | Mascot + name |
+| [Wordmark](../assets/branding/klicky-wordmark.svg) / [dark-surface wordmark](../assets/branding/klicky-wordmark-dark.svg) | Name without the mascot |
+| [Happy mascot](../assets/branding/mascot-happy.png) / [resting mascot](../assets/branding/mascot-resting.png) | Transparent illustrations |
+| [Under the keys](../assets/branding/under-the-keys.png) | Keyboard-world illustration |
+| [Social preview JPEG](../assets/branding/social-preview.jpg) | Preferred GitHub upload: **1280 × 640, under 1 MB** |
+| [Social preview PNG](../assets/branding/social-preview.png) | Compatibility version, also 1280 × 640 and under 1 MB |
+| [Menu template](../assets/branding/klicky-menu-template.png) / [2x](../assets/branding/klicky-menu-template@2x.png) | 18/36px macOS template assets |
+| [Windows ICO](../packaging/windows/klicky.ico) | Executable, tray and installer; nine sizes from 16 to 256px |
 
-## Regeneration
+The final illustrations were prepared from the established character references. The social poster uses the selected cozy keyboard artwork. Original reference boards and internal character briefs are not public project assets.
 
-All platform exports come from the same SVG. Node.js and the pinned renderer are development tools only. Cargo builds consume the committed assets and do not invoke Node or download an image renderer.
+## Colour and type
+
+| Role | Colour |
+|---|---|
+| Cream | `#FFF3E6` |
+| Deep plum | `#21152F` |
+| Violet | `#7435B4` |
+| Lilac | `#C084FC` |
+| Blush | `#FFB3C3` |
+| Honey | `#FFD76A` |
+
+The website uses locally hosted **Nunito**, with system sans-serif fallbacks and system monospace for commands. No font-service request is needed. Nunito is distributed under its [SIL Open Font License](../assets/website/fonts/OFL.txt); the original font and Latin web subset are committed. Wordmark lettering is outlined, so it does not require installed fonts.
+
+Use plum/cream for reading surfaces, violet for controls and honey sparingly for sound and emphasis. Check contrast in both light and dark appearances; the decorative palette does not replace accessible text colours.
+
+## Usage
+
+- Leave clear space around the curl and ears; do not squash, crop or stretch the mark.
+- Use the simplified mark for small application icons; do not reduce a detailed illustration into an unreadable tray image.
+- Let the monochrome template inherit the platform's appearance. Do not derive it by recolouring the detailed artwork.
+- Keep the creature curious, cheerful and unhurried. Resting is content, not a request to keep typing.
+- Do not establish a species/origin, add unrelated costumes or imply an AI companion, virtual pet or gamification feature.
+- Keep documentation and error messages clear. Personality belongs around instructions, never in place of an actionable explanation.
+
+## Platform exports
 
 ```sh
 npm ci --prefix tools/branding --ignore-scripts
 npm run --prefix tools/branding build
 ```
 
-The lockfile pins resvg-js 2.6.2 and platform packages. No system fonts, external images or network assets are needed to render the logo. Review the icon at small sizes on both light and dark backgrounds after changing the master. The macOS helper uses the monochrome image when installed and retains its keyboard-symbol fallback for older installations.
+The locked resvg renderer exports the colour SVG to PNG/ICO and the independently authored monochrome SVG to macOS templates. Cargo consumes committed files; users need neither Node nor an image renderer. CI checks that regenerated native assets match Git.
 
-Source branding changes do not deploy the public website. Its Pages/APT publication workflow remains a separately reviewed operation; website consumers can use the shared SVG when that update is approved.
+Illustrations and the selected social JPEG/PNG are curated final raster assets, not regenerated by the vector exporter. Keep both poster formats at exactly 1280 × 640 and below 1,000,000 bytes. Optimized website illustrations live under `assets/website/mascot`; their PNG masters stay in the public asset library.
 
-The social poster keeps its lettering as vector paths, so export does not depend on installed fonts. It is exported by the same locked renderer. Upload `assets/branding/social-preview.png` in GitHub repository Settings → Social preview when changing the poster. The website uses the PNG for Open Graph and Twitter cards.
+New icons appear in newly built app packages. Replacing repository artwork does not update an already-installed executable or authorize a release.
+
+Upload `assets/branding/social-preview.jpg` in GitHub **Settings → Social preview**. The Pages builder publishes the artwork for website sharing; the GitHub repository setting is separate.

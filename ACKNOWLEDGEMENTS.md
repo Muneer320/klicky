@@ -42,3 +42,9 @@ The current repository adds and maintains:
 The bundled recordings and timing maps are owned by Muneer Alam and Sauhard Gupta and distributed under the repository MIT License. See [`sounds/LICENSE.md`](sounds/LICENSE.md).
 
 Contributors adding or replacing sounds must provide a clear source and redistribution permission.
+
+## Visual identity and typography
+
+The Klicky mascot identity and selected cozy keyboard artwork establish the project's visual direction. The public asset library contains selected final illustrations and simplified application marks; private reference boards are not distributed.
+
+The website and outlined wordmarks use Nunito by The Nunito Project Authors. The typeface and web subset retain the [SIL Open Font License](assets/website/fonts/OFL.txt), separately from Klicky's MIT-licensed application code.

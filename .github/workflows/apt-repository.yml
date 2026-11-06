@@ -5,9 +5,9 @@ on:
     branches: [master]
     paths:
       - .github/workflows/apt-repository.yml
-      - packaging/apt/index.html
+      - packaging/apt/**
       - assets/website/**
-      - assets/branding/social-preview.png
+      - assets/branding/**
       - scripts/build-apt-repository.py
       - scripts/install.sh
       - scripts/install.ps1

@@ -29,11 +29,18 @@ class Preview(BaseHTTPRequestHandler):
         content_type = "text/html; charset=utf-8"
         if path != "/klicky/":
             asset = None
-            if path in ("/klicky/install.sh", "/klicky/install.ps1",
+            if path in ("/klicky/guide.html", "/klicky/sitemap.xml", "/klicky/robots.txt"):
+                asset = ROOT / "packaging/apt" / path.rsplit("/", 1)[1]
+            elif path in ("/klicky/install.sh", "/klicky/install.ps1",
                         "/klicky/uninstall.sh", "/klicky/uninstall.ps1"):
                 asset = ROOT / "scripts" / path.rsplit("/", 1)[1]
-            elif path == "/klicky/assets/social-preview.png":
-                asset = ROOT / "assets/branding/social-preview.png"
+            elif path in ("/klicky/assets/social-preview.png", "/klicky/assets/social-preview.jpg"):
+                asset = ROOT / "assets/branding" / path.rsplit("/", 1)[1]
+            elif path.startswith("/klicky/assets/branding/"):
+                folder = (ROOT / "assets/branding").resolve()
+                candidate = (folder / path.removeprefix("/klicky/assets/branding/")).resolve()
+                if candidate.is_relative_to(folder):
+                    asset = candidate
             elif path.startswith("/klicky/assets/"):
                 folder = (ROOT / "assets/website").resolve()
                 candidate = (folder / path.removeprefix("/klicky/assets/")).resolve()
@@ -84,10 +91,10 @@ def main():
                 for width in [320, 360, 768, 1440]:
                     page.set_viewport_size({"width": width, "height": 1000})
                     assert page.goto(url).status == 200
-                    assert page.title() == "Klicky / Give your keys a voice"
+                    assert page.title() == "Klicky / A little sound for every keystroke"
                     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
                     assert page.locator("h1").count() == 1
-                    assert page.locator("script").count() == 0
+                    assert page.locator('script[src="assets/site.js"]').count() == 1
                     assert "{{" not in page.content()
                     for link in page.locator('a[href^="#"]').all():
                         assert page.locator(link.get_attribute("href")).count() == 1
@@ -95,39 +102,51 @@ def main():
                     assert page.locator(".skip").evaluate("e => e === document.activeElement")
                     assert page.locator(".skip").bounding_box()["y"] >= 0
                     page.keyboard.press("Enter")
-                    key = page.locator(".instrument summary")
-                    key.focus()
-                    assert key.evaluate("e => getComputedStyle(e).outlineStyle") != "none"
-                    page.keyboard.press("Enter")
-                    assert page.locator(".instrument").get_attribute("open") is not None
-                    assert page.locator(".trace").evaluate("e => getComputedStyle(e).animationName") == "none"
-                    page.keyboard.press("Enter")
                     for summary in page.locator(".pack summary").all():
                         summary.focus()
                         page.keyboard.press("Space")
                     assert page.locator(".pack[open]").count() == 6
+                    assert page.locator(".pack audio[controls]").count() == 10
                     assert page.locator(".pack code").count() == 10
+                    assert page.locator("audio[autoplay]").count() == 0
+                    assert page.locator(".story-art").evaluate("e => getComputedStyle(e).animationName") == "none"
+                    for image in page.locator("img").all():
+                        if not image.is_visible():
+                            continue
+                        image.scroll_into_view_if_needed()
+                        image.evaluate("e => e.decode()")
+                        assert image.evaluate("e => e.complete && e.naturalWidth > 0")
                     axe = output / "axe.min.js"
                     if axe.exists():
                         page.add_script_tag(path=str(axe))
                         violations = page.evaluate("async () => (await axe.run(document, {runOnly: {type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21aa']}})).violations")
                         assert not violations, [(v["id"], [n["target"] for n in v["nodes"]]) for v in violations]
-                        print(f"PASS axe WCAG A/AA {theme} {width}px")
-                    page.locator(".pack summary").last.evaluate("e => e.blur()")
                     page.evaluate("window.scrollTo(0, 0)")
                     page.screenshot(path=str(output / f"{theme}-{width}.png"), full_page=True)
-                    print(f"PASS {theme} {width}px: overflow, anchors, focus, key/pack disclosure, reduced motion")
+                    assert page.goto(url + "guide.html").status == 200
+                    assert page.locator("h1").count() == 1
+                    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+                    for link in page.locator('a[href^="#"]').all():
+                        assert page.locator(link.get_attribute("href")).count() == 1
+                    assert page.locator(".docs-content section").count() >= 16
+                    if axe.exists():
+                        page.add_script_tag(path=str(axe))
+                        violations = page.evaluate("async () => (await axe.run(document, {runOnly: {type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21aa']}})).violations")
+                        assert not violations, [(v["id"], [n["target"] for n in v["nodes"]]) for v in violations]
+                    page.screenshot(path=str(output / f"guide-{theme}-{width}.png"), full_page=True)
+                    print(f"PASS {theme} {width}px: landing/guide, overflow, anchors, focus, disclosures, images, audio, reduced motion")
             page.emulate_media(reduced_motion="no-preference")
+            page.set_viewport_size({"width": 1440, "height": 1000})
             page.goto(url)
-            page.locator(".instrument summary").click()
-            assert page.locator(".trace").evaluate("e => getComputedStyle(e).animationName") == "signal"
+            assert page.locator(".story-art").evaluate("e => getComputedStyle(e).animationName") == "greeting"
+            assert page.locator(".story-art").evaluate("e => getComputedStyle(e).animationIterationCount") == "2"
             assert not errors, errors
             browser.close()
     finally:
         server.shutdown()
         server.server_close()
         thread.join()
-    print("PASS: no browser console/runtime errors; /klicky/ base path; CSS animation")
+    print("PASS: no browser console/runtime errors; /klicky/ base path; finite CSS animation")
     print(f"Screenshots: {output}")
 
 

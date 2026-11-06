@@ -135,8 +135,13 @@ def render_index(public_url: str, versions: list[str], fingerprint: str) -> str:
 def copy_site_assets(output: Path) -> None:
     root = Path(__file__).resolve().parent.parent
     shutil.copytree(root / "assets/website", output / "assets")
+    shutil.copytree(root / "assets/branding", output / "assets/branding")
     shutil.copy2(root / "assets/branding/social-preview.png",
                  output / "assets/social-preview.png")
+    shutil.copy2(root / "assets/branding/social-preview.jpg",
+                 output / "assets/social-preview.jpg")
+    for name in ("guide.html", "sitemap.xml", "robots.txt"):
+        shutil.copy2(root / "packaging/apt" / name, output / name)
     for name in ("install.sh", "install.ps1", "uninstall.sh", "uninstall.ps1"):
         shutil.copy2(root / "scripts" / name, output / name)
 
