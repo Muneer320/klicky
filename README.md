@@ -71,14 +71,14 @@ irm https://klicky.muneer320.tech/install.ps1 | iex
 
 Downloads the published installer, verifies its SHA-256 and opens per-user setup. Choose login startup in the wizard; the helper starts Klicky afterward. No Rust, Visual Studio or elevation needed. Use the tray for packs, volume and Pause/Resume.
 
-> [!NOTE]
-> Windows downloads are development previews. If Windows Security reports a threat, stop setup and use the [security-block troubleshooting steps](docs/TROUBLESHOOTING.md#windows).
-
 Prefer a file? The [Windows preview](https://github.com/Muneer320/klicky/releases/tag/windows-preview-2026-11-06) has an installer and portable ZIP. Extract the complete ZIP and open `klicky-desktop.exe`.
 
 [Windows controls and recovery](docs/WINDOWS.md) · [Installation options](docs/INSTALLATION.md#windows)
 
 </details>
+
+> [!NOTE]
+> Windows downloads are development previews. If Windows Security reports a threat, stop setup and use the [security-block troubleshooting steps](docs/TROUBLESHOOTING.md#windows).
 
 Current downloads: **v0.4.0 Linux packages**, a separate **Windows preview**, and **macOS source setup**. [Releases](https://github.com/Muneer320/klicky/releases) · [Full installation guide](https://klicky.muneer320.tech/guide.html#installation)
 
