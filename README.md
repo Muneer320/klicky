@@ -217,4 +217,4 @@ These stop the app and remove installed desktop controls. Settings/custom sounds
 | Explore the character or use artwork | [Klicky's story](docs/CHARACTER.md) · [Brand assets](docs/BRANDING.md) |
 | Check releases and project history | [Releases](https://github.com/Muneer320/klicky/releases) · [Changelog](CHANGELOG.md) |
 
-Built on [Sauhard Gupta's original Klicky](https://github.com/Sauhard74/klicky), with subsequent work by Muneer Alam and contributors. [Acknowledgements](ACKNOWLEDGEMENTS.md) · [MIT license](LICENSE). Third-party notices accompany packaged downloads; the website's Nunito typeface retains its [SIL Open Font License](assets/website/fonts/OFL.txt).
+Built on [Sauhard Gupta's original Klicky](https://github.com/Sauhard74/klicky), with subsequent work by [Muneer Alam](https://muneer320.tech/) and contributors. [How Klicky grew from macOS to Linux and Windows](https://muneer320.tech/projects/klicky/). [Acknowledgements](ACKNOWLEDGEMENTS.md) · [MIT license](LICENSE). Third-party notices accompany packaged downloads; the website's Nunito typeface retains its [SIL Open Font License](assets/website/fonts/OFL.txt).
