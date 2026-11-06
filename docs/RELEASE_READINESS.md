@@ -2,7 +2,7 @@
 
 Klicky v0.5.0 brings Linux, macOS and Windows 11 x64 into one release. Linux ships Debian/Arch packages; Windows ships an unsigned per-user installer and portable ZIP; macOS uses the versioned source installer, with its menu helper included by default.
 
-This source tree prepares v0.5.0. A candidate build is not a published release. Keep the release-preparation PR open until approval to transition the public installation commands and website. The older Windows preview remains a historical download; new Windows users should use the stable installer after publication.
+For each release, keep the preparation PR open until approval to transition the public installation commands and website. A candidate build is not a published release. The older Windows preview remains a historical download; new Windows users should use the stable installer.
 
 ## Build a candidate without publishing
 
