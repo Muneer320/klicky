@@ -83,7 +83,7 @@ try {
     }
     if ($seen.Count -ne $inventoried.Count + 2 -or -not $seen.Contains('BUILD-INFO.json') -or -not $seen.Contains('THIRD-PARTY.txt')) { throw 'Unexpected un-inventoried payload files.' }
     $cliHash = (Get-FileHash -LiteralPath (Join-Path $payload 'klicky.exe') -Algorithm SHA256).Hash.ToLowerInvariant()
-    $receipt = "[Klicky]`nAppId={B8E55779-4EDB-4D8F-962D-10460EC7C230}`nVersion=$version`nSourceRevision=$revision`nCliSHA256=$cliHash`n"
+    $receipt = "[Klicky]`nAppId={B8E55779-4EDB-4D8F-962D-10460EC7C230}`nVersion=$version`nSourceRevision=$revision`nCliSHA256=$cliHash`nRecoveryVersion=1`n"
     [IO.File]::WriteAllText((Join-Path $payload 'INSTALLER-IDENTITY.ini'), $receipt, [Text.UTF8Encoding]::new($false))
     Invoke-Checked $CompilerPath @('--no-ide-signtools', '--no-signing', "--output-dir=$compiled", "--define=PayloadDirectory=$payload", "--define=AppVersion=$version", "--define=SourceRevision=$revision", (Join-Path $repository 'packaging/windows/installer.iss')) | Out-Host
     $installer = Join-Path $compiled "$name-setup.exe"

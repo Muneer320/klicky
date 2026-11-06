@@ -85,6 +85,8 @@ Snapshots are approximate concurrent totals, not audible-latency measurements. `
 
 The installer uses `%LOCALAPPDATA%\Programs\Klicky`, preserves configuration and custom sounds on removal, and updates only after verifying shutdown and exclusive bundle ownership. It restarts a previously running app with its pause choice preserved. Another signed-in session or an unconfirmed shutdown blocks replacement.
 
+If the installed `klicky.exe` is missing, the current installer can repair the owned bundle without running that executable. Quit Klicky in all signed-in sessions first. Its updated uninstaller also supports removal with the CLI absent, removing only an unchanged Klicky-owned login shortcut. Older installers need this repair before removal. A modified executable or an active bundle is refused; resolve any Windows Security detection before retrying.
+
 If an update fails, the installer attempts to restore previous files, Start entry and Installed Apps registration. It keeps unresolved recovery material in `%LOCALAPPDATA%\KlickyInstaller\recovery`. Preserve that folder until recovery finishes. `payload` holds the old bundle; the adjacent file/hash lists and external metadata describe its snapshot. Ask for help before running a partial bundle or deleting the recovery copy.
 
 Remove the installed app through **Settings → Apps → Installed apps**. Edited or other-bundle startup entries are preserved. Do not manually replace a running bundle or move a portable copy into the managed install directory.

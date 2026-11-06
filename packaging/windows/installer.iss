@@ -99,6 +99,7 @@ var
   UninstallKeyHash: String;
   HadStartShortcut: Boolean;
   StartShortcutHash: String;
+  OfflineRecovery: Boolean;
 
 function CreateFileW(Name: String; Access, Share: LongWord; Security: NativeUInt;
   Disposition, Flags: LongWord; Template: THandle): THandle;
@@ -264,7 +265,7 @@ begin
   if RequireReceipt then Result := Trim(Output.StdOut[0]);
 end;
 
-procedure CheckIdentity;
+function CheckIdentity: Boolean;
 var
   Identity, Expected, OldVersion: String;
   OldPacked, NewPacked: Int64;
@@ -274,10 +275,13 @@ begin
   if GetIniString('Klicky', 'AppId', '', Identity) <> '{#KlickyAppId}' then
     RaiseException('This folder is not owned by the Klicky installer. Move portable copies elsewhere first.');
   Expected := GetIniString('Klicky', 'CliSHA256', '', Identity);
-  CheckPath(ExpandConstant('{app}\klicky.exe'), False);
-  if (Length(Expected) <> 64) or
-     (CompareText(GetSHA256OfFile(ExpandConstant('{app}\klicky.exe')), Expected) <> 0) then
-    RaiseException('The installed control executable differs from its installer identity. Restore it before updating or removing Klicky.');
+  if Length(Expected) <> 64 then RaiseException('The installed control identity is invalid.');
+  Result := AttributesIfPresent(ExpandConstant('{app}\klicky.exe')) <> InvalidAttributes;
+  if Result then begin
+    CheckPath(ExpandConstant('{app}\klicky.exe'), False);
+    if CompareText(GetSHA256OfFile(ExpandConstant('{app}\klicky.exe')), Expected) <> 0 then
+      RaiseException('The installed control executable differs from its installer identity. It was not executed.');
+  end;
   if IsUninstaller then Exit;
   OldVersion := GetIniString('Klicky', 'Version', '', Identity);
   if not StrToVersion(OldVersion, OldPacked) or not StrToVersion('{#AppVersion}', NewPacked) then
@@ -297,6 +301,8 @@ begin
   WasRunning := Receipt[18] = '1';
   WasPaused := Receipt[20] = '1';
 end;
+
+#include "recovery.iss"
 
 procedure SnapshotDirectory(const Relative: String; Depth: Integer);
 var
@@ -519,15 +525,17 @@ begin
     CheckInstallLocation;
     HadInstall := FileExists(ExpandConstant('{app}\') + IdentityName);
     if HadInstall then begin
-      CheckIdentity;
-      PrepareProcess;
+      OfflineRecovery := not CheckIdentity;
+      if not OfflineRecovery then PrepareProcess;
     end else CheckEmptyDestination;
     if not ForceDirectories(ExpandConstant('{app}')) then RaiseException('Cannot create the Klicky application folder.');
     LockBundle;
     if HadInstall <> FileExists(ExpandConstant('{app}\') + IdentityName) then
       RaiseException('Klicky installation ownership changed during preparation. Cancel and retry.');
     if HadInstall then begin
-      CheckIdentity;
+      if OfflineRecovery = CheckIdentity then
+        RaiseException('The installed control executable changed during preparation. Cancel and retry.');
+      if OfflineRecovery then Log('Repairing an inactive owned bundle without running its missing control executable.');
       MakeBackup;
     end else CheckEmptyDestination;
     Prepared := True;
@@ -597,14 +605,18 @@ begin
   if Step = usAppMutexCheck then begin
     { Inno 7.1.1 calls this after confirmation and before any removal. Exceptions are fatal. }
     CheckInstallLocation;
-    CheckIdentity;
-    PrepareProcess;
+    OfflineRecovery := not CheckIdentity;
+    if not OfflineRecovery then PrepareProcess;
     LockBundle;
-    CheckIdentity;
+    if OfflineRecovery = CheckIdentity then
+      RaiseException('The installed control executable changed during preparation. Cancel and retry.');
   end else if Step = usUninstall then begin
-    Receipt := RunControl('service unregister-startup', True);
-    if (Receipt <> 'KLICKY_STARTUP_V1 ABSENT') and (Receipt <> 'KLICKY_STARTUP_V1 FOREIGN') then
-      RaiseException('Login shortcut removal was not confirmed. No bundle files were removed.');
+    if OfflineRecovery then RemoveOfflineStartup
+    else begin
+      Receipt := RunControl('service unregister-startup', True);
+      if (Receipt <> 'KLICKY_STARTUP_V1 ABSENT') and (Receipt <> 'KLICKY_STARTUP_V1 FOREIGN') then
+        RaiseException('Login shortcut removal was not confirmed. No bundle files were removed.');
+    end;
     RemovalStarted := True;
   end else if Step = usPostUninstall then begin
     UnlockBundle;
