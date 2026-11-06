@@ -32,7 +32,11 @@ param([switch]$Purge)
         }
         if (-not (Test-Path -LiteralPath $uninstaller -PathType Leaf)) { throw 'The registered uninstaller is missing. Repair the installation before removing it.' }
         if (-not (Test-Path -LiteralPath (Join-Path $app 'klicky.exe') -PathType Leaf)) {
-            throw 'The installed Klicky control executable is missing, so its uninstaller cannot safely stop the app. Check Windows Security Protection history. If it was quarantined, resolve the detection before repair; do not disable protection. See https://github.com/Muneer320/klicky/blob/master/docs/TROUBLESHOOTING.md#windows'
+            $identity = Join-Path $app 'INSTALLER-IDENTITY.ini'
+            if (-not (Test-Path -LiteralPath $identity -PathType Leaf) -or
+                -not ([IO.File]::ReadAllLines($identity) -ccontains 'RecoveryVersion=1')) {
+                throw 'This older installation needs repair with the current installer before removal because its control executable is missing. Close Klicky, resolve any security detection, then run the current installer. Keep protection enabled.'
+            }
         }
         $logDirectory = Join-Path $local 'KlickyInstaller/logs'
         New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null

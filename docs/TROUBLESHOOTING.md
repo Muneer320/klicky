@@ -52,7 +52,7 @@ Note the Klicky build and detection name, and contact the maintainer through the
 
 Use the current [Windows removal helper](https://klicky.muneer320.tech/uninstall.ps1) in PowerShell under the account that installed Klicky. It reads the current user's Windows registration directly. Registry access errors are reported rather than treated as an absent installation. Portable copies are removed separately; the helper does not guess ownership or delete an unregistered application folder.
 
-The preview's native uninstaller uses `klicky.exe` to stop its running tray app and unregister login startup. If that executable is missing, removal cannot complete through this path. Check **Windows Security → Protection history** before attempting repair. Keep protection enabled and resolve any detection first; do not restore a quarantined executable just to uninstall. Settings and custom packs remain untouched after a failed removal.
+Older preview uninstallers need `klicky.exe` to stop the app and remove login startup. If it is missing, quit Klicky in every signed-in session and repair with the current installer first. The updated installer and uninstaller can recover an inactive, installer-owned bundle without executing the missing CLI. Edited or foreign startup shortcuts are preserved. Check **Windows Security → Protection history** before repair; keep protection enabled and resolve any detection first. Do not restore a quarantined executable just to uninstall. Settings and custom packs remain untouched after a failed removal.
 
 </details>
 
