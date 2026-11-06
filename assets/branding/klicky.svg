@@ -1,5 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none" role="img" aria-labelledby="title">
-  <title id="title">Klicky</title>
-  <path transform="matrix(.92 0 0 1 0 0)" fill="#2563EB" fill-rule="evenodd" d="M65 50H132C145 50 153 57 157 70L181 158C186 176 176 190 158 190H38C20 190 10 176 15 158L40 70C44 57 52 50 65 50ZM67 69C61 69 57 73 55 80L39 132C37 140 42 146 50 146H147C155 146 160 140 158 132L142 80C140 73 136 69 130 69H67Z"/>
-  <path d="M192 88C209 106 209 134 192 152M218 67C247 96 247 144 218 173" stroke="#2563EB" stroke-width="16" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+<title id="title">Klicky</title><desc id="desc">A cream creature with sound-wave ears, violet keycaps and a curled antenna.</desc>
+<defs><linearGradient id="ear" x2="0" y2="1"><stop stop-color="#8844D0"/><stop offset="1" stop-color="#F6A4BC"/></linearGradient></defs>
+<path d="M237 172C173 116 195 47 247 47C298 47 316 108 277 120C251 128 239 104 250 91" fill="none" stroke="#40214F" stroke-width="35" stroke-linecap="round"/>
+<path d="M237 172C173 116 195 47 247 47C298 47 316 108 277 120C251 128 239 104 250 91" fill="none" stroke="#FFF0D8" stroke-width="22" stroke-linecap="round"/>
+<path d="M157 225C103 167 41 180 43 227C46 304 84 349 151 329M355 225C409 167 471 180 469 227C466 304 428 349 361 329" fill="url(#ear)" stroke="#40214F" stroke-width="13" stroke-linejoin="round"/>
+<g stroke="#FFD76A" stroke-width="13" stroke-linecap="round"><path d="M77 245V269M101 231V286M125 249V268M387 249V268M411 231V286M435 245V269"/></g>
+<path d="M130 285C127 223 174 190 256 190C338 190 385 223 382 285L397 327L378 324C398 394 345 420 256 420C167 420 114 394 134 324L115 327Z" fill="#FFF0D8" stroke="#40214F" stroke-width="13" stroke-linejoin="round"/>
+<g stroke="#40214F" stroke-width="10" stroke-linejoin="round"><rect x="150" y="177" width="68" height="64" rx="12" fill="#C084FC" transform="rotate(-15 184 209)"/><rect x="222" y="158" width="68" height="68" rx="12" fill="#DDB2FF"/><rect x="294" y="177" width="68" height="64" rx="12" fill="#C084FC" transform="rotate(15 328 209)"/></g>
+<g stroke="#7C3AED" stroke-width="7" stroke-linecap="round"><path d="M180 197L190 207M190 197L180 207M250 179L262 191M262 179L250 191M322 197L332 207M332 197L322 207"/></g>
+<g fill="#40214F"><ellipse cx="199" cy="309" rx="21" ry="27"/><ellipse cx="313" cy="309" rx="21" ry="27"/></g>
+<g fill="#FFF8EF"><circle cx="193" cy="299" r="7"/><circle cx="307" cy="299" r="7"/></g>
+<g fill="#F49EB4"><ellipse cx="163" cy="349" rx="21" ry="12"/><ellipse cx="349" cy="349" rx="21" ry="12"/></g>
+<path d="M234 348Q244 364 256 349Q268 364 278 348" fill="none" stroke="#40214F" stroke-width="8" stroke-linecap="round"/>
 </svg>

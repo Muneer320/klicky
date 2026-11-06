@@ -4,1553 +4,785 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
-    <title>Klicky / Give your keys a voice</title>
+    <title>Klicky / A little sound for every keystroke</title>
     <meta
       name="description"
-      content="Mechanical keyboard sounds for Windows, macOS and Linux. Ten sound packs, adjustable volume and simple desktop controls. Free and open source."
+      content="There's someone under your keys. Klicky is a local Rust keyboard-sound app with ten sound packs, native controls and a tiny mascot who loves every click."
     />
     <link rel="canonical" href="https://klicky.muneer320.tech/" />
+    <link rel="icon" type="image/svg+xml" href="assets/branding/klicky.svg" />
+    <link rel="stylesheet" href="assets/site.css" />
+    <script src="assets/site.js" defer></script>
+    <link rel="preload" as="image" href="assets/mascot/under-the-keys.webp" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Klicky / Give your keys a voice" />
+    <meta
+      property="og:title"
+      content="Klicky / A little sound for every keystroke"
+    />
     <meta
       property="og:description"
-      content="A little more character for every keystroke. Mechanical keyboard sounds for Windows, macOS and Linux."
+      content="A tiny creature. A big love for clicks. Mechanical keyboard sounds, made locally with Rust."
     />
     <meta property="og:url" content="https://klicky.muneer320.tech/" />
     <meta
       property="og:image"
-      content="https://klicky.muneer320.tech/assets/social-preview.png"
+      content="https://klicky.muneer320.tech/assets/social-preview.jpg"
     />
     <meta property="og:image:width" content="1280" />
     <meta property="og:image:height" content="640" />
     <meta
       property="og:image:alt"
-      content="Klicky. Give your keys a voice. Windows, macOS and Linux."
+      content="Klicky beneath a violet keycap. A little sound for every keystroke."
     />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Klicky / Give your keys a voice" />
+    <meta
+      name="twitter:title"
+      content="Klicky / A little sound for every keystroke"
+    />
     <meta
       name="twitter:description"
-      content="Mechanical keyboard sounds. Ten packs. Your keyboard."
+      content="There's someone under your keys. Meet Klicky, the local keyboard-sound app."
     />
     <meta
       name="twitter:image"
-      content="https://klicky.muneer320.tech/assets/social-preview.png"
+      content="https://klicky.muneer320.tech/assets/social-preview.jpg"
     />
-    <style>
-      :root {
-        --paper: #f6f5ef;
-        --ink: #192638;
-        --muted: #526078;
-        --blue: #215bdd;
-        --tint: #e6edfc;
-        --line: #d3d8e2;
-        --surface: #fff;
-        --shadow: #c7d3eb;
-        --mono: ui-monospace, SFMono-Regular, Consolas, monospace;
-        color-scheme: light dark;
-        font-family:
-          Inter,
-          ui-sans-serif,
-          system-ui,
-          -apple-system,
-          BlinkMacSystemFont,
-          "Segoe UI",
-          sans-serif;
-        color: var(--ink);
-        background: var(--paper);
-        scroll-behavior: smooth;
-      }
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-      }
-      a {
-        color: var(--blue);
-        text-underline-offset: 0.22em;
-      }
-      a:hover {
-        text-decoration-thickness: 2px;
-      }
-      button,
-      a,
-      summary,
-      audio {
-        touch-action: manipulation;
-      }
-      a:focus-visible,
-      summary:focus-visible,
-      audio:focus-visible {
-        outline: 3px solid var(--blue);
-        outline-offset: 6px;
-      }
-      p {
-        line-height: 1.65;
-      }
-      h1,
-      h2,
-      h3,
-      p {
-        margin-top: 0;
-      }
-      svg {
-        max-width: 100%;
-      }
-      code {
-        font: 0.86em var(--mono);
-        overflow-wrap: anywhere;
-      }
-      pre {
-        background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: 12px;
-        padding: 20px;
-        overflow: auto;
-        max-width: 100%;
-        color: var(--ink);
-        line-height: 1.7;
-        font-size: 0.9rem;
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
-      }
-      pre code {
-        font-size: inherit;
-      }
-      summary {
-        cursor: pointer;
-        list-style: none;
-      }
-      summary::-webkit-details-marker {
-        display: none;
-      }
-      summary::after {
-        content: "+";
-        font: 1.3rem var(--mono);
-        margin-left: 18px;
-        float: right;
-        color: var(--blue);
-      }
-      details[open] > summary::after {
-        content: "−";
-      }
-      details > summary {
-        border-radius: 5px;
-      }
-      .wrap {
-        width: min(1160px, calc(100% - 64px));
-        margin-inline: auto;
-      }
-      .skip {
-        position: fixed;
-        top: -80px;
-        left: 16px;
-        padding: 12px 20px;
-        background: var(--ink);
-        color: var(--paper);
-        z-index: 5;
-      }
-      .skip:focus {
-        top: 12px;
-      }
-      header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding-block: 28px;
-        border-bottom: 1px solid var(--line);
-        gap: 24px;
-      }
-      .brand {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        color: var(--ink);
-        font-size: 1.65rem;
-        font-weight: 800;
-        text-decoration: none;
-        letter-spacing: -0.06em;
-      }
-      .mark {
-        width: 43px;
-        height: 43px;
-        flex: none;
-        color: var(--blue);
-      }
-      nav {
-        display: flex;
-        gap: 30px;
-        align-items: center;
-        font-size: 0.9rem;
-      }
-      nav a {
-        color: var(--ink);
-        text-decoration: none;
-      }
-      .repo {
-        border: 1px solid var(--line);
-        border-radius: 30px;
-        padding: 10px 17px;
-      }
-      .hero {
-        display: grid;
-        grid-template-columns: 1.12fr 1fr;
-        align-items: center;
-        gap: 35px;
-        min-height: 640px;
-        padding-block: 76px 65px;
-      }
-      .eyebrow {
-        font: 0.76rem var(--mono);
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 26px;
-      }
-      .eyebrow::before {
-        content: "";
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--blue);
-        margin-right: 10px;
-      }
-      h1 {
-        font:
-          normal clamp(3.8rem, 7.6vw, 6.7rem) / 1.03 Georgia,
-          "Times New Roman",
-          serif;
-        letter-spacing: -0.065em;
-        margin-bottom: 28px;
-      }
-      h1 em {
-        color: var(--blue);
-        font-weight: normal;
-      }
-      .intro {
-        font-size: 1.13rem;
-        max-width: 470px;
-        color: var(--muted);
-      }
-      .actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 13px;
-        margin-block: 30px 22px;
-      }
-      .button {
-        display: inline-flex;
-        align-items: center;
-        gap: 25px;
-        padding: 15px 23px;
-        border: 1px solid var(--blue);
-        border-radius: 7px;
-        background: var(--blue);
-        color: #fff;
-        text-decoration: none;
-        font-weight: 650;
-        font-size: 0.95rem;
-      }
-      .button.secondary {
-        background: transparent;
-        color: var(--ink);
-        border-color: var(--line);
-      }
-      .platforms {
-        font: 0.75rem var(--mono);
-        color: var(--muted);
-      }
-      .platforms span {
-        margin-inline: 9px;
-        color: var(--blue);
-      }
-      .instrument {
-        position: relative;
-        min-width: 0;
-        padding: 42px 20px 24px;
-        isolation: isolate;
-      }
-      .instrument::before {
-        content: "";
-        position: absolute;
-        inset: 15px 0 60px;
-        border-radius: 50%;
-        background: var(--tint);
-        z-index: -1;
-      }
-      .instrument summary {
-        display: block;
-        text-align: center;
-        padding: 4px 20px 28px;
-      }
-      .instrument summary::after {
-        display: none;
-      }
-      .key-stage {
-        width: 100%;
-        height: 295px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-      }
-      .key {
-        width: 190px;
-        height: 190px;
-        border: 16px solid #2563eb;
-        border-bottom-width: 43px;
-        border-radius: 36px;
-        background: #f8faff;
-        color: #2563eb;
-        box-shadow: 0 18px 0 #192638;
-        transform: rotate(-10deg);
-        display: grid;
-        place-items: center;
-        font-size: 5.6rem;
-        font-weight: 700;
-        line-height: 1;
-        transition:
-          transform 0.18s,
-          box-shadow 0.18s;
-      }
-      .instrument[open] .key {
-        transform: translateY(12px) rotate(-10deg);
-        box-shadow: 0 6px 0 #192638;
-      }
-      .trace {
-        position: absolute;
-        right: -3px;
-        top: 70px;
-        width: 105px;
-        height: 145px;
-        fill: none;
-        stroke: var(--blue);
-        stroke-width: 7;
-        stroke-linecap: round;
-      }
-      .instrument[open] .trace {
-        animation: signal 0.65s ease 3;
-      }
-      .instrument summary small {
-        display: block;
-        font: 0.7rem var(--mono);
-        color: var(--muted);
-        margin-top: 8px;
-      }
-      .instrument .explain {
-        font-size: 0.85rem;
-        text-align: center;
-        color: var(--muted);
-        max-width: 350px;
-        margin: 0 auto;
-        padding: 0 10px 14px;
-      }
-      .illustration-note {
-        font: 0.65rem var(--mono);
-        text-align: center;
-        color: var(--muted);
-        margin-top: 8px;
-        letter-spacing: 0.04em;
-      }
-      .promise {
-        border-top: 1px solid var(--line);
-        border-bottom: 1px solid var(--line);
-        display: flex;
-        justify-content: space-between;
-        gap: 25px;
-        padding-block: 23px;
-        font-size: 0.87rem;
-      }
-      .promise strong {
-        color: var(--blue);
-        font-weight: 600;
-      }
-      .section {
-        padding-block: 100px;
-      }
-      .section-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: end;
-        gap: 40px;
-        margin-bottom: 40px;
-      }
-      .section-head > p {
-        max-width: 340px;
-        margin-bottom: 4px;
-        color: var(--muted);
-        font-size: 0.97rem;
-      }
-      h2 {
-        font:
-          normal clamp(2.5rem, 4.5vw, 3.6rem) / 1.08 Georgia,
-          "Times New Roman",
-          serif;
-        letter-spacing: -0.045em;
-        margin-bottom: 0;
-      }
-      .label {
-        display: block;
-        font: 0.72rem var(--mono);
-        letter-spacing: 0.11em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 17px;
-      }
-      .packs {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 18px;
-      }
-      .pack {
-        border: 1px solid var(--line);
-        border-radius: 12px;
-        background: var(--surface);
-        padding: 24px;
-        align-self: start;
-      }
-      .pack summary {
-        font-size: 1.05rem;
-        font-weight: 700;
-        min-height: 80px;
-        display: block;
-      }
-      .pack summary > span {
-        display: block;
-        font-size: 0.79rem;
-        font-weight: 400;
-        color: var(--muted);
-        padding-top: 11px;
-      }
-      .pack summary::after {
-        margin-top: -70px;
-      }
-      .pack .swatch {
-        display: block;
-        width: 28px;
-        height: 10px;
-        border-radius: 3px;
-        background: var(--pack-color);
-        margin-bottom: 20px;
-      }
-      .pack .listen {
-        border-top: 1px solid var(--line);
-        padding-top: 16px;
-        margin-top: 8px;
-      }
-      .listen .variant {
-        display: block;
-        font-size: 0.78rem;
-        margin: 0 0 9px;
-        color: var(--muted);
-      }
-      .listen code {
-        display: block;
-        font-size: 0.7rem;
-        margin-bottom: 10px;
-        color: var(--muted);
-      }
-      audio {
-        display: block;
-        width: 100%;
-        height: 36px;
-        margin-bottom: 18px;
-      }
-      .pack p {
-        font-size: 0.85rem;
-        color: var(--muted);
-        margin-top: 15px;
-      }
-      .section-note {
-        color: var(--muted);
-        font-size: 0.82rem;
-        margin-top: 24px;
-      }
-      .install-band {
-        background: var(--tint);
-        border-block: 1px solid var(--line);
-      }
-      .install-band .section-head > p {
-        max-width: 380px;
-      }
-      .install-list {
-        border-top: 1px solid var(--line);
-      }
-      .os {
-        border-bottom: 1px solid var(--line);
-        padding-block: 25px;
-      }
-      .os > summary {
-        font-size: 1.3rem;
-        font-weight: 650;
-        display: flex;
-        align-items: center;
-        gap: 20px;
-      }
-      .os > summary::after {
-        margin-left: auto;
-        float: none;
-      }
-      .os .number {
-        font: 0.73rem var(--mono);
-        color: var(--muted);
-        width: 26px;
-        flex: none;
-      }
-      .os .system-note {
-        font: 0.76rem var(--mono);
-        font-weight: 400;
-        color: var(--muted);
-        margin-left: 14px;
-      }
-      .os-content {
-        padding: 23px 0 0 46px;
-        max-width: 900px;
-      }
-      .os-content p {
-        font-size: 0.95rem;
-        color: var(--muted);
-      }
-      .os-content .button {
-        margin: 0 12px 15px 0;
-      }
-      .os-content .small {
-        font-size: 0.8rem;
-      }
-      .how {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 110px;
-      }
-      .how h2 {
-        margin-bottom: 28px;
-      }
-      .how p {
-        color: var(--muted);
-      }
-      .control-line {
-        border-top: 1px solid var(--line);
-        padding-block: 19px;
-        font-size: 0.95rem;
-        display: grid;
-        grid-template-columns: 100px 1fr;
-        gap: 20px;
-      }
-      .control-line strong {
-        font-weight: 650;
-      }
-      .control-line span {
-        color: var(--muted);
-      }
-      .terminal {
-        background: var(--ink);
-        color: var(--paper);
-        padding: 29px;
-        border-radius: 14px;
-        align-self: center;
-        transform: rotate(1deg);
-      }
-      .terminal .dots {
-        display: flex;
-        gap: 6px;
-        margin-bottom: 25px;
-      }
-      .dots i {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: #94a3b8;
-      }
-      .terminal pre {
-        padding: 0;
-        margin: 0;
-        background: transparent;
-        color: #e2eaff;
-        border: 0;
-        font-size: 0.86rem;
-      }
-      .terminal .prompt {
-        color: #8db8ff;
-      }
-      .terminal p {
-        font: 0.73rem var(--mono);
-        color: #b6c1d4;
-        margin: 25px 0 0;
-      }
-      .faq {
-        display: grid;
-        grid-template-columns: 1fr 1.55fr;
-        gap: 85px;
-        border-top: 1px solid var(--line);
-      }
-      .questions {
-        border-top: 1px solid var(--line);
-      }
-      .questions details {
-        border-bottom: 1px solid var(--line);
-        padding: 22px 0;
-      }
-      .questions summary {
-        font-size: 1rem;
-        font-weight: 600;
-      }
-      .questions p {
-        color: var(--muted);
-        font-size: 0.92rem;
-        padding-right: 22px;
-        margin: 18px 0 0;
-      }
-      .archive {
-        border: 1px solid var(--line);
-        border-radius: 12px;
-        padding: 23px;
-        margin-bottom: 65px;
-      }
-      .archive > summary {
-        font-weight: 600;
-        font-size: 0.9rem;
-      }
-      .archive .archive-body {
-        padding-top: 25px;
-        max-width: 870px;
-      }
-      .archive p,
-      .archive li {
-        font-size: 0.85rem;
-        color: var(--muted);
-      }
-      .archive ul {
-        padding-left: 23px;
-      }
-      .fingerprint {
-        display: block;
-        overflow-wrap: anywhere;
-        line-height: 1.8;
-      }
-      .archive-links {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 20px;
-        font-size: 0.86rem;
-        margin-block: 23px;
-      }
-      footer {
-        border-top: 1px solid var(--line);
-        display: flex;
-        justify-content: space-between;
-        gap: 25px;
-        padding-block: 28px 40px;
-        font-size: 0.78rem;
-        color: var(--muted);
-      }
-      footer p {
-        margin: 0;
-      }
-      footer a {
-        color: var(--muted);
-      }
-      @keyframes signal {
-        0%,
-        100% {
-          opacity: 0.4;
-          transform: translateX(0);
-        }
-        50% {
-          opacity: 1;
-          transform: translateX(7px);
-        }
-      }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --paper: #111a28;
-          --ink: #e7edf7;
-          --muted: #a6b4c9;
-          --blue: #8db2ff;
-          --tint: #19283e;
-          --line: #33435a;
-          --surface: #172334;
-          --shadow: #243a5c;
-        }
-        .button {
-          background: #2563eb;
-          border-color: #2563eb;
-        }
-        .button.secondary {
-          background: transparent;
-          border-color: var(--line);
-        }
-        .terminal {
-          background: #090f19;
-        }
-        .instrument::before {
-          background: #192e50;
-        }
-        .key {
-          box-shadow: 0 18px 0 #070d16;
-        }
-        .instrument[open] .key {
-          box-shadow: 0 6px 0 #070d16;
-        }
-      }
-      @media (max-width: 900px) {
-        .wrap {
-          width: calc(100% - 44px);
-        }
-        nav {
-          gap: 18px;
-        }
-        .hero {
-          gap: 10px;
-          min-height: auto;
-          padding-block: 65px;
-        }
-        .hero h1 {
-          font-size: 4.8rem;
-        }
-        .key {
-          width: 160px;
-          height: 160px;
-          font-size: 4.5rem;
-        }
-        .trace {
-          width: 78px;
-          right: -12px;
-        }
-        .instrument {
-          padding-inline: 4px;
-        }
-        .instrument summary {
-          padding-inline: 8px;
-        }
-        .packs {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-        .how {
-          gap: 40px;
-        }
-        .faq {
-          gap: 40px;
-        }
-        .section {
-          padding-block: 75px;
-        }
-        .promise {
-          font-size: 0.78rem;
-          gap: 15px;
-        }
-      }
-      @media (max-width: 600px) {
-        .wrap {
-          width: calc(100% - 36px);
-        }
-        header {
-          padding-block: 20px;
-          gap: 10px;
-        }
-        .brand {
-          font-size: 1.4rem;
-          gap: 8px;
-        }
-        .mark {
-          width: 33px;
-          height: 33px;
-        }
-        nav {
-          gap: 15px;
-          font-size: 0.78rem;
-        }
-        nav .repo {
-          display: none;
-        }
-        .hero {
-          grid-template-columns: 1fr;
-          padding-block: 44px 30px;
-          gap: 15px;
-        }
-        .hero h1 {
-          font-size: 4.6rem;
-          max-width: 340px;
-        }
-        .eyebrow {
-          font-size: 0.63rem;
-          margin-bottom: 22px;
-        }
-        .intro {
-          font-size: 1rem;
-          max-width: 360px;
-        }
-        .actions {
-          margin-top: 24px;
-        }
-        .button {
-          padding: 13px 17px;
-          font-size: 0.85rem;
-          gap: 18px;
-        }
-        .platforms {
-          font-size: 0.67rem;
-        }
-        .instrument {
-          max-width: 330px;
-          justify-self: center;
-          width: 100%;
-          padding-top: 5px;
-        }
-        .instrument::before {
-          inset: 0 10px 20px;
-        }
-        .key-stage {
-          height: 235px;
-        }
-        .trace {
-          right: 0;
-          top: 48px;
-        }
-        .instrument summary {
-          padding-bottom: 15px;
-        }
-        .promise {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 10px;
-          padding-block: 21px;
-          font-size: 0.8rem;
-        }
-        .promise p {
-          margin: 0;
-        }
-        .section {
-          padding-block: 58px;
-        }
-        .section-head {
-          display: block;
-          margin-bottom: 28px;
-        }
-        .section-head > p {
-          margin-top: 20px;
-          font-size: 0.92rem;
-        }
-        .packs {
-          grid-template-columns: 1fr;
-          gap: 12px;
-        }
-        .pack {
-          padding: 21px;
-        }
-        .pack summary {
-          min-height: 65px;
-        }
-        .pack summary::after {
-          margin-top: -56px;
-        }
-        .pack .swatch {
-          margin-bottom: 16px;
-        }
-        .label {
-          font-size: 0.65rem;
-        }
-        .os > summary {
-          gap: 10px;
-          font-size: 1.15rem;
-        }
-        .os .system-note {
-          display: block;
-          font-size: 0.65rem;
-          margin: 6px 0 0;
-        }
-        .os-content {
-          padding-left: 0;
-        }
-        .os-content p {
-          font-size: 0.87rem;
-        }
-        .os .number {
-          width: 20px;
-        }
-        .how,
-        .faq {
-          grid-template-columns: 1fr;
-          gap: 30px;
-        }
-        .how .terminal {
-          margin-top: 5px;
-          transform: none;
-          padding: 23px;
-        }
-        .control-line {
-          grid-template-columns: 82px 1fr;
-          font-size: 0.85rem;
-        }
-        .questions summary {
-          font-size: 0.9rem;
-        }
-        .questions p {
-          padding-right: 0;
-          font-size: 0.87rem;
-        }
-        .archive {
-          padding: 19px;
-          margin-bottom: 45px;
-        }
-        .archive > summary {
-          font-size: 0.82rem;
-        }
-        .archive-links {
-          gap: 13px;
-        }
-        footer {
-          display: block;
-          font-size: 0.74rem;
-        }
-        footer p + p {
-          margin-top: 14px;
-        }
-        pre {
-          padding: 16px;
-          font-size: 0.77rem;
-        }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        :root {
-          scroll-behavior: auto;
-        }
-        *,
-        *::before,
-        *::after {
-          animation: none !important;
-          transition: none !important;
-        }
-      }
-    </style>
   </head>
   <body>
+    <p id="copy-status" class="sr-only" role="status" aria-live="polite"></p>
     <a class="skip" href="#main">Skip to content</a>
-    <header class="wrap">
-      <a class="brand" href="#main" aria-label="Klicky home"
-        ><svg class="mark" viewBox="0 0 256 256" fill="none" aria-hidden="true">
-          <path
-            transform="matrix(.92 0 0 1 0 0)"
-            fill="currentColor"
-            fill-rule="evenodd"
-            d="M65 50H132C145 50 153 57 157 70L181 158C186 176 176 190 158 190H38C20 190 10 176 15 158L40 70C44 57 52 50 65 50ZM67 69C61 69 57 73 55 80L39 132C37 140 42 146 50 146H147C155 146 160 140 158 132L142 80C140 73 136 69 130 69H67Z"
-          />
-          <path
-            d="M192 88C209 106 209 134 192 152M218 67C247 96 247 144 218 173"
-            stroke="currentColor"
-            stroke-width="16"
-            stroke-linecap="round"
-          /></svg
-        >Klicky</a
-      >
-      <nav aria-label="Main navigation">
-        <a href="#sounds">Sounds</a><a href="#install">Install</a
-        ><a href="#faq">FAQ</a
-        ><a class="repo" href="https://github.com/Muneer320/klicky"
-          >GitHub ↗</a
+    <header class="masthead">
+      <nav class="nav wrap" aria-label="Main navigation">
+        <a class="brand" href="./" aria-label="Klicky home"
+          ><img
+            src="assets/branding/klicky.svg"
+            width="46"
+            height="46"
+            alt=""
+          />Klicky</a
         >
+        <div class="nav-links">
+          <a class="secondary" href="#story">Meet Klicky</a
+          ><a class="secondary" href="#sounds">Sound room</a
+          ><a href="guide.html">Docs</a
+          ><a class="nav-cta" href="#install"
+            >Get Klicky <span aria-hidden="true">↗</span></a
+          >
+        </div>
       </nav>
     </header>
-    <main id="main" tabindex="-1">
-      <section class="hero wrap" aria-labelledby="hero-title">
-        <div>
-          <p class="eyebrow">A little character for every keystroke</p>
-          <h1 id="hero-title">Give your<br />keys a <em>voice.</em></h1>
-          <p class="intro">
-            The sound of a mechanical keyboard, on the keyboard you already own.
-            Pick a switch, find your volume, and make typing feel a little more
-            yours.
-          </p>
-          <div class="actions">
-            <a class="button" href="#install"
-              >Get Klicky <span aria-hidden="true">↓</span></a
-            ><a class="button secondary" href="#sounds"
-              >Find your sound <span aria-hidden="true">↗</span></a
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <img
+          class="hero-art"
+          src="assets/mascot/under-the-keys.webp"
+          width="1536"
+          height="1024"
+          alt="Klicky, a tiny cream creature with violet sound-wave ears, tucked beneath a warmly lit keyboard keycap."
+          fetchpriority="high"
+        />
+        <div class="wrap">
+          <div class="hero-copy">
+            <p class="eyebrow">Meet your keyboard's little resident</p>
+            <h1 id="hero-title">
+              There's someone<br />under your <em>keys.</em>
+            </h1>
+            <p class="hero-tagline">A little sound for every keystroke.</p>
+            <p class="hero-description">
+              Turn ordinary typing into clicks, clacks and thocks. A local Rust
+              app, ten sound packs, and a tiny creature who's very happy you're
+              here.
+            </p>
+            <div class="actions">
+              <a class="button honey" href="#install"
+                >Install Klicky <span aria-hidden="true">↗</span></a
+              ><a class="button outline" href="#sounds">Find your sound</a>
+            </div>
+            <div class="hero-facts">
+              <span>Any keyboard</span><span>No account</span
+              ><span>Free &amp; open source</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <div class="night">
+        <p class="chapter-line wrap">A tiny creature. A very real utility.</p>
+      </div>
+      <section class="section wrap" id="story" aria-labelledby="story-title">
+        <div class="story">
+          <figure class="story-art">
+            <img
+              src="assets/mascot/happy.webp"
+              width="640"
+              height="640"
+              alt="Klicky sitting happily, with its curled antenna, little paws and violet keycap crown."
+              loading="lazy"
+            />
+            <figcaption>Favourite sound? The next one.</figcaption>
+          </figure>
+          <div class="story-copy">
+            <p class="eyebrow">Somewhere beneath the keycaps</p>
+            <h2 id="story-title">A small joy,<br />hiding in plain sight.</h2>
+            <p>
+              Nobody knows quite what Klicky is, or how it found its way into
+              the keyboard. We do know one thing: it absolutely loves sounds.
+            </p>
+            <p>
+              A single <span class="sound-word">click</span> perks its ears up.
+              A steady rhythm gets its little feet moving. A long typing
+              session? Best day ever.
+            </p>
+            <p>
+              Behind the character is a focused little app. Klicky adds
+              mechanical keyboard sounds to your own keyboard, with native input
+              capture, prepared audio and straightforward controls. You choose
+              the sound. Klicky supplies the personality.
+            </p>
+            <a href="guide.html#overview"
+              ><strong
+                >Meet the software behind the creature
+                <span aria-hidden="true">→</span></strong
+              ></a
             >
           </div>
-          <p class="platforms">
-            Windows <span>/</span> macOS <span>/</span> Linux
-          </p>
         </div>
-        <div>
-          <details class="instrument">
-            <summary aria-label="Open the keycap illustration">
-              <span class="key-stage" aria-hidden="true"
-                ><span class="key">K</span
-                ><svg class="trace" viewBox="0 0 105 145">
-                  <path
-                    d="M14 42Q47 72 14 102M43 16Q103 72 43 128"
-                  /></svg></span
-              ><small>One key. A little personality. Click to open.</small>
-            </summary>
-            <p class="explain">
-              Klicky listens for a keypress and plays a prepared sample through
-              your selected output. Hear the real packs below.
-            </p>
-          </details>
-          <p class="illustration-note">Silent, conceptual illustration</p>
-        </div>
-      </section>
-      <div class="promise wrap">
-        <p><strong>10 sound packs</strong> included from the start</p>
-        <p><strong>Local by design.</strong> No account or subscription</p>
-        <p><strong>Free &amp; open source.</strong> Yours to explore</p>
-      </div>
-      <section class="section wrap" id="sounds" aria-labelledby="sounds-title">
-        <div class="section-head">
+        <div class="beats">
           <div>
-            <span class="label">01 / The good part</span>
-            <h2 id="sounds-title">Find your kind of click.</h2>
-          </div>
-          <p>
-            Sharp, soft, or somewhere in between. Open a pack and press play to
-            hear what suits you.
-          </p>
-        </div>
-        <div class="packs">
-          <details class="pack" style="--pack-color: #e5c5a0">
-            <summary>
-              <i class="swatch" aria-hidden="true"></i>EG Oreo<span
-                >The everyday starting point.</span
-              >
-            </summary>
-            <div class="listen">
-              <span class="variant">Bundled preview</span><code>eg-oreo</code
-              ><audio
-                id="audio-eg-oreo"
-                controls
-                preload="none"
-                aria-label="EG Oreo, Bundled preview"
-              >
-                <source src="assets/audio/eg-oreo.mp3" type="audio/mpeg" />
-                Your browser does not support audio playback.
-              </audio>
-            </div>
-          </details>
-          <details class="pack" style="--pack-color: #b9a4df">
-            <summary>
-              <i class="swatch" aria-hidden="true"></i>Crystal Purple<span
-                >A different character for your desk.</span
-              >
-            </summary>
-            <div class="listen">
-              <span class="variant">Bundled preview</span
-              ><code>eg-crystal-purple</code
-              ><audio
-                id="audio-eg-crystal-purple"
-                controls
-                preload="none"
-                aria-label="Crystal Purple, Bundled preview"
-              >
-                <source
-                  src="assets/audio/eg-crystal-purple.mp3"
-                  type="audio/mpeg"
-                />
-                Your browser does not support audio playback.
-              </audio>
-            </div>
-          </details>
-          <details class="pack" style="--pack-color: #83a5de">
-            <summary>
-              <i class="swatch" aria-hidden="true"></i>Cherry MX Blue<span
-                >Try a little more click.</span
-              >
-            </summary>
-            <div class="listen">
-              <span class="variant">PBT keycaps</span
-              ><code>cherrymx-blue-pbt</code
-              ><audio
-                id="audio-cherrymx-blue-pbt"
-                controls
-                preload="none"
-                aria-label="Cherry MX Blue, PBT keycaps"
-              >
-                <source
-                  src="assets/audio/cherrymx-blue-pbt.mp3"
-                  type="audio/mpeg"
-                />
-                Your browser does not support audio playback.</audio
-              ><span class="variant">ABS keycaps</span
-              ><code>cherrymx-blue-abs</code
-              ><audio
-                id="audio-cherrymx-blue-abs"
-                controls
-                preload="none"
-                aria-label="Cherry MX Blue, ABS keycaps"
-              >
-                <source
-                  src="assets/audio/cherrymx-blue-abs.mp3"
-                  type="audio/mpeg"
-                />
-                Your browser does not support audio playback.
-              </audio>
-            </div>
-          </details>
-          <details class="pack" style="--pack-color: #b68c71">
-            <summary>
-              <i class="swatch" aria-hidden="true"></i>Cherry MX Brown<span
-                >Meet the middle ground.</span
-              >
-            </summary>
-            <div class="listen">
-              <span class="variant">PBT keycaps</span
-              ><code>cherrymx-brown-pbt</code
-              ><audio
-                id="audio-cherrymx-brown-pbt"
-                controls
-                preload="none"
-                aria-label="Cherry MX Brown, PBT keycaps"
-              >
-                <source
-                  src="assets/audio/cherrymx-brown-pbt.mp3"
-                  type="audio/mpeg"
-                />
-                Your browser does not support audio playback.</audio
-              ><span class="variant">ABS keycaps</span
-              ><code>cherrymx-brown-abs</code
-              ><audio
-                id="audio-cherrymx-brown-abs"
-                controls
-                preload="none"
-                aria-label="Cherry MX Brown, ABS keycaps"
-              >
-                <source
-                  src="assets/audio/cherrymx-brown-abs.mp3"
-                  type="audio/mpeg"
-                />
-                Your browser does not support audio playback.
-              </audio>
-            </div>
-          </details>
-          <details class="pack" style="--pack-color: #dc9a94">
-            <summary>
-              <i class="swatch" aria-hidden="true"></i>Cherry MX Red<span
-                >Another rhythm to type to.</span
-              >
-            </summary>
-            <div class="listen">
-              <span class="variant">PBT keycaps</span
-              ><code>cherrymx-red-pbt</code
-              ><audio
-                id="audio-cherrymx-red-pbt"
-                controls
-                preload="none"
-                aria-label="Cherry MX Red, PBT keycaps"
-              >
-                <source
-                  src="assets/audio/cherrymx-red-pbt.mp3"
-                  type="audio/mpeg"
-                />
-                Your browser does not support audio playback.</audio
-              ><span class="variant">ABS keycaps</span
-              ><code>cherrymx-red-abs</code
-              ><audio
-                id="audio-cherrymx-red-abs"
-                controls
-                preload="none"
-                aria-label="Cherry MX Red, ABS keycaps"
-              >
-                <source
-                  src="assets/audio/cherrymx-red-abs.mp3"
-                  type="audio/mpeg"
-                />
-                Your browser does not support audio playback.
-              </audio>
-            </div>
-          </details>
-          <details class="pack" style="--pack-color: #566178">
-            <summary>
-              <i class="swatch" aria-hidden="true"></i>Cherry MX Black<span
-                >Make a different impression.</span
-              >
-            </summary>
-            <div class="listen">
-              <span class="variant">PBT keycaps</span
-              ><code>cherrymx-black-pbt</code
-              ><audio
-                id="audio-cherrymx-black-pbt"
-                controls
-                preload="none"
-                aria-label="Cherry MX Black, PBT keycaps"
-              >
-                <source
-                  src="assets/audio/cherrymx-black-pbt.mp3"
-                  type="audio/mpeg"
-                />
-                Your browser does not support audio playback.</audio
-              ><span class="variant">ABS keycaps</span
-              ><code>cherrymx-black-abs</code
-              ><audio
-                id="audio-cherrymx-black-abs"
-                controls
-                preload="none"
-                aria-label="Cherry MX Black, ABS keycaps"
-              >
-                <source
-                  src="assets/audio/cherrymx-black-abs.mp3"
-                  type="audio/mpeg"
-                />
-                Your browser does not support audio playback.
-              </audio>
-            </div>
-          </details>
-        </div>
-        <p class="section-note">
-          Short sequences made from the bundled samples; previews play only when
-          you press their audio controls. The page does not listen to your
-          keyboard.
-          <a
-            href="https://github.com/Muneer320/klicky/blob/master/docs/SOUND_PACKS.md"
-            >Bring your own sounds ↗</a
-          >
-        </p>
-      </section>
-      <section
-        class="install-band"
-        id="install"
-        aria-labelledby="install-title"
-      >
-        <div class="section wrap">
-          <div class="section-head">
-            <div>
-              <span class="label">02 / Make yourself at home</span>
-              <h2 id="install-title">A small setup.<br />A daily companion.</h2>
-            </div>
+            <span class="beat-number">01 / TAP</span>
+            <h3>Your keyboard, as it is.</h3>
             <p>
-              Choose your system, copy its command, and follow the installer.
-              Your settings and custom packs stay yours when you update.
+              Laptop, membrane or mechanical. No special keyboard or extra
+              driver on Windows/macOS.
             </p>
           </div>
-          <div class="install-list">
-            <details class="os">
+          <div>
+            <span class="beat-number">02 / CLICK</span>
+            <h3>A sound that feels like you.</h3>
+            <p>
+              Choose a switch and keycap combination, set the volume, or bring
+              your own recordings.
+            </p>
+          </div>
+          <div>
+            <span class="beat-number">03 / SETTLE IN</span>
+            <h3>There when you want it.</h3>
+            <p>
+              Run locally, use the desktop controls, and turn sounds off
+              whenever you want some quiet.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section class="section night" id="sounds" aria-labelledby="sounds-title">
+        <div class="wrap">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Klicky's sound room</p>
+              <span class="sound-buddy" aria-hidden="true"
+                ><img
+                  src="assets/mascot/happy.webp"
+                  width="96"
+                  height="96"
+                  alt=""
+                  loading="lazy"
+              /></span>
+              <h2 id="sounds-title">Find your kind of <em>click.</em></h2>
+            </div>
+            <p class="intro">
+              Ten included packs. A whole range of personalities. Open a pack
+              and press Play to listen.
+            </p>
+          </div>
+          <div class="sound-grid">
+            <details class="pack" style="--pack-color: #a88dbb">
               <summary>
-                <span class="number">01</span
-                ><span
-                  >Windows
-                  <span class="system-note"
-                    >Windows 11 · x64 · unsigned preview</span
-                  ></span
-                >
+                <span class="swatch" aria-hidden="true"></span>Cherry MX Black
               </summary>
-              <div class="os-content">
-                <p>
-                  Run in PowerShell. The helper checks the published installer's
-                  SHA-256 file and opens the setup wizard. No Rust or Visual
-                  Studio needed.
-                </p>
-                <pre><code>irm https://klicky.muneer320.tech/install.ps1 | iex</code></pre>
-                <p class="small">
-                  The Windows preview is unsigned. The helper downloads the
-                  published installer and verifies its checksum before opening
-                  setup. No account or GitHub sign-in is needed to download it.
-                </p>
-                <p>
-                  Choose your login-startup preference in setup. Open Klicky
-                  from Start and choose <strong>Resume</strong> from the tray.
-                  The helper starts the installed app automatically when setup
-                  finishes. A paused launch selected in the wizard is respected.
-                  The menu also changes packs and volume.
-                </p>
-                <a
-                  href="https://github.com/Muneer320/klicky/releases"
-                  class="button"
-                  >Download installer ↗</a
-                ><a
-                  href="https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#windows"
-                  >Portable and manual options</a
+              <p>A deeper voice for everyday typing.</p>
+              <div class="listen">
+                <span class="variant" id="label-cherrymx-black-pbt"
+                  >Cherry MX Black · PBT keycaps</span
+                ><code>cherrymx-black-pbt</code
+                ><audio
+                  controls
+                  preload="none"
+                  aria-labelledby="label-cherrymx-black-pbt"
+                  src="assets/audio/cherrymx-black-pbt.mp3"
                 >
-              </div>
-            </details>
-            <details class="os">
-              <summary>
-                <span class="number">02</span
-                ><span
-                  >macOS
-                  <span class="system-note"
-                    >Source installer + optional menu bar control</span
-                  ></span
-                >
-              </summary>
-              <div class="os-content">
-                <p>
-                  Run in Terminal. Setup prepares missing Rust and Apple build
-                  tools, then builds and installs Klicky with the menu bar
-                  control. Approve Apple's tools dialog if shown; first setup
-                  takes a few minutes.
-                </p>
-                <pre><code>curl -fsSL https://klicky.muneer320.tech/install.sh | bash</code></pre>
-                <p>
-                  Setup starts the app and enables login startup. If
-                  Accessibility permission is needed, it opens
-                  <strong
-                    >System Settings → Privacy &amp; Security →
-                    Accessibility</strong
+                  Your browser cannot play this preview.
+                  <a href="assets/audio/cherrymx-black-pbt.mp3"
+                    >Download the audio.</a
                   >
-                  and shows <code>~/.local/bin/klicky</code> in Finder. Add that
-                  file with <strong>+</strong>; setup retries while you approve
-                  it. No second Terminal command is needed.
-                </p>
-                <p>
-                  To skip the menu bar helper, add
-                  <code>-s -- --no-menu</code> after <code>bash</code>.
-                </p>
-                <a
-                  href="https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#macos"
-                  >Manual setup, updates and removal ↗</a
+                </audio>
+              </div>
+              <div class="listen">
+                <span class="variant" id="label-cherrymx-black-abs"
+                  >Cherry MX Black · ABS keycaps</span
+                ><code>cherrymx-black-abs</code
+                ><audio
+                  controls
+                  preload="none"
+                  aria-labelledby="label-cherrymx-black-abs"
+                  src="assets/audio/cherrymx-black-abs.mp3"
                 >
+                  Your browser cannot play this preview.
+                  <a href="assets/audio/cherrymx-black-abs.mp3"
+                    >Download the audio.</a
+                  >
+                </audio>
               </div>
             </details>
-            <details class="os">
+            <details class="pack" style="--pack-color: #8fbded">
               <summary>
-                <span class="number">03</span
-                ><span
-                  >Linux
-                  <span class="system-note"
-                    >Ubuntu / Debian · Arch / Omarchy · source</span
-                  ></span
-                >
+                <span class="swatch" aria-hidden="true"></span>Cherry MX Blue
               </summary>
-              <div class="os-content">
-                <p>
-                  On Ubuntu 24.04+ / compatible Debian <strong>amd64</strong>,
-                  or Arch / Omarchy <strong>x86_64</strong>, run:
-                </p>
-                <pre><code>curl -fsSL https://klicky.muneer320.tech/install.sh | bash</code></pre>
-                <p>
-                  The installer selects the signed APT repository or Arch
-                  package, checks its key or checksum, and enables the user
-                  service. Run as your desktop user; it asks for
-                  <code>sudo</code> for package setup. Use a terminal with
-                  <code>curl</code>; setup installs GnuPG if needed. Compatible
-                  Omarchy shells get the bar toggle by default; add
-                  <code>-s -- --no-omarchy-toggle</code> after
-                  <code>bash</code> to skip it.
-                </p>
-                <p>
-                  Other distributions and architectures can use the same source
-                  installer after installing Rust and ALSA development headers.
-                  Wayland and X11 are supported; automatic setup uses systemd
-                  and udev.
-                </p>
-                <a
-                  href="https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#linux"
-                  >Source builds, direct downloads and removal ↗</a
+              <p>A bright, characterful click.</p>
+              <div class="listen">
+                <span class="variant" id="label-cherrymx-blue-pbt"
+                  >Cherry MX Blue · PBT keycaps</span
+                ><code>cherrymx-blue-pbt</code
+                ><audio
+                  controls
+                  preload="none"
+                  aria-labelledby="label-cherrymx-blue-pbt"
+                  src="assets/audio/cherrymx-blue-pbt.mp3"
                 >
+                  Your browser cannot play this preview.
+                  <a href="assets/audio/cherrymx-blue-pbt.mp3"
+                    >Download the audio.</a
+                  >
+                </audio>
+              </div>
+              <div class="listen">
+                <span class="variant" id="label-cherrymx-blue-abs"
+                  >Cherry MX Blue · ABS keycaps</span
+                ><code>cherrymx-blue-abs</code
+                ><audio
+                  controls
+                  preload="none"
+                  aria-labelledby="label-cherrymx-blue-abs"
+                  src="assets/audio/cherrymx-blue-abs.mp3"
+                >
+                  Your browser cannot play this preview.
+                  <a href="assets/audio/cherrymx-blue-abs.mp3"
+                    >Download the audio.</a
+                  >
+                </audio>
+              </div>
+            </details>
+            <details class="pack" style="--pack-color: #d8a178">
+              <summary>
+                <span class="swatch" aria-hidden="true"></span>Cherry MX Brown
+              </summary>
+              <p>A softer stop along the way.</p>
+              <div class="listen">
+                <span class="variant" id="label-cherrymx-brown-pbt"
+                  >Cherry MX Brown · PBT keycaps</span
+                ><code>cherrymx-brown-pbt</code
+                ><audio
+                  controls
+                  preload="none"
+                  aria-labelledby="label-cherrymx-brown-pbt"
+                  src="assets/audio/cherrymx-brown-pbt.mp3"
+                >
+                  Your browser cannot play this preview.
+                  <a href="assets/audio/cherrymx-brown-pbt.mp3"
+                    >Download the audio.</a
+                  >
+                </audio>
+              </div>
+              <div class="listen">
+                <span class="variant" id="label-cherrymx-brown-abs"
+                  >Cherry MX Brown · ABS keycaps</span
+                ><code>cherrymx-brown-abs</code
+                ><audio
+                  controls
+                  preload="none"
+                  aria-labelledby="label-cherrymx-brown-abs"
+                  src="assets/audio/cherrymx-brown-abs.mp3"
+                >
+                  Your browser cannot play this preview.
+                  <a href="assets/audio/cherrymx-brown-abs.mp3"
+                    >Download the audio.</a
+                  >
+                </audio>
+              </div>
+            </details>
+            <details class="pack" style="--pack-color: #f195a7">
+              <summary>
+                <span class="swatch" aria-hidden="true"></span>Cherry MX Red
+              </summary>
+              <p>Another rhythm to settle into.</p>
+              <div class="listen">
+                <span class="variant" id="label-cherrymx-red-pbt"
+                  >Cherry MX Red · PBT keycaps</span
+                ><code>cherrymx-red-pbt</code
+                ><audio
+                  controls
+                  preload="none"
+                  aria-labelledby="label-cherrymx-red-pbt"
+                  src="assets/audio/cherrymx-red-pbt.mp3"
+                >
+                  Your browser cannot play this preview.
+                  <a href="assets/audio/cherrymx-red-pbt.mp3"
+                    >Download the audio.</a
+                  >
+                </audio>
+              </div>
+              <div class="listen">
+                <span class="variant" id="label-cherrymx-red-abs"
+                  >Cherry MX Red · ABS keycaps</span
+                ><code>cherrymx-red-abs</code
+                ><audio
+                  controls
+                  preload="none"
+                  aria-labelledby="label-cherrymx-red-abs"
+                  src="assets/audio/cherrymx-red-abs.mp3"
+                >
+                  Your browser cannot play this preview.
+                  <a href="assets/audio/cherrymx-red-abs.mp3"
+                    >Download the audio.</a
+                  >
+                </audio>
+              </div>
+            </details>
+            <details class="pack" style="--pack-color: #ece3d8">
+              <summary>
+                <span class="swatch" aria-hidden="true"></span>EG Oreo
+              </summary>
+              <p>The default. A lovely place to start.</p>
+              <div class="listen">
+                <span class="variant" id="label-eg-oreo"
+                  >EG Oreo · Included default</span
+                ><code>eg-oreo</code
+                ><audio
+                  controls
+                  preload="none"
+                  aria-labelledby="label-eg-oreo"
+                  src="assets/audio/eg-oreo.mp3"
+                >
+                  Your browser cannot play this preview.
+                  <a href="assets/audio/eg-oreo.mp3">Download the audio.</a>
+                </audio>
+              </div>
+            </details>
+            <details class="pack" style="--pack-color: #c084fc">
+              <summary>
+                <span class="swatch" aria-hidden="true"></span>EG Crystal Purple
+              </summary>
+              <p>Klicky has a soft spot for purple.</p>
+              <div class="listen">
+                <span class="variant" id="label-eg-crystal-purple"
+                  >EG Crystal Purple · Included pack</span
+                ><code>eg-crystal-purple</code
+                ><audio
+                  controls
+                  preload="none"
+                  aria-labelledby="label-eg-crystal-purple"
+                  src="assets/audio/eg-crystal-purple.mp3"
+                >
+                  Your browser cannot play this preview.
+                  <a href="assets/audio/eg-crystal-purple.mp3"
+                    >Download the audio.</a
+                  >
+                </audio>
               </div>
             </details>
           </div>
           <p class="section-note">
-            Prefer to read before running? Inspect the
-            <a
-              href="https://github.com/Muneer320/klicky/blob/master/scripts/install.sh"
-              >Linux/macOS</a
-            >
-            or
-            <a
-              href="https://github.com/Muneer320/klicky/blob/master/scripts/install.ps1"
-              >Windows</a
-            >
-            installer. Updates keep settings and custom sounds.
+            These are short rendered sample sequences, not a live typing or
+            latency demonstration. Audio plays only when you press Play.
+            <a href="guide.html#sound-packs">Make your own pack →</a>
           </p>
         </div>
       </section>
-      <section class="section wrap how" aria-labelledby="controls-title">
-        <div>
-          <span class="label">03 / Just enough control</span>
-          <h2 id="controls-title">Your keys.<br />Your rules.</h2>
-          <p>
-            A background utility should fit into your day. Pick a sound, lower
-            the volume, or turn it off when you want quiet.
-          </p>
-          <div class="control-line">
-            <strong>Windows</strong
-            ><span>Sounds, volume and Pause/Resume in the tray.</span>
+      <section
+        class="section install"
+        id="install"
+        aria-labelledby="install-title"
+      >
+        <div class="wrap install-layout">
+          <div class="install-intro">
+            <p class="eyebrow">Make a little room</p>
+            <h2 id="install-title">A new resident.<br />A familiar setup.</h2>
+            <p class="intro">
+              Pick your system. Copy one command. The installer takes it from
+              there, with any permissions explained along the way.
+            </p>
+            <img
+              src="assets/branding/klicky.svg"
+              width="128"
+              height="128"
+              alt=""
+              loading="lazy"
+            />
+            <p class="small muted">
+              Prefer a package, a file download or a source checkout? The
+              <a href="guide.html#installation">installation guide</a> covers
+              every available route.
+            </p>
           </div>
-          <div class="control-line">
-            <strong>macOS</strong
-            ><span
-              >A menu bar toggle, with sound and volume commands in
-              Terminal.</span
-            >
+          <div>
+            <details class="os" open>
+              <summary>
+                Linux<span class="system-note"
+                  >Ubuntu / compatible Debian · Arch / Omarchy</span
+                >
+              </summary>
+              <div class="os-content">
+                <div class="command">
+                  <pre><code id="install-linux">curl -fsSL https://klicky.muneer320.tech/install.sh | bash</code></pre>
+                  <button
+                    class="copy"
+                    data-copy="install-linux"
+                    hidden
+                    aria-label="Copy Linux install command"
+                  >
+                    Copy
+                  </button>
+                </div>
+                <p>
+                  Uses the signed APT repository on Ubuntu 24.04+ / compatible
+                  Debian amd64, or the verified Arch x86_64 package. Includes
+                  all sounds and enables the user service at login.
+                  Package/device setup asks for <code>sudo</code>; Klicky runs
+                  as your user.
+                </p>
+                <p>
+                  Compatible Omarchy shells get their bar toggle too. Other
+                  distributions and architectures can use the automatic
+                  <a href="guide.html#linux-source">source installer</a>.
+                </p>
+                <div class="method-links">
+                  <a href="guide.html#linux">All Linux methods</a
+                  ><a href="guide.html#verify">Verify &amp; first steps</a>
+                </div>
+              </div>
+            </details>
+            <details class="os">
+              <summary>
+                macOS<span class="system-note"
+                  >Source build · menu bar included</span
+                >
+              </summary>
+              <div class="os-content">
+                <div class="command">
+                  <pre><code id="install-macos">curl -fsSL https://klicky.muneer320.tech/install.sh | bash</code></pre>
+                  <button
+                    class="copy"
+                    data-copy="install-macos"
+                    hidden
+                    aria-label="Copy macOS install command"
+                  >
+                    Copy
+                  </button>
+                </div>
+                <p>
+                  Prepares missing Rust and Apple build tools, builds Klicky,
+                  installs its menu bar control and enables login startup. First
+                  setup can take several minutes.
+                </p>
+                <p>
+                  Approve Apple's tools dialog if shown, then grant
+                  Accessibility access to <code>~/.local/bin/klicky</code> when
+                  requested. Setup opens the permission pane and retries while
+                  you approve it.
+                </p>
+                <div class="method-links">
+                  <a href="guide.html#macos">macOS setup &amp; options</a
+                  ><a href="guide.html#verify">Verify &amp; first steps</a>
+                </div>
+              </div>
+            </details>
+            <details class="os">
+              <summary>
+                Windows<span class="system-note"
+                  >Windows 11 x64 · unsigned preview</span
+                >
+              </summary>
+              <div class="os-content">
+                <div class="command">
+                  <pre><code id="install-windows">irm https://klicky.muneer320.tech/install.ps1 | iex</code></pre>
+                  <button
+                    class="copy"
+                    data-copy="install-windows"
+                    hidden
+                    aria-label="Copy Windows install command"
+                  >
+                    Copy
+                  </button>
+                </div>
+                <p>
+                  Run in PowerShell. The helper downloads the published preview,
+                  verifies its SHA-256 and opens the per-user setup wizard. It
+                  starts the installed app afterward. No Rust or Visual Studio
+                  required.
+                </p>
+                <p>
+                  Use the tray for packs, volume, Pause/Resume and optional
+                  login startup. Windows downloads are currently unsigned
+                  previews;
+                  <a href="guide.html#windows-security"
+                    >stop setup if Windows Security reports a threat</a
+                  >.
+                </p>
+                <div class="method-links">
+                  <a
+                    href="https://github.com/Muneer320/klicky/releases/tag/windows-preview-2026-11-06"
+                    >Installer &amp; portable ZIP</a
+                  ><a href="guide.html#windows">Windows guide</a>
+                </div>
+              </div>
+            </details>
+            <p class="small muted">
+              Inspect the scripts before running them if you prefer.
+              <a href="install.sh">Linux/macOS script</a> ·
+              <a href="install.ps1">Windows script</a>. Settings and custom
+              sounds are preserved on normal upgrades and removal.
+            </p>
           </div>
-          <div class="control-line">
-            <strong>Linux</strong
-            ><span
-              >A small CLI, plus an optional
-              <a
-                href="https://github.com/Muneer320/klicky/blob/master/docs/OMARCHY.md"
-                >Omarchy bar toggle</a
-              >.</span
-            >
-          </div>
-        </div>
-        <div class="terminal">
-          <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
-          <pre><code><span class="prompt">$</span> klicky list
-
-<span class="prompt">$</span> klicky switch eg-oreo
-
-<span class="prompt">$</span> klicky volume 0.5
-
-<span class="prompt">$</span> klicky status</code></pre>
-          <p>Linux / macOS · Windows has these controls in the tray.</p>
         </div>
       </section>
-      <section class="section wrap faq" id="faq" aria-labelledby="faq-title">
-        <div>
-          <span class="label">04 / A few good questions</span>
-          <h2 id="faq-title">Before you ask.</h2>
+      <section
+        class="section wrap"
+        id="engineering"
+        aria-labelledby="engineering-title"
+      >
+        <div class="engineering">
+          <div>
+            <p class="eyebrow">A little magic. Careful engineering.</p>
+            <h2 id="engineering-title">
+              Small job.<br />Thoughtful internals.
+            </h2>
+            <p class="intro">
+              The character is imaginary. The software is a native Rust utility
+              built around one job: playing a prepared sound when a key goes
+              down.
+            </p>
+            <a href="guide.html#architecture"
+              ><strong>Explore the architecture →</strong></a
+            >
+          </div>
+          <div class="facts">
+            <div class="fact">
+              <strong>Prepared audio</strong>
+              <p>
+                Decode OGG recordings and prepare key slices when a pack loads.
+                Reuse cached PCM and a persistent mixer while typing.
+              </p>
+            </div>
+            <div class="fact">
+              <strong>Native input</strong>
+              <p>
+                Linux evdev, macOS event taps and Windows passive Raw Input,
+                with controls that fit each desktop.
+              </p>
+            </div>
+            <div class="fact">
+              <strong>Local by default</strong>
+              <p>
+                Normal operation stores no typed text and makes no network
+                requests. No account, telemetry or cloud sound service.
+              </p>
+            </div>
+          </div>
         </div>
-        <div class="questions">
-          <details>
-            <summary>Do I need a mechanical keyboard?</summary>
+        <ol class="flow" aria-label="How a key becomes a sound">
+          <li>
+            <strong>01 · A physical keypress</strong>
             <p>
-              No. Klicky adds the sound in software. A laptop keyboard or
-              ordinary desktop keyboard works too.
+              A native adapter maps the keyboard event to a sound-pack key name.
             </p>
-          </details>
-          <details>
-            <summary>Does it record what I type?</summary>
+          </li>
+          <li>
+            <strong>02 · A prepared slice</strong>
             <p>
-              Normal operation reads key events locally to trigger sound. It
-              does not store typed text, log key names, or send network
-              requests. Advanced Linux/macOS benchmark mode prints mapped key
-              names for controlled tests.
-              <a
-                href="https://github.com/Muneer320/klicky/blob/master/SECURITY.md"
-                >Privacy details</a
-              >.
+              The platform's runtime selects cached PCM and applies your volume.
             </p>
-          </details>
-          <details>
-            <summary>Will the sound keep up with my typing?</summary>
+          </li>
+          <li>
+            <strong>03 · Persistent playback</strong>
             <p>
-              Samples are prepared when the pack loads and played through a
-              persistent mixer. Output-device delay still matters: try laptop
-              speakers or wired headphones if Bluetooth feels out of sync.
-              Internal dispatch measurements are
-              <span>not physical key-to-speaker latency</span>.
-              <a
-                href="https://github.com/Muneer320/klicky/blob/master/docs/BENCHMARKS.md"
-                >How performance is measured</a
-              >.
+              The mixer overlaps sounds through the OS audio output. No OGG
+              decoding on each press.
             </p>
-          </details>
-          <details>
-            <summary>Can I add my own sounds?</summary>
+          </li>
+        </ol>
+        <p class="small muted">
+          Linux/macOS use the Unix daemon and Rodio output; Windows has its own
+          event-driven coordinator and CPAL renderer. Output hardware matters:
+          requested buffer sizes and internal timings are not physical audible
+          latency.
+          <a href="guide.html#performance"
+            >Performance, without the hand-waving →</a
+          >
+        </p>
+        <aside class="quiet">
+          <img
+            src="assets/mascot/resting.webp"
+            width="640"
+            height="427"
+            alt="Klicky curled up peacefully with its eyes closed."
+            loading="lazy"
+          />
+          <div>
+            <p class="eyebrow">Quiet is good, too</p>
+            <h3>Take a break. Klicky can wait.</h3>
             <p>
-              Yes. Put a custom pack in your user sounds folder. A pack with the
-              same name takes priority over the bundled copy.
-              <a
-                href="https://github.com/Muneer320/klicky/blob/master/docs/SOUND_PACKS.md"
-                >Pack format and examples</a
-              >.
+              Pause from the Windows tray, toggle off in the macOS menu bar, or
+              stop the Linux service. No streaks, scores or guilt. Just a little
+              sound when you want it.
             </p>
-          </details>
-          <details>
-            <summary>How do I update or remove it?</summary>
-            <p>
-              Run a newer Windows installer, use your Linux package manager, or
-              rerun the source installer. Stop the Linux service before
-              replacing its package.
-            </p>
-            <p>To remove Klicky and its installed controls on Linux/macOS:</p>
-            <pre><code>curl -fsSL https://klicky.muneer320.tech/uninstall.sh | bash</code></pre>
-            <p>
-              For a Windows installer setup, run in PowerShell and finish the
-              wizard:
-            </p>
-            <pre><code>irm https://klicky.muneer320.tech/uninstall.ps1 | iex</code></pre>
-            <p>
-              Personal settings and custom sounds are kept.
-              <a
-                href="https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#uninstall"
-                >Purge flags, portable removal and update instructions</a
-              >.
-            </p>
-          </details>
-          <details>
-            <summary>Something is not working. Where do I start?</summary>
-            <p>
-              Check the selected output, pack, volume and pause state. The
-              <a
-                href="https://github.com/Muneer320/klicky/blob/master/docs/TROUBLESHOOTING.md"
-                >troubleshooting guide</a
-              >
-              covers permissions, startup and missing sounds. If needed,
-              <a href="https://github.com/Muneer320/klicky/issues/new"
-                >open an issue</a
-              >
-              with your OS, build and what happened.
-            </p>
-          </details>
-        </div>
+          </div>
+        </aside>
       </section>
-      <div class="wrap">
+      <section class="section wrap" id="faq" aria-labelledby="faq-title">
+        <div class="faq-layout">
+          <div>
+            <p class="eyebrow">A few good questions</p>
+            <h2 id="faq-title">Before you move in.</h2>
+            <p class="intro">
+              The <a href="guide.html">field guide</a> has setup steps,
+              commands, configuration, troubleshooting and complete removal
+              instructions.
+            </p>
+          </div>
+          <div class="questions">
+            <details>
+              <summary>Do I need a mechanical keyboard?</summary>
+              <p>
+                No. Klicky adds the sound in software. Your ordinary laptop or
+                desktop keyboard works too.
+              </p>
+            </details>
+            <details>
+              <summary>Does Klicky record what I type?</summary>
+              <p>
+                Normal operation does not store typed text, log key names or
+                make network requests. It reads global keyboard events locally
+                to select sounds, so its input permission is sensitive. Unix
+                benchmark mode does print mapped key names; use it only for
+                controlled tests.
+                <a href="guide.html#privacy">Read the privacy details.</a>
+              </p>
+            </details>
+            <details>
+              <summary>Will this feel responsive with headphones?</summary>
+              <p>
+                Klicky uses prepared audio and a persistent output stream. Your
+                device still affects timing: Bluetooth can add noticeable
+                transport delay. Compare speakers or wired headphones if it
+                feels out of sync. No universal latency figure is promised.
+              </p>
+            </details>
+            <details>
+              <summary>Can I add sounds or change the volume?</summary>
+              <p>
+                Yes. Use the Windows tray or the CLI to choose packs and volume.
+                Custom packs contain one OGG recording and a JSON timing map.
+                User packs override bundled packs with the same name.
+                <a href="guide.html#sound-packs">Pack format and locations.</a>
+              </p>
+            </details>
+            <details>
+              <summary>Does Linux work on Wayland?</summary>
+              <p>
+                Yes. The evdev backend reads keyboard devices below Wayland and
+                X11. The installer sets up a keyboard-only udev rule; Klicky
+                itself runs as your user.
+              </p>
+            </details>
+            <details>
+              <summary>How do I update or remove everything?</summary>
+              <p>
+                Use your package manager or rerun the appropriate installer to
+                update. The
+                <a href="guide.html#remove">one-command uninstallers</a> stop
+                the app and remove installed desktop controls. Settings and
+                custom sounds stay unless you explicitly choose purge. Portable
+                Windows folders are removed explicitly.
+              </p>
+            </details>
+            <details>
+              <summary>Can I help build Klicky?</summary>
+              <p>
+                Very much so. Useful bug reports, sound-pack work, documentation
+                and focused code changes are welcome.
+                <a
+                  href="https://github.com/Muneer320/klicky/blob/master/CONTRIBUTING.md"
+                  >Start with the contribution guide.</a
+                >
+                The app is MIT-licensed; included fonts retain their own open
+                license.
+              </p>
+            </details>
+          </div>
+        </div>
         <details class="archive">
-          <summary>Klicky APT Repository · package and signing details</summary>
+          <summary>Signed Linux archive &amp; package history</summary>
           <div class="archive-body">
             <p>
-              This site also hosts Klicky's signed APT archive. Its latest
-              Debian package is <strong>{{LATEST_VERSION}}</strong>. The
-              repository's <code>stable</code> channel is a Klicky channel, not
-              a Debian release codename.
+              The product website and APT repository share this deployment.
+              Latest indexed package: <strong>{{LATEST_VERSION}}</strong>. The
+              <code>stable</code> channel is Klicky's channel, not a Debian
+              release codename.
             </p>
             <p>
-              For an existing repository install, stop Klicky before updating
-              it:
+              Already configured the repository?
+              <code>sudo apt install klicky</code>. Otherwise use the installer
+              above or the <a href="guide.html#linux">manual APT steps</a>.
             </p>
-            <pre><code>systemctl --user stop klicky.service
-sudo apt update
-sudo apt install klicky
-systemctl --user start klicky.service</code></pre>
             <p>
-              Other signed-in users must stop their packaged copies too.
-              <a
-                href="https://github.com/Muneer320/klicky/blob/master/docs/APT_REPOSITORY.md"
-                >Manual source setup and removal</a
-              >.
+              <a href="klicky.sources">APT source</a> ·
+              <a href="klicky-archive-keyring.gpg">Binary signing key</a> ·
+              <a href="klicky-archive-keyring.asc">ASCII signing key</a> ·
+              <a href="dists/stable/InRelease">Signed index</a>
             </p>
-            <div class="archive-links">
-              <a href="klicky.sources">APT source</a
-              ><a href="klicky-archive-keyring.gpg">Public key (GPG)</a
-              ><a href="klicky-archive-keyring.asc">Public key (ASCII)</a
-              ><a href="dists/stable/InRelease">Signed index</a>
-            </div>
-            <p>
-              Repository URL: <code>{{PUBLIC_URL}}</code><br />Primary
-              signing-key fingerprint:<code class="fingerprint"
-                >{{FINGERPRINT}}</code
-              >
-            </p>
-            <p>Available package versions:</p>
+            <span>Signing fingerprint</span
+            ><code class="fingerprint">{{FINGERPRINT}}</code>
+            <p>Archive base: <a href="{{PUBLIC_URL}}/">{{PUBLIC_URL}}/</a></p>
             <ul>
               {{VERSIONS}}
             </ul>
           </div>
         </details>
-      </div>
+      </section>
     </main>
-    <footer class="wrap">
-      <p>
-        A small project by
-        <a href="https://muneer320.tech/">Muneer Alam</a> &amp; contributors.<br />Built
-        on
-        <a href="https://github.com/Sauhard74/klicky"
-          >Sauhard Gupta's original Klicky</a
-        >.
-      </p>
-      <p>
-        <a href="https://github.com/Muneer320/klicky">Source</a> ·
-        <a href="https://github.com/Muneer320/klicky/blob/master/README.md"
-          >Documentation</a
-        >
-        ·
-        <a href="https://github.com/Muneer320/klicky/blob/master/LICENSE"
-          >MIT license</a
-        >
-      </p>
+    <footer class="site-footer">
+      <div class="wrap">
+        <div class="footer-top">
+          <div>
+            <a class="brand" href="./"
+              ><img
+                src="assets/branding/klicky.svg"
+                width="46"
+                height="46"
+                alt=""
+              />Klicky</a
+            >
+            <p>A little sound for every keystroke.</p>
+          </div>
+          <nav class="footer-links" aria-label="Footer">
+            <a href="guide.html">Documentation</a
+            ><a href="https://github.com/Muneer320/klicky">Source</a
+            ><a href="https://github.com/Muneer320/klicky/releases">Releases</a
+            ><a href="https://github.com/Muneer320/klicky/issues">Get help</a>
+          </nav>
+        </div>
+        <p class="footer-bottom">
+          Built on Sauhard Gupta's original Klicky, with work by Muneer Alam and
+          contributors.
+          <a
+            href="https://github.com/Muneer320/klicky/blob/master/ACKNOWLEDGEMENTS.md"
+            >Credits &amp; licenses</a
+          >
+          ·
+          <a
+            href="https://github.com/Muneer320/klicky/blob/master/docs/CHARACTER.md"
+            >Meet the character</a
+          >. No analytics. No account. Just clicks.
+        </p>
+      </div>
     </footer>
   </body>
 </html>

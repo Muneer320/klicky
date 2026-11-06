@@ -1,0 +1,939 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Klicky field guide / Install, configure and make it yours</title>
+    <meta
+      name="description"
+      content="Install Klicky on Linux, macOS or Windows preview. Commands, configuration, sound packs, architecture, privacy, troubleshooting and complete removal."
+    />
+    <link rel="canonical" href="https://klicky.muneer320.tech/guide.html" />
+    <link rel="icon" href="assets/branding/klicky.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="assets/site.css" />
+    <script src="assets/site.js" defer></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="The Klicky field guide" />
+    <meta
+      property="og:url"
+      content="https://klicky.muneer320.tech/guide.html"
+    />
+    <meta
+      property="og:description"
+      content="From your first click to your own sound pack. Install, configure and understand Klicky."
+    />
+    <meta
+      property="og:image"
+      content="https://klicky.muneer320.tech/assets/social-preview.jpg"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta
+      name="twitter:image"
+      content="https://klicky.muneer320.tech/assets/social-preview.jpg"
+    />
+  </head>
+  <body>
+    <p id="copy-status" class="sr-only" role="status" aria-live="polite"></p>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="masthead">
+      <nav class="nav wrap" aria-label="Main navigation">
+        <a class="brand" href="./"
+          ><img
+            src="assets/branding/klicky.svg"
+            width="46"
+            height="46"
+            alt=""
+          />Klicky</a
+        >
+        <div class="nav-links">
+          <a class="secondary" href="./#sounds">Sound room</a
+          ><a href="https://github.com/Muneer320/klicky">Source</a
+          ><a class="nav-cta" href="#installation">Install</a>
+        </div>
+      </nav>
+    </header>
+    <div class="docs-header">
+      <div class="wrap">
+        <img
+          class="docs-hero-mascot"
+          src="assets/branding/klicky.svg"
+          width="100"
+          height="100"
+          alt=""
+        />
+        <p class="eyebrow">A little help beneath the keys</p>
+        <h1>The field guide.</h1>
+        <p class="intro">
+          From your first click to your own sound pack. Setup, everyday controls
+          and the engineering underneath.
+        </p>
+        <a class="back-home" href="./">← Back to Klicky's little world</a>
+      </div>
+    </div>
+    <main class="wrap docs-layout" id="main">
+      <nav class="toc" aria-label="Guide contents">
+        <strong>In this guide</strong><a href="#overview">Meet the app</a
+        ><a href="#installation">Installation</a><a href="#linux">Linux</a
+        ><a href="#macos">macOS</a><a href="#windows">Windows preview</a
+        ><a href="#verify">First steps</a><a href="#cli">CLI reference</a
+        ><a href="#configuration">Configuration</a
+        ><a href="#sound-packs">Custom sounds</a
+        ><a href="#architecture">How it works</a><a href="#privacy">Privacy</a
+        ><a href="#performance">Performance</a
+        ><a href="#troubleshooting">Troubleshooting</a><a href="#faq">FAQ</a
+        ><a href="#updates">Updates</a><a href="#remove">Uninstall</a
+        ><a href="#contribute">Contribute</a>
+      </nav>
+      <div class="docs-content">
+        <section id="overview">
+          <p class="eyebrow">The creature and the code</p>
+          <h2>Meet the app.</h2>
+          <p>
+            Klicky adds mechanical keyboard sounds to an ordinary keyboard. It
+            includes ten sound packs, volume control, overlapping playback and
+            native desktop integration. It runs locally as your user, without an
+            account or subscription.
+          </p>
+          <p>
+            The creature beneath the keys is our fictional mascot. The
+            application is a focused Rust utility, not an AI assistant, game or
+            virtual pet.
+          </p>
+          <div
+            class="table-scroll"
+            role="region"
+            aria-label="Platform support and distribution"
+            tabindex="0"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th>System</th>
+                  <th>Current distribution</th>
+                  <th>Controls</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Linux</td>
+                  <td>v0.4.0 Debian/Arch packages; source installer</td>
+                  <td>CLI, systemd; optional Omarchy toggle</td>
+                </tr>
+                <tr>
+                  <td>macOS</td>
+                  <td>Source installer</td>
+                  <td>Menu toggle, CLI, launchd</td>
+                </tr>
+                <tr>
+                  <td>Windows 11 x64</td>
+                  <td>Unsigned preview: installer and portable ZIP</td>
+                  <td>Native tray and CLI</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            <a href="https://github.com/Muneer320/klicky/releases">Releases</a>
+            and the
+            <a
+              href="https://github.com/Muneer320/klicky/blob/master/CHANGELOG.md"
+              >source changelog</a
+            >
+            describe different states. Homebrew, Winget, Scoop, Chocolatey and
+            Cargo installation are not currently published routes.
+          </p>
+        </section>
+        <section id="installation">
+          <p class="eyebrow">Choose a doorway</p>
+          <h2>Installation.</h2>
+          <p>
+            Use your desktop's normal terminal, as your user. Linux package
+            setup asks for sudo when needed; the app remains unprivileged.
+            Inspect the <a href="install.sh">Unix</a> or
+            <a href="install.ps1">PowerShell</a> helper first if you prefer.
+          </p>
+          <p>
+            <a href="#linux">Linux packages/source</a> ·
+            <a href="#macos">macOS source + menu bar</a> ·
+            <a href="#windows">Windows installer/portable</a>
+          </p>
+        </section>
+        <section id="linux">
+          <h2>Linux.</h2>
+          <p>
+            Ubuntu 24.04+ / compatible Debian <strong>amd64</strong>, or Arch /
+            Omarchy <strong>x86_64</strong>:
+          </p>
+          <div class="command">
+            <pre><code id="linux-setup">curl -fsSL https://klicky.muneer320.tech/install.sh | bash</code></pre>
+            <button
+              class="copy"
+              data-copy="linux-setup"
+              hidden
+              aria-label="Copy Linux setup"
+            >
+              Copy
+            </button>
+          </div>
+          <p>
+            The helper verifies the pinned APT key or Arch release checksum,
+            installs the package and sounds, and enables/starts the systemd user
+            service. Use a terminal with curl; APT setup installs GnuPG if
+            missing. Debian packages need glibc 2.39+, libasound2t64, systemd
+            and udev.
+          </p>
+          <p>
+            Compatible Omarchy QML shells get the toggle automatically. To skip
+            it:
+          </p>
+          <pre><code>curl -fsSL https://klicky.muneer320.tech/install.sh | bash -s -- --no-omarchy-toggle</code></pre>
+          <details>
+            <summary>Use APT directly</summary>
+            <p>After configuring the signed repository:</p>
+            <pre><code>sudo apt install klicky
+systemctl --user enable --now klicky.service</code></pre>
+            <p>
+              For key inspection and manual setup, use the
+              <a
+                href="https://github.com/Muneer320/klicky/blob/master/docs/APT_REPOSITORY.md"
+                >APT guide</a
+              >. Confirm exactly one primary key:
+              <code>DBB6 7AE4 78D2 FFCE C663 7B55 9899 E554 D358 0D8F</code>.
+            </p>
+          </details>
+          <details>
+            <summary>Download and install a package</summary>
+            <p>
+              Choose only your distribution's commands. The automatic helper
+              additionally handles key/checksum verification.
+            </p>
+            <pre><code># Ubuntu / compatible Debian
+curl -fL --retry 2 -o klicky.deb https://klicky.muneer320.tech/pool/main/k/klicky/klicky_0.4.0-1_amd64.deb
+sudo apt install ./klicky.deb
+systemctl --user enable --now klicky.service
+
+# Arch / Omarchy
+curl -fL --retry 2 -o klicky.pkg.tar.zst https://github.com/Muneer320/klicky/releases/download/v0.4.0/klicky-0.4.0-1-x86_64.pkg.tar.zst
+sudo pacman -U ./klicky.pkg.tar.zst
+systemctl --user enable --now klicky.service</code></pre>
+          </details>
+          <h3 id="linux-source">Build from source</h3>
+          <p>
+            For other distributions/architectures, older systems or development:
+          </p>
+          <pre><code>curl -fsSL https://klicky.muneer320.tech/install.sh | bash -s -- --source</code></pre>
+          <p>
+            This prepares missing Rust 1.87, compiler and ALSA development
+            dependencies on supported APT/pacman/dnf systems, then builds and
+            starts Klicky using systemd/udev. Existing checkout:
+          </p>
+          <pre><code>git clone https://github.com/Muneer320/klicky.git
+cd klicky
+./scripts/install-linux.sh</code></pre>
+          <p>
+            Checkouts need Rust 1.87+, Git, a compiler, pkg-config and ALSA
+            headers (libasound2-dev on Ubuntu/Debian; alsa-lib-devel on Fedora).
+            For non-systemd setup or source-to-package migration, see
+            <a
+              href="https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#linux-from-source"
+              >advanced installation</a
+            >.
+          </p>
+        </section>
+        <section id="macos">
+          <h2>macOS.</h2>
+          <div class="command">
+            <pre><code id="mac-setup">curl -fsSL https://klicky.muneer320.tech/install.sh | bash</code></pre>
+            <button
+              class="copy"
+              data-copy="mac-setup"
+              hidden
+              aria-label="Copy macOS setup"
+            >
+              Copy
+            </button>
+          </div>
+          <p>
+            Prepares missing Rust and Apple tools, builds the app, installs the
+            menu helper and enables login startup. Approve Apple's tools dialog
+            if shown. First setup can take several minutes; this is a source
+            installation, not a prebuilt .app or Homebrew package.
+          </p>
+          <div class="note">
+            <p>
+              Grant Accessibility to
+              <strong><code>~/.local/bin/klicky</code></strong> in System
+              Settings → Privacy &amp; Security → Accessibility. Setup opens the
+              pane, shows the installed file and retries while you approve it.
+            </p>
+          </div>
+          <p>Skip the helper:</p>
+          <pre><code>curl -fsSL https://klicky.muneer320.tech/install.sh | bash -s -- --no-menu</code></pre>
+          <p>From a checkout with Rust 1.87+ and Apple build tools:</p>
+          <pre><code>./scripts/install-macos.sh
+./scripts/install-macos-menu-bar.sh</code></pre>
+          <p>
+            The menu toggles the daemon; change packs/volume through the CLI.
+            Quitting the helper closes the menu, not the daemon.
+          </p>
+        </section>
+        <section id="windows">
+          <h2>Windows preview.</h2>
+          <p><strong>Windows 11 x64 desktop.</strong> Run in PowerShell:</p>
+          <div class="command">
+            <pre><code id="win-setup">irm https://klicky.muneer320.tech/install.ps1 | iex</code></pre>
+            <button
+              class="copy"
+              data-copy="win-setup"
+              hidden
+              aria-label="Copy Windows setup"
+            >
+              Copy
+            </button>
+          </div>
+          <p>
+            Downloads a published installer, verifies its SHA-256 and opens
+            per-user setup. Choose login startup in the wizard. Rust, Visual
+            Studio and elevation are not needed. The helper starts the installed
+            app afterward, respecting a paused launch.
+          </p>
+          <p>
+            Download the installer or complete ZIP from the
+            <a
+              href="https://github.com/Muneer320/klicky/releases/tag/windows-preview-2026-11-06"
+              >Windows preview</a
+            >. For portable use, extract everything into a stable folder and
+            open <code>klicky-desktop.exe</code>. Keep both executables, sounds
+            and notices together.
+          </p>
+          <p>
+            Downloads are unsigned development previews. Windows 10, ARM64 and
+            x86 are not initial targets.
+            <a href="#windows-security">Security help</a> ·
+            <a
+              href="https://github.com/Muneer320/klicky/blob/master/docs/WINDOWS.md"
+              >Windows development/recovery guide</a
+            >.
+          </p>
+        </section>
+        <section id="verify">
+          <h2>Your first few clicks.</h2>
+          <p>
+            On Linux/macOS, check the app, choose a sound and set the volume:
+          </p>
+          <div class="command">
+            <pre><code id="first-cli">klicky list
+klicky status
+klicky switch cherrymx-blue-pbt
+klicky volume 0.5</code></pre>
+            <button
+              class="copy"
+              data-copy="first-cli"
+              hidden
+              aria-label="Copy first CLI commands"
+            >
+              Copy
+            </button>
+          </div>
+          <p>
+            If the shell cannot find a source installation, use
+            <code>~/.local/bin/klicky</code>. Linux packages install
+            <code>/usr/bin/klicky</code>. Windows has tray controls and this
+            installed CLI:
+          </p>
+          <pre><code>&amp; "$env:LOCALAPPDATA\Programs\Klicky\klicky.exe" status</code></pre>
+          <p>
+            Select the intended speakers/headphones and type briefly. On
+            Windows, Resume if paused. The macOS menu toggles sounds; Linux uses
+            its service controls.
+          </p>
+        </section>
+        <section id="cli">
+          <h2>CLI reference.</h2>
+          <p>
+            Common commands below work on Unix and Windows. Windows uses the
+            installed path above, or <code>.\klicky.exe</code> from a portable
+            folder; it is not added to PATH.
+          </p>
+          <div
+            class="table-scroll"
+            role="region"
+            aria-label="CLI commands"
+            tabindex="0"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th>Command</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>list</code></td>
+                  <td>List bundled/system and user packs.</td>
+                </tr>
+                <tr>
+                  <td><code>switch NAME</code></td>
+                  <td>Choose a pack; save for next start if stopped.</td>
+                </tr>
+                <tr>
+                  <td><code>volume LEVEL</code></td>
+                  <td>Set a finite value from 0.0 (mute) to 1.0.</td>
+                </tr>
+                <tr>
+                  <td><code>status</code></td>
+                  <td>Show settings and responsive live state.</td>
+                </tr>
+                <tr>
+                  <td><code>start</code></td>
+                  <td>Run in the foreground; stop a managed instance first.</td>
+                </tr>
+                <tr>
+                  <td><code>stop</code></td>
+                  <td>Stop and confirm process exit.</td>
+                </tr>
+                <tr>
+                  <td><code>service start</code> / <code>stop</code></td>
+                  <td>Change this session; keep the login-startup choice.</td>
+                </tr>
+                <tr>
+                  <td><code>service enable</code> / <code>disable</code></td>
+                  <td>
+                    Start now and at login / stop now and disable startup.
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>service status</code></td>
+                  <td>Show login startup and app state.</td>
+                </tr>
+                <tr>
+                  <td><code>--help</code> / <code>--version</code></td>
+                  <td>Inspect the CLI and build.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <h3>Windows additions</h3>
+          <p>
+            <code>pause</code>, <code>resume</code>,
+            <code>retry-audio</code> and read-only <code>diagnostics</code>.
+            <code>service start --paused</code> affects a newly launched
+            instance. Foreground <code>start</code> also takes
+            <code>--paused</code>, <code>--seconds N</code> (1–3600) and
+            aggregate <code>--benchmark</code> diagnostics.
+          </p>
+          <h3>Linux/macOS benchmark mode</h3>
+          <p>
+            <code>start --benchmark</code> prints mapped key names and internal
+            timing. Use only for controlled tests, never while typing sensitive
+            information. Windows-only pause/seconds/diagnostics commands do not
+            exist on Unix.
+          </p>
+          <p>
+            A successful live pack/volume command confirms the change was
+            loaded, saved and applied. If a response fails or times out, check
+            status and logs before retrying.
+            <a
+              href="https://github.com/Muneer320/klicky/blob/master/docs/CLI.md"
+              >Full CLI reference →</a
+            >
+          </p>
+        </section>
+        <section id="configuration">
+          <h2>Configuration.</h2>
+          <p>Two fields in <code>config.toml</code>:</p>
+          <pre><code>sound_pack = "eg-oreo"
+volume = 0.8</code></pre>
+          <div
+            class="table-scroll"
+            role="region"
+            aria-label="Configuration paths"
+            tabindex="0"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th>System</th>
+                  <th>User settings and sounds</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Linux</td>
+                  <td>
+                    <code>~/.config/klicky</code> /
+                    <code>$XDG_CONFIG_HOME/klicky</code>
+                  </td>
+                </tr>
+                <tr>
+                  <td>macOS</td>
+                  <td><code>~/Library/Application Support/klicky</code></td>
+                </tr>
+                <tr>
+                  <td>Windows</td>
+                  <td><code>%LOCALAPPDATA%\Klicky</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Use controls for live changes; edit configuration while stopped.
+            Custom packs go in the neighboring <code>sounds</code> folder and
+            override system/bundled names.
+          </p>
+          <p>
+            <code>KLICKY_SYSTEM_SOUNDS_DIR</code> overrides the secondary pack
+            root; Windows requires an absolute path.
+            <code>KLICKY_SKIP_UDEV=1</code> skips the Linux source installer's
+            device rule when access is managed elsewhere. These are advanced
+            environment options, not config fields.
+            <a
+              href="https://github.com/Muneer320/klicky/blob/master/docs/CONFIGURATION.md"
+              >Configuration reference →</a
+            >
+          </p>
+        </section>
+        <section id="sound-packs">
+          <h2>A sound of your own.</h2>
+          <p>
+            Ten bundled packs: Cherry MX Black, Blue, Brown and Red with PBT/ABS
+            variants, EG Oreo and EG Crystal Purple.
+            <a href="./#sounds">Listen in the sound room.</a>
+          </p>
+          <p>
+            A custom pack is a directory containing <code>sound.ogg</code> and
+            <code>config.json</code>. The JSON maps keys to
+            <code>[start_ms, duration_ms]</code>:
+          </p>
+          <pre><code>{
+  "defines": {
+    "KeyA": [0, 120],
+    "Space": [235, 180],
+    "Return": [415, 150]
+  },
+  "name": "My Pack"
+}</code></pre>
+          <p>Copy it into your sounds folder, then select it:</p>
+          <pre><code># Linux example; use the corresponding macOS/Windows path above.
+mkdir -p ~/.config/klicky/sounds
+cp -R my-pack ~/.config/klicky/sounds/
+klicky switch my-pack</code></pre>
+          <p>
+            A malformed or undecodable pack leaves the current one active.
+            Include common keys, avoid clipping and redistribute only recordings
+            you have permission to use.
+            <a
+              href="https://github.com/Muneer320/klicky/blob/master/docs/SOUND_PACKS.md"
+              >Format and supported key names →</a
+            >
+          </p>
+        </section>
+        <section id="architecture">
+          <h2>Under the keycaps.</h2>
+          <p>
+            One resident application serves the user session. Native input feeds
+            the platform runtime; shared preparation decodes OGG with Symphonia,
+            creates per-key PCM slices and applies capped normalization when
+            loading a pack.
+          </p>
+          <ol class="flow" aria-label="Playback pipeline">
+            <li>
+              <strong>Native input</strong>
+              <p>Linux evdev / macOS event taps / Windows passive Raw Input.</p>
+            </li>
+            <li>
+              <strong>Cached PCM</strong>
+              <p>Select prepared samples and apply the user's volume.</p>
+            </li>
+            <li>
+              <strong>Persistent mixer</strong>
+              <p>Overlap key sounds through the platform renderer.</p>
+            </li>
+          </ol>
+          <div
+            class="table-scroll"
+            role="region"
+            aria-label="Platform runtime architecture"
+            tabindex="0"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th>Platform</th>
+                  <th>Runtime / control</th>
+                  <th>Audio</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Linux/macOS</td>
+                  <td>
+                    Unix daemon, channels, Unix socket IPC; systemd/launchd.
+                  </td>
+                  <td>Rodio MixerDeviceSink.</td>
+                </tr>
+                <tr>
+                  <td>Windows</td>
+                  <td>
+                    Event-driven coordinator, bounded input/control work, pack
+                    worker, native tray and current-logon-protected named pipes.
+                  </td>
+                  <td>
+                    Rodio mixer, supervised Windows CPAL renderer and bounded
+                    voices.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Windows gates capture outside the verified active/unlocked desktop
+            and discards obsolete input across transitions. Its adapters
+            preserve the separate Unix implementation.
+            <a
+              href="https://github.com/Muneer320/klicky/blob/master/docs/ARCHITECTURE.md"
+              >Module map, concurrency and lifecycle →</a
+            >
+          </p>
+        </section>
+        <section id="privacy">
+          <h2>Local sounds. Sensitive permissions.</h2>
+          <p>
+            Normal operation does not store typed text, log key names, record
+            microphone audio or make network requests. Installation helpers
+            download files; the running app needs no cloud service.
+          </p>
+          <p>
+            Global keyboard access is sensitive. macOS requires Accessibility;
+            Linux uses a keyboard-only udev rule; Windows receives passive Raw
+            Input without elevation. Grant access only to software you trust. Do
+            not make input devices world-readable.
+          </p>
+          <p>
+            Unix benchmarks print mapped key names; Windows diagnostics use
+            aggregate counters. The website has no analytics, account or global
+            keyboard listener. Its small script copies commands and prevents
+            overlapping previews.
+            <a
+              href="https://github.com/Muneer320/klicky/blob/master/SECURITY.md"
+              >Security model and private reporting →</a
+            >
+          </p>
+        </section>
+        <section id="performance">
+          <h2>Responsive by design.</h2>
+          <p>
+            Decoding, slicing and normalization happen at pack load. Keypress
+            playback reuses cached PCM and an existing output stream instead of
+            opening a device or decoding OGG for every press.
+          </p>
+          <p>
+            This does not guarantee a particular physical latency, CPU load or
+            memory footprint on every system. Device buffering, drivers,
+            Bluetooth and load matter. Internal dispatch timings and requested
+            buffer sizes do not measure physical keypress-to-audible delay.
+          </p>
+          <p>
+            Compare speakers or wired output when diagnosing an out-of-sync
+            feeling.
+            <a
+              href="https://github.com/Muneer320/klicky/blob/master/docs/BENCHMARKS.md"
+              >Read the measurement guide →</a
+            >
+          </p>
+        </section>
+        <section id="troubleshooting">
+          <h2>When the clicks go quiet.</h2>
+          <div class="questions">
+            <details>
+              <summary>No sound or intermittent missing sounds</summary>
+              <p>
+                Check state, pack, volume and selected output. In Windows,
+                Resume and try Retry audio. Compare diagnostics before/after a
+                problem from the same process; they contain aggregate counters.
+                Random missing ordinary key sounds are worth reporting even if
+                restarting helps.
+              </p>
+              <pre><code>&amp; "$env:LOCALAPPDATA\Programs\Klicky\klicky.exe" status
+&amp; "$env:LOCALAPPDATA\Programs\Klicky\klicky.exe" diagnostics</code></pre>
+            </details>
+            <details>
+              <summary>Linux input or startup problems</summary>
+              <pre><code>klicky status
+systemctl --user status klicky.service
+journalctl --user -u klicky.service -n 50 --no-pager</code></pre>
+              <p>
+                Confirm the keyboard-only udev rule; log out/in after permission
+                changes. Newly attached keyboards may need
+                <code>systemctl --user restart klicky.service</code>. Check
+                <code>command -v klicky</code> if a source binary shadows a
+                package. Wayland uses the same backend.
+              </p>
+            </details>
+            <details>
+              <summary>macOS input or missing menu</summary>
+              <p>
+                Grant Accessibility to the installed
+                <code>~/.local/bin/klicky</code>, not a development copy. Then
+                stop/start its service. Inspect daemon and helper separately:
+              </p>
+              <pre><code>~/.local/bin/klicky service status
+launchctl print "gui/$(id -u)/dev.klicky.daemon"
+launchctl print "gui/$(id -u)/dev.klicky.menu"</code></pre>
+              <p>
+                Reinstall a missing helper from the checkout. Quitting its menu
+                does not stop the daemon.
+              </p>
+            </details>
+            <details>
+              <summary>Windows starts late after sign-in</summary>
+              <p>
+                Windows can defer Startup-folder apps while busy. Open Klicky
+                from Start to use it sooner, then Resume if paused. Check Start
+                with Windows in the tray and Settings → Apps → Startup. Klicky
+                does not change the system-wide delay.
+              </p>
+            </details>
+            <details id="windows-security">
+              <summary>Windows Security blocks setup or the app</summary>
+              <p>
+                Stop setup and keep protection enabled. Do not add an exclusion
+                or restore a quarantined file just to finish. Note the
+                build/detection name, keep full logs private and use the
+                <a
+                  href="https://github.com/Muneer320/klicky/blob/master/SECURITY.md"
+                  >private reporting route</a
+                >. A suspected false positive needs confirmation. Antivirus
+                detections and unsigned-app reputation warnings are different
+                issues.
+              </p>
+            </details>
+            <details>
+              <summary>A pack or volume change did not apply</summary>
+              <p>
+                Check status, custom-pack precedence and daemon logs. Successful
+                live commands confirm loading, saving and activation; a timeout
+                needs investigation before retrying. Use controls instead of
+                editing active configuration. A rejected pack must not replace a
+                working one.
+              </p>
+            </details>
+          </div>
+          <p>
+            <a
+              href="https://github.com/Muneer320/klicky/blob/master/docs/TROUBLESHOOTING.md"
+              >More troubleshooting</a
+            >
+            ·
+            <a href="https://github.com/Muneer320/klicky/issues/new"
+              >Report a bug</a
+            >. Include OS, build, output and reproduction steps; you need not
+            share what you typed.
+          </p>
+        </section>
+        <section id="faq">
+          <h2>Good questions.</h2>
+          <div class="questions">
+            <details>
+              <summary>Can I use any keyboard?</summary>
+              <p>
+                Yes; a mechanical keyboard is optional. Firmware-only Fn actions
+                and some vendor keys may not emit supported keyboard events.
+              </p>
+            </details>
+            <details>
+              <summary>Can I use Bluetooth?</summary>
+              <p>
+                Yes, through the selected output. Bluetooth transport can add
+                delay that smaller app buffers cannot remove; compare speakers
+                or wired output.
+              </p>
+            </details>
+            <details>
+              <summary>Does it run in the background?</summary>
+              <p>
+                Yes. Linux/macOS setup enables login startup; Windows offers
+                opt-in startup. Native controls and service commands can stop
+                sounds or disable startup.
+              </p>
+            </details>
+            <details>
+              <summary>Is Klicky free?</summary>
+              <p>
+                The app is MIT-licensed and needs no subscription/account.
+                Third-party fonts and dependencies retain their licenses and
+                notices.
+              </p>
+            </details>
+            <details>
+              <summary>Is the mascot an app feature?</summary>
+              <p>
+                The character is our fictional visual identity. Klicky is a
+                sound utility, with no AI conversations, virtual-pet
+                obligations, typing rewards or streaks.
+              </p>
+            </details>
+          </div>
+        </section>
+        <section id="updates">
+          <h2>Keep your resident up to date.</h2>
+          <p>
+            Settings and custom sounds are preserved. Stop packaged Linux
+            processes before replacing the binary, including copies in other
+            signed-in sessions:
+          </p>
+          <pre><code># APT repository
+systemctl --user stop klicky.service
+sudo apt update &amp;&amp; sudo apt install --only-upgrade klicky
+systemctl --user start klicky.service</code></pre>
+          <p>
+            For Arch, install the newer release package instead of the APT
+            command. For source installs, rerun the download installer or update
+            the checkout and rerun the platform scripts, including the macOS
+            helper. Check Accessibility again if replacement stops macOS input.
+          </p>
+          <p>
+            Windows: run the newer installer. It verifies shutdown and preserves
+            the running/pause choice. Disable owned startup and quit before
+            replacing/moving a portable copy. Keep recovery material after a
+            failed update.
+            <a
+              href="https://github.com/Muneer320/klicky/blob/master/docs/WINDOWS.md#installation-and-recovery"
+              >Recovery details →</a
+            >
+          </p>
+        </section>
+        <section id="remove">
+          <h2>Until the next click.</h2>
+          <p>
+            Removal stops the app, disables owned login startup and removes
+            installed controls.
+            <strong>Settings and custom sounds stay by default.</strong> Purge
+            explicitly deletes them.
+          </p>
+          <h3>Linux / macOS</h3>
+          <div class="command">
+            <pre><code id="unix-remove">curl -fsSL https://klicky.muneer320.tech/uninstall.sh | bash</code></pre>
+            <button
+              class="copy"
+              data-copy="unix-remove"
+              hidden
+              aria-label="Copy Unix uninstall command"
+            >
+              Copy
+            </button>
+          </div>
+          <p>Also delete personal settings/sounds:</p>
+          <pre><code>curl -fsSL https://klicky.muneer320.tech/uninstall.sh | bash -s -- --purge</code></pre>
+          <p>
+            Linux handles the package/source copy, service, device rule, APT
+            source/key and supported Omarchy control. Other signed-in users must
+            stop packaged copies first. macOS unloads daemon/helper and removes
+            their binaries, LaunchAgents and menu images. Rust and Apple tools
+            remain; Accessibility permission can be removed manually.
+          </p>
+          <h3>Windows installer setup</h3>
+          <div class="command">
+            <pre><code id="win-remove">irm https://klicky.muneer320.tech/uninstall.ps1 | iex</code></pre>
+            <button
+              class="copy"
+              data-copy="win-remove"
+              hidden
+              aria-label="Copy Windows uninstall command"
+            >
+              Copy
+            </button>
+          </div>
+          <p>
+            Complete the native wizard. Also remove settings, custom sounds and
+            installer data:
+          </p>
+          <pre><code>&amp; ([scriptblock]::Create((irm https://klicky.muneer320.tech/uninstall.ps1))) -Purge</code></pre>
+          <p>
+            Use <code>-WhatIf</code> instead of <code>-Purge</code> to preview.
+            Failed/cancelled native removal keeps personal data. Settings → Apps
+            → Installed apps also has the uninstaller.
+          </p>
+          <h3>Windows portable copy</h3>
+          <p>
+            Disable that bundle's login startup in its tray, choose Quit and
+            delete only its extracted folder. The helper does not search drives
+            or delete arbitrary portable/development folders. After closing all
+            copies, its purge command can remove shared settings.
+            <a
+              href="https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#uninstall"
+              >Complete removal guide →</a
+            >
+          </p>
+        </section>
+        <section id="contribute">
+          <h2>Help this little world grow.</h2>
+          <p>
+            Useful bug reports, accessible docs, sound packs and focused code
+            changes are welcome. Work on dedicated branches, explain the change
+            and validate affected platforms.
+          </p>
+          <ul>
+            <li>
+              <a
+                href="https://github.com/Muneer320/klicky/blob/master/CONTRIBUTING.md"
+                >Contributor setup and PR workflow</a
+              >
+            </li>
+            <li>
+              <a
+                href="https://github.com/Muneer320/klicky/blob/master/docs/ARCHITECTURE.md"
+                >Architecture and module map</a
+              >
+            </li>
+            <li>
+              <a
+                href="https://github.com/Muneer320/klicky/blob/master/docs/SOUND_PACKS.md"
+                >Sound-pack authoring</a
+              >
+            </li>
+            <li>
+              <a
+                href="https://github.com/Muneer320/klicky/blob/master/docs/BRANDING.md"
+                >Brand assets and usage</a
+              >
+            </li>
+            <li>
+              <a
+                href="https://github.com/Muneer320/klicky/blob/master/docs/RELEASE_READINESS.md"
+                >Release checklist</a
+              >
+            </li>
+            <li>
+              <a
+                href="https://github.com/Muneer320/klicky/blob/master/ACKNOWLEDGEMENTS.md"
+                >Credits and notices</a
+              >
+            </li>
+          </ul>
+          <p>
+            Built on Sauhard Gupta's original Klicky, with work by Muneer Alam
+            and contributors.
+          </p>
+        </section>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <div class="wrap footer-top">
+        <a class="brand" href="./"
+          ><img
+            src="assets/branding/klicky.svg"
+            width="46"
+            height="46"
+            alt=""
+          />Klicky</a
+        >
+        <p>A little sound for every keystroke. <a href="./">Back home →</a></p>
+      </div>
+    </footer>
+  </body>
+</html>

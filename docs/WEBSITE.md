@@ -1,40 +1,40 @@
 # Website maintenance
 
-Klicky's product page and signed APT archive share GitHub Pages. The public address is [klicky.muneer320.tech](https://klicky.muneer320.tech/); the archive also uses `https://muneer320.github.io/klicky/`.
+Klicky's product site, field guide and signed APT archive share GitHub Pages at [klicky.muneer320.tech](https://klicky.muneer320.tech/). The archive also uses `https://muneer320.github.io/klicky/`.
 
-## Where things live
+## Source map
 
 | Source | Purpose |
 |---|---|
-| [HTML template](../packaging/apt/index.html) | Product content, styles and native disclosures |
-| [Public media](../assets/website/audio) | Ten short sound-pack previews |
-| [Preview exporter](../tools/website/export-previews.py) | Rebuild listening examples with FFmpeg |
-| [Brand assets](../assets/branding) | Shared mark and social image |
-| [Repository builder](../scripts/build-apt-repository.py) | Signed archive, page, media and installer entry points |
-| [Preview/check tool](../scripts/check-website.py) | Local browser preview and responsive checks |
+| [Landing template](../packaging/apt/index.html) | Mascot-led introduction, sound room, OS setup and archive links |
+| [Field guide](../packaging/apt/guide.html) | On-site installation, CLI/configuration, architecture and troubleshooting |
+| [Styles](../assets/website/site.css) | Shared responsive light/dark design and reduced-motion behavior |
+| [Small enhancement script](../assets/website/site.js) | Copy buttons and one-preview-at-a-time audio |
+| [Website media](../assets/website) | Optimized illustrations, sound previews and locally hosted Nunito font/license |
+| [Brand assets](../assets/branding) | Final mascot art, platform marks and social poster |
+| [Archive builder](../scripts/build-apt-repository.py) | Signed archive, pages, media and install/remove endpoints |
+| [Browser checker](../scripts/check-website.py) | Local preview, responsive checks, axe audit and screenshots |
 
-There is no frontend framework, JavaScript bundle, external font or analytics service. Audio uses native browser controls, loads on demand and never autoplays. The animated keycap is a silent conceptual illustration. Reduced-motion mode removes animation; light and dark appearances follow the system.
+There is no frontend framework, remote font service, account, analytics or global keyboard listener. The small script is progressive enhancement: commands remain visible and native audio/disclosures work without JavaScript. Audio never autoplays. The mascot's greeting is finite, with all animation disabled under reduced motion.
 
-The builder escapes its four template markers: `PUBLIC_URL`, `LATEST_VERSION`, `VERSIONS` and `FINGERPRINT`. Keep the relative archive links intact: `klicky.sources`, both public-key formats and `dists/stable/InRelease`. They work under both the custom domain and the `/klicky/` project path.
+Keep the archive template markers `PUBLIC_URL`, `LATEST_VERSION`, `VERSIONS` and `FINGERPRINT`. The builder escapes dynamic metadata. Preserve relative links to `klicky.sources`, both signing-key formats and `dists/stable/InRelease`; the site must work at `/` and `/klicky/`.
 
-`render_sources` owns the Deb822 definition. `copy_site_assets` publishes only the website asset directory, social PNG and the install/uninstall scripts. Do not copy build outputs, planning files or unrelated repository directories into the public site.
+`copy_site_assets` publishes the curated website/branding folders, field guide and four install/remove scripts. The preferred social image is `/assets/social-preview.jpg`; `/assets/social-preview.png` remains compatible with older links. Both are 1280 × 640 and under 1 MB. Never copy reference boards, internal character briefs, planning files, local test output or unrelated directories into public assets.
 
-## Preview and check
+## Preview and validate
 
 ```bash
 python -B scripts/check-website.py --serve
 ```
 
-Open the printed URL. The preview serves the real template, media and installer script downloads. It does not run installers or create placeholder APT packages. Stop with Ctrl+C.
-
-Basic checks:
+Open the printed URL. It serves real pages/assets/scripts, not installers or placeholder package downloads. Stop with Ctrl+C.
 
 ```bash
 python -B scripts/check-docs.py
 python -B -m unittest scripts/test_apt_repository.py
 ```
 
-For browser checks, install Python Playwright and Chromium once:
+For browser QA, install Python Playwright and Chromium once:
 
 ```bash
 python -m pip install playwright
@@ -42,7 +42,7 @@ python -m playwright install chromium
 python -B scripts/check-website.py
 ```
 
-This checks phone/tablet/desktop layouts in both appearances, fragment links, focus, native disclosures, reduced motion and console errors. Screenshots go to ignored `target/website-review`. Supplying a local axe-core bundle at `target/website-review/axe.min.js` also enables its accessibility audit. The tool is never shipped with the site.
+The checker exercises landing/guide at 320, 360, 768 and 1440px in light/dark mode: overflow, fragment links, keyboard focus, disclosures, real image loading, native audio and reduced motion. Screenshots go to ignored `target/website-review`. A local axe-core bundle at `target/website-review/axe.min.js` enables the WCAG audit. The tool is not shipped with the website.
 
 To rebuild sound examples:
 
@@ -50,12 +50,12 @@ To rebuild sound examples:
 python tools/website/export-previews.py
 ```
 
-Use `--ffmpeg /path/to/ffmpeg` if needed. These are offline sample sequences, not physical typing measurements. The source clips remain in `sounds`; the examples use the same 85% normalization target, 6x gain ceiling and a demonstration volume of 80%. No recordings are made.
+Use `--ffmpeg /path/to/ffmpeg` if needed. Examples are offline sample sequences with the app's normalization target/gain cap, not physical typing measurements. No microphone recording is made.
 
-## Publishing safely
+## Publication
 
-The Pages/APT workflow runs after reviewed changes to its listed master-branch paths. It verifies published package history, rebuilds the complete signed archive and retains `CNAME`. Do not deploy the HTML alone or replace the archive with a generic static-site workflow. See [APT maintenance](MAINTAINING_APT.md) for signing and recovery.
+The reviewed Pages/APT workflow rebuilds the complete signed archive, verifies retained package history and keeps CNAME. Do not deploy the landing HTML alone or replace this with a generic static-site workflow. See [APT maintenance](MAINTAINING_APT.md).
 
-The custom-domain CNAME must point to `muneer320.github.io` at the domain's active DNS provider, with the same domain configured in GitHub Pages and HTTPS enabled.
+The custom-domain CNAME points to `muneer320.github.io`; GitHub Pages must retain the same domain and HTTPS setting. Installation endpoints are `/install.sh` and `/install.ps1`; removal uses `/uninstall.sh` and `/uninstall.ps1`.
 
-The installation endpoints are `https://klicky.muneer320.tech/install.sh` and `/install.ps1`; removal uses `/uninstall.sh` and `/uninstall.ps1`. Publishing these scripts does not publish application releases: the Windows helper needs an identified public installer/checksum pair. Keep download status and install instructions synchronized when a release is approved. The APT release-event path skips prereleases, so publishing a platform preview does not replace the stable Linux archive.
+Publishing website changes does not publish application releases or update installed icons. Keep preview/stable wording aligned with real release assets. The APT release-event path skips prereleases so a Windows preview cannot replace stable Linux packages.

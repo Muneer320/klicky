@@ -15,6 +15,9 @@ The project follows [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Established Klicky's mascot identity across application marks, documentation and a two-page website with an on-site field guide
+- Added CLI/configuration references, platform-aware architecture diagrams and a new 1280 × 640 social preview
+
 - Extracted shared library boundaries while preserving the Linux/macOS engine and platform backends
 - Simplified the README and added expandable installation, FAQ and troubleshooting guides
 - Added one-command installation entry points with default macOS/Omarchy desktop controls and automatic startup

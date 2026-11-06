@@ -1,22 +1,67 @@
 # Klicky
 
-<img src="assets/branding/klicky.svg" width="88" height="88" alt="Klicky keycap and sound mark">
+<p align="center"><img src="assets/branding/social-preview.jpg" width="1280" height="640" alt="Klicky, a tiny cream creature with sound-wave ears, making a home beneath a violet keycap."></p>
 
-**Mechanical keyboard sounds for Windows, macOS and Linux.**
+<p align="center"><strong>A little sound for every keystroke.</strong><br>Mechanical keyboard sounds for Linux, macOS and Windows 11 preview. Built with Rust.</p>
 
-Give everyday typing a little more character. Klicky plays a sound when you press a key, with **10 included sound packs**, adjustable volume and optional desktop controls. Any keyboard will do.
+<p align="center"><a href="https://klicky.muneer320.tech/">Meet Klicky</a> · <a href="#install">Install</a> · <a href="https://klicky.muneer320.tech/guide.html">Field guide</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
 
-[Install](#install) · [Choose your sound](#choose-your-sound) · [FAQ](#faq) · [Get help](#get-help) · [Contribute](CONTRIBUTING.md)
+<p align="center"><a href="https://github.com/Muneer320/klicky/actions/workflows/ci.yml"><img src="https://github.com/Muneer320/klicky/actions/workflows/ci.yml/badge.svg" alt="CI status"></a> <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-7435b4" alt="MIT license"></a> <a href="docs/SOUND_PACKS.md"><img src="https://img.shields.io/badge/sound_packs-10-c084fc" alt="10 included sound packs"></a></p>
 
-[![CI](https://github.com/Muneer320/klicky/actions/workflows/ci.yml/badge.svg)](https://github.com/Muneer320/klicky/actions/workflows/ci.yml)
-[![MIT license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+> **There's someone under your keys.**
+>
+> A click perks its ears up. A steady rhythm gets its little feet moving. Nobody knows quite what Klicky is. It just loves being there.
+
+Klicky the app gives ordinary typing a little more character. Choose a sound pack, set the volume, and get on with whatever you're typing. Any keyboard will do. The mascot is imaginary; the software is a focused local utility, with no account, subscription or cloud sound service.
+
+| A little detail | What it means for you |
+|---|---|
+| **10 included sound packs** | Cherry MX Black, Blue, Brown and Red with PBT/ABS variants, plus EG Oreo and EG Crystal Purple. [Listen before installing.](https://klicky.muneer320.tech/#sounds) |
+| **Your sounds, your volume** | Choose a pack, adjust volume or add your own OGG/JSON recordings. |
+| **Native desktop controls** | Windows tray; macOS menu toggle; Linux CLI and optional Omarchy bar control. |
+| **Prepared audio** | Decode once when a pack loads, then reuse cached samples and a persistent mixer while typing. |
+| **Local operation** | Normal playback stores no typed text and makes no network requests. [Permissions and privacy.](SECURITY.md) |
 
 ## Install
 
-Choose your operating system below. The app runs locally, without an account or subscription.
+Choose your system. The helpers download, install and start Klicky, with platform permissions explained during setup. Prefer reading a script first? Inspect [install.sh](https://klicky.muneer320.tech/install.sh) or [install.ps1](https://klicky.muneer320.tech/install.ps1).
 
 <details>
-<summary><strong>Windows 11 · x64</strong></summary>
+<summary><strong>Linux · Ubuntu / compatible Debian, Arch / Omarchy</strong></summary>
+
+```bash
+curl -fsSL https://klicky.muneer320.tech/install.sh | bash
+```
+
+Uses signed APT on **Ubuntu 24.04+ / compatible Debian amd64**, or the verified **Arch / Omarchy x86_64** package. Includes sounds and enables login startup. Use a terminal with curl and run as your user; package/device setup asks for sudo.
+
+Compatible Omarchy shells get the bar toggle by default. Add `-s -- --no-omarchy-toggle` after `bash` to skip it. For Fedora, older systems and other architectures, use the automatic source build:
+
+```bash
+curl -fsSL https://klicky.muneer320.tech/install.sh | bash -s -- --source
+```
+
+[All Linux methods and prerequisites](docs/INSTALLATION.md#linux) · [Signed APT setup](docs/APT_REPOSITORY.md) · [Omarchy integration](docs/OMARCHY.md)
+
+</details>
+
+<details>
+<summary><strong>macOS · source installation, menu bar included</strong></summary>
+
+```bash
+curl -fsSL https://klicky.muneer320.tech/install.sh | bash
+```
+
+Prepares missing Rust and Apple tools, builds Klicky, installs its menu control and enables login startup. First setup can take several minutes; approve Apple's tools dialog if shown.
+
+Allow **`~/.local/bin/klicky`** in **System Settings → Privacy & Security → Accessibility**. Setup opens the pane and retries while you approve it. To skip the menu helper, add `-s -- --no-menu` after `bash`.
+
+[macOS setup, source checkout and removal](docs/INSTALLATION.md#macos)
+
+</details>
+
+<details>
+<summary><strong>Windows 11 · x64 unsigned preview</strong></summary>
 
 Run in PowerShell:
 
@@ -24,193 +69,152 @@ Run in PowerShell:
 irm https://klicky.muneer320.tech/install.ps1 | iex
 ```
 
-The helper downloads the published installer, verifies its SHA-256 file and opens setup. Choose your login-startup preference; it starts Klicky when setup finishes. Use the tray menu for sounds, volume and Pause/Resume.
+Downloads the published installer, verifies its SHA-256 and opens per-user setup. Choose login startup in the wizard; the helper starts Klicky afterward. No Rust, Visual Studio or elevation needed. Use the tray for packs, volume and Pause/Resume.
 
-**No Rust or Visual Studio needed.** Windows downloads are currently unsigned previews. Prefer a file? [Download the installer](https://github.com/Muneer320/klicky/releases/download/windows-preview-2026-11-06/klicky-0.4.0-windows-x64-preview-7640d242bbc1-setup.exe), or use the portable ZIP from the [Windows preview](https://github.com/Muneer320/klicky/releases/tag/windows-preview-2026-11-06). Extract the complete portable bundle and open `klicky-desktop.exe`.
+> [!NOTE]
+> Windows downloads are development previews. If Windows Security reports a threat, stop setup and use the [security-block troubleshooting steps](docs/TROUBLESHOOTING.md#windows).
 
-[Windows guide](docs/WINDOWS.md) · [Installation options](docs/INSTALLATION.md#windows)
+Prefer a file? The [Windows preview](https://github.com/Muneer320/klicky/releases/tag/windows-preview-2026-11-06) has an installer and portable ZIP. Extract the complete ZIP and open `klicky-desktop.exe`.
 
-</details>
-
-<details>
-<summary><strong>macOS</strong></summary>
-
-Run in Terminal:
-
-```bash
-curl -fsSL https://klicky.muneer320.tech/install.sh | bash
-```
-
-It downloads, builds, installs and starts Klicky with its menu bar control, and enables login startup. Missing Rust/build tools are set up for you; approve Apple's tools dialog if it appears. First setup can take several minutes.
-
-macOS requires Accessibility permission for **`~/.local/bin/klicky`**. If startup needs that permission, setup opens the settings pane and retries while you approve it. No second Terminal command is needed. To skip the menu bar helper, add `-s -- --no-menu` after `bash`.
-
-Use the menu bar control to turn sounds on or off. [Manual steps and removal](docs/INSTALLATION.md#macos)
+[Windows controls and recovery](docs/WINDOWS.md) · [Installation options](docs/INSTALLATION.md#windows)
 
 </details>
 
-<details>
-<summary><strong>Linux · Ubuntu, Debian, Arch, Omarchy and more</strong></summary>
+Current downloads: **v0.4.0 Linux packages**, a separate **Windows preview**, and **macOS source setup**. [Releases](https://github.com/Muneer320/klicky/releases) · [Full installation guide](https://klicky.muneer320.tech/guide.html#installation)
 
-On **Ubuntu 24.04+ / compatible Debian amd64** or **Arch / Omarchy x86_64**, run:
+## Make yourself at home
+
+On Linux/macOS:
 
 ```bash
-curl -fsSL https://klicky.muneer320.tech/install.sh | bash
+klicky list                       # See the available packs
+klicky switch cherrymx-blue-pbt   # Choose your sound
+klicky volume 0.5                 # Set volume, from 0 to 1
+klicky status                    # Check the app
 ```
 
-The installer chooses the signed APT repository or published Arch package, includes the sound packs, and enables Klicky at login. It asks for `sudo` for package/device setup; Klicky itself runs as your user. Use a terminal with `curl`; setup installs GnuPG if needed. Compatible Omarchy shells get the bar toggle automatically; add `-s -- --no-omarchy-toggle` after `bash` to skip it.
+If a source-installed command is not on PATH, use `~/.local/bin/klicky`; Linux packages install `/usr/bin/klicky`. Windows has the same everyday CLI commands at its installed path:
 
-Already set up the APT repository? Use:
-
-```bash
-sudo apt install klicky
+```powershell
+& "$env:LOCALAPPDATA\Programs\Klicky\klicky.exe" status
 ```
 
-For **Fedora, older distributions or other architectures**, use the [source-install instructions](docs/INSTALLATION.md#linux-from-source). Klicky works below Wayland and X11; the automatic service setup uses systemd and udev.
-
-[Manual package downloads](https://github.com/Muneer320/klicky/releases) · [APT setup](docs/APT_REPOSITORY.md) · [Installation and removal](docs/INSTALLATION.md#linux)
-
-</details>
-
-Prefer to inspect the installer first? Download [install.sh](https://klicky.muneer320.tech/install.sh), read it, then run it with `bash`. Existing settings and custom sound packs are kept when upgrading or removing the app.
-
-## Choose your sound
-
-Windows has sound-pack and volume controls in the tray. On Linux and macOS, run:
-
-```bash
-klicky list                       # See your packs
-klicky switch cherrymx-blue-pbt   # Pick a sound
-klicky volume 0.5                 # Set volume from 0 to 1
-klicky status                    # Check the running app
-```
-
-If your shell cannot find `klicky`, use `~/.local/bin/klicky`. On Windows, the CLI is in `%LOCALAPPDATA%\Programs\Klicky`.
+| Your desktop | Everyday controls |
+|---|---|
+| **Windows** | Tray: packs, volume, Pause/Resume, Retry audio and optional login startup. |
+| **macOS** | Menu bar: toggle sounds. Terminal: pack and volume controls. |
+| **Linux** | CLI and systemd; optional supported Omarchy bar toggle. |
 
 <details>
-<summary><strong>The 10 included packs</strong></summary>
-
-| Switch | PBT keycaps | ABS keycaps |
-|---|---|---|
-| Cherry MX Black | `cherrymx-black-pbt` | `cherrymx-black-abs` |
-| Cherry MX Blue | `cherrymx-blue-pbt` | `cherrymx-blue-abs` |
-| Cherry MX Brown | `cherrymx-brown-pbt` | `cherrymx-brown-abs` |
-| Cherry MX Red | `cherrymx-red-pbt` | `cherrymx-red-abs` |
-
-Plus **`eg-oreo`** (the default) and **`eg-crystal-purple`**. Want your own sound? See [custom packs](docs/SOUND_PACKS.md).
-
-</details>
-
-## Make it yours
-
-- **Windows:** use the tray menu for sounds, volume, Pause/Resume and login startup.
-- **macOS:** use the menu bar toggle; change sounds and volume in Terminal.
-- **Linux:** use the CLI, or add the optional [Omarchy bar toggle](docs/OMARCHY.md).
-
-<details>
-<summary><strong>Start, stop and change login startup</strong></summary>
-
-On Linux and macOS:
+<summary><strong>Start, stop and choose login startup</strong></summary>
 
 ```bash
-klicky service start     # Start now
+klicky service start     # Start this session
 klicky service stop      # Stop now; keep login startup
 klicky service enable    # Start now and at login
 klicky service disable   # Stop now and disable login startup
 ```
 
-On Windows, use the tray's **Start with Windows** submenu. The Windows CLI has the same service commands; see the [Windows guide](docs/WINDOWS.md).
+Windows supports these service commands too, through its installed CLI. Its tray also has **Start with Windows**. Windows may independently disable or defer startup. [Full CLI reference](docs/CLI.md)
 
 </details>
 
 <details>
-<summary><strong>Configuration files and custom packs</strong></summary>
+<summary><strong>Configuration and your own sound packs</strong></summary>
 
 | System | Settings folder |
 |---|---|
-| Windows | `%LOCALAPPDATA%\Klicky` |
+| Linux | `~/.config/klicky` or `$XDG_CONFIG_HOME/klicky` |
 | macOS | `~/Library/Application Support/klicky` |
-| Linux | `~/.config/klicky` (or `$XDG_CONFIG_HOME/klicky`) |
+| Windows | `%LOCALAPPDATA%\Klicky` |
 
-Settings live in `config.toml`; custom packs go in its neighboring `sounds` folder. A custom pack takes precedence over a bundled pack with the same name. Use the running app's controls for live changes.
+`config.toml` contains two fields:
 
 ```toml
 sound_pack = "eg-oreo"
 volume = 0.8
 ```
 
-[Sound pack format](docs/SOUND_PACKS.md) · [Advanced setup](docs/INSTALLATION.md)
+Custom packs go in the neighboring `sounds` folder. Each pack contains `sound.ogg` and a JSON timing map. A user pack overrides a bundled/system pack with the same name. Use app controls for live changes.
+
+[Configuration reference](docs/CONFIGURATION.md) · [Make a sound pack](docs/SOUND_PACKS.md)
 
 </details>
 
-## FAQ
+## Under the keycaps
+
+Klicky prepares audio when loading a pack, then selects cached PCM during typing. Platform adapters preserve the native input, controls and audio behavior of each system.
+
+```mermaid
+flowchart LR
+    L[Linux evdev] --> U[Unix daemon]
+    M[macOS event taps] --> U
+    W[Windows Raw Input] --> C[Windows coordinator]
+    P[OGG + JSON pack] --> S[Shared decoding / slicing / normalization]
+    S --> PCM[Prepared PCM]
+    PCM --> U
+    PCM --> C
+    U --> R[Rodio persistent output]
+    C --> A[Rodio mixer / Windows CPAL renderer]
+    R --> O[Speakers or headphones]
+    A --> O
+```
+
+The Unix daemon and Windows coordinator have different concurrency and recovery designs. Cached audio and persistent output reduce work on keypresses; output hardware still affects perceived timing. [Architecture](docs/ARCHITECTURE.md) · [Performance and measurement](docs/BENCHMARKS.md)
+
+## A few good questions
 
 <details>
-<summary><strong>Do I need a mechanical keyboard?</strong></summary>
+<summary><strong>Do I need a mechanical keyboard? Does Linux work on Wayland?</strong></summary>
 
-No. Klicky adds the sound in software, so a laptop or ordinary desktop keyboard works too.
+Any ordinary keyboard works; the sound is added in software. Linux reads evdev below Wayland/X11, using a keyboard-only device rule rather than separate desktop-specific capture.
 
 </details>
 
 <details>
 <summary><strong>Does it record what I type?</strong></summary>
 
-Normal operation does not store typed text, log key names or send network requests. Klicky reads keyboard events locally to trigger the sounds. macOS asks for Accessibility permission; Linux uses a keyboard-only device rule. Advanced Linux/macOS benchmark mode prints mapped key names, so it is for controlled tests. [Privacy and security](SECURITY.md)
+Normal operation stores no typed text, logs no key names and sends no network requests. Global keyboard permission is sensitive, so grant it only to trusted software. Unix benchmark mode prints mapped key names and is for controlled tests. [Privacy and security](SECURITY.md)
 
 </details>
 
 <details>
-<summary><strong>Can I use headphones? Why does Bluetooth feel delayed?</strong></summary>
+<summary><strong>Why does Bluetooth feel delayed, or why are sounds missing?</strong></summary>
 
-Yes. Klicky plays through your selected audio output. Bluetooth can add its own delay; try laptop speakers or wired headphones if the sound feels out of sync.
-
-</details>
-
-<details>
-<summary><strong>Can I pause it or keep it from starting automatically?</strong></summary>
-
-Yes. Use Pause in the Windows tray, the macOS menu toggle, or `klicky service stop` on Linux/macOS. Windows login startup is opt-in. Use `service disable` or the corresponding desktop control to turn startup off. [Controls](#make-it-yours)
+Compare speakers or wired output first; Bluetooth can add transport delay. Check state, pack, volume and the selected output. The [troubleshooting guide](docs/TROUBLESHOOTING.md) covers input permissions, startup, audio recovery and useful diagnostics. Report random missing sounds even if a restart helps.
 
 </details>
 
 <details>
-<summary><strong>How do I update or uninstall?</strong></summary>
+<summary><strong>How do I update or completely uninstall?</strong></summary>
 
-Update through your package manager, rerun the source installer, or run a newer Windows installer. [Update instructions](docs/INSTALLATION.md#updates-and-removal)
+Update through your package manager or rerun the appropriate installer. [Update steps](docs/INSTALLATION.md#updates-and-removal)
 
-For a one-command uninstall on **Linux/macOS**:
+Linux/macOS removal:
 
 ```bash
 curl -fsSL https://klicky.muneer320.tech/uninstall.sh | bash
 ```
 
-For an installer setup on **Windows**, run in PowerShell:
+Windows installer removal:
 
 ```powershell
 irm https://klicky.muneer320.tech/uninstall.ps1 | iex
 ```
 
-These stop Klicky and remove its installed desktop controls too. Settings and custom sounds are kept. [Add `--purge` / `-Purge` to remove personal data, or remove a portable copy](docs/INSTALLATION.md#uninstall).
+These stop the app and remove installed desktop controls. Settings/custom sounds stay by default. [Explicit purge and portable removal](docs/INSTALLATION.md#uninstall)
 
 </details>
 
-## Get help
+## Find your way around
 
-<details>
-<summary><strong>No sound, missing sounds, startup or permission problems?</strong></summary>
+| I want to… | Start here |
+|---|---|
+| Install, configure or troubleshoot | [The website field guide](https://klicky.muneer320.tech/guide.html) |
+| Look up commands or configuration | [CLI](docs/CLI.md) · [Configuration](docs/CONFIGURATION.md) |
+| Add recordings or desktop integration | [Sound packs](docs/SOUND_PACKS.md) · [Omarchy](docs/OMARCHY.md) |
+| Understand or contribute code | [Architecture](docs/ARCHITECTURE.md) · [Contributing](CONTRIBUTING.md) |
+| Explore the character or use artwork | [Klicky's story](docs/CHARACTER.md) · [Brand assets](docs/BRANDING.md) |
+| Check releases and project history | [Releases](https://github.com/Muneer320/klicky/releases) · [Changelog](CHANGELOG.md) |
 
-Check the selected output, pack, volume and whether Klicky is paused. Then open the [troubleshooting guide](docs/TROUBLESHOOTING.md) for your system. It includes the commands to check permissions, services and Windows diagnostic counters.
-
-If the problem continues, [open an issue](https://github.com/Muneer320/klicky/issues/new) with your OS, Klicky build, audio output and what happened. You do not need to share what you typed.
-
-</details>
-
-## Under the hood
-
-Klicky prepares sound samples when a pack loads and reuses one persistent mixer while you type. Native input comes from Linux `evdev`, macOS global input and Windows Raw Input. The Windows tray and optional macOS helper provide desktop controls.
-
-[Architecture](docs/ARCHITECTURE.md) · [Performance and measurement](docs/BENCHMARKS.md) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
-
-## Credits
-
-Built on [Sauhard Gupta's original Klicky](https://github.com/Sauhard74/klicky), with subsequent work by Muneer Alam and contributors. See [Acknowledgements](ACKNOWLEDGEMENTS.md). Source and bundled sounds use the [MIT license](LICENSE); third-party notices accompany packaged downloads.
+Built on [Sauhard Gupta's original Klicky](https://github.com/Sauhard74/klicky), with subsequent work by Muneer Alam and contributors. [Acknowledgements](ACKNOWLEDGEMENTS.md) · [MIT license](LICENSE). Third-party notices accompany packaged downloads; the website's Nunito typeface retains its [SIL Open Font License](assets/website/fonts/OFL.txt).

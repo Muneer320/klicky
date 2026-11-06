@@ -64,6 +64,7 @@
         if (-not $launch.WaitForExit(30000)) { throw 'Klicky startup was not confirmed within 30 seconds. Open it from Start for details.' }
         if ($launch.ExitCode -ne 0) { throw 'Klicky installed, but startup reported an error. Open it from Start for details.' }
         Write-Output 'Klicky is installed and running. Its tray menu changes sounds and volume. Choose Resume if you selected a paused launch.'
+        Write-Output 'A little sound for every keystroke.'
     }
     finally {
         # Delete only the known downloads, not a recursively computed directory.

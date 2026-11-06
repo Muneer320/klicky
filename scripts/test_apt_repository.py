@@ -85,14 +85,15 @@ class AptRepositoryTests(unittest.TestCase):
             "DBB67AE478D2FFCEC6637B559899E554D3580D8F",
         )
 
-        self.assertIn("Klicky APT Repository", page)
+        self.assertIn("Signed Linux archive &amp; package history", page)
         self.assertIn("0.3.0-1", page)
         self.assertIn("sudo apt install klicky", page)
         self.assertIn(
             "DBB6 7AE4 78D2 FFCE C663 7B55 9899 E554 D358 0D8F", page)
-        self.assertRegex(page, r"prefers-color-scheme:\s*dark")
+        css = (MODULE_PATH.parent.parent / "assets/website/site.css").read_text(encoding="utf-8")
+        self.assertRegex(css, r"prefers-color-scheme:\s*dark")
         self.assertIn('href="#main"', page)
-        self.assertNotIn("<script", page)
+        self.assertIn('<script src="assets/site.js" defer></script>', page)
         self.assertNotIn("https://fonts.", page)
 
     def test_product_page_preserves_navigation_packs_and_archive_paths(self):
@@ -118,25 +119,27 @@ class AptRepositoryTests(unittest.TestCase):
         for link in elements.links:
             if link.startswith("#"):
                 self.assertIn(link[1:], elements.ids)
-            elif not link.startswith("https://"):
+            elif not link.startswith("https://") and not link.startswith(("guide.html", "assets/audio/")):
                 self.assertIn(link, {
                     "klicky.sources", "klicky-archive-keyring.gpg",
                     "klicky-archive-keyring.asc", "dists/stable/InRelease",
+                    "./", "install.sh", "install.ps1",
                 })
         for pack in (MODULE_PATH.parent.parent / "sounds").iterdir():
             if pack.is_dir():
                 self.assertIn(pack.name, page)
         self.assertNotIn("{{", page)
-        self.assertIn("not physical key-to-speaker latency", page)
-        self.assertRegex(page, r"prefers-reduced-motion:\s*reduce")
-        self.assertIn("Silent, conceptual illustration", page)
+        self.assertIn("not a live typing or latency demonstration", " ".join(page.split()))
+        css = (MODULE_PATH.parent.parent / "assets/website/site.css").read_text(encoding="utf-8")
+        self.assertRegex(css, r"prefers-reduced-motion:\s*reduce")
+        self.assertIn("The character is imaginary.", " ".join(page.split()))
 
     def test_index_escapes_dynamic_archive_metadata(self):
         page = apt_repository.render_index(
             "https://example.com/klicky", [
                 '<img src=x onerror="bad">'], "A" * 40
         )
-        self.assertNotIn("<img", page)
+        self.assertNotIn('<img src=x onerror="bad">', page)
         self.assertIn("&lt;img", page)
 
 

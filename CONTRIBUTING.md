@@ -2,6 +2,8 @@
 
 Thank you for helping improve Klicky. Small, focused changes are easier to test across input stacks and operating systems than broad rewrites.
 
+New to the product? Start with the [field guide](https://klicky.muneer320.tech/guide.html). For presentation work, use the [character story](docs/CHARACTER.md) and [brand asset guide](docs/BRANDING.md); keep instructions technically clear and the mascot recognizable.
+
 ## Before starting
 
 Open an issue before changing any of these areas:
