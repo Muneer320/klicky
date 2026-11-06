@@ -184,3 +184,7 @@ Windows stores configuration/custom packs under `%LOCALAPPDATA%\Klicky`, with se
 - Windows 11 x64 is a development preview. Calibrated physical latency, matched Linux/macOS baselines, additional hardware and full installation/session/reliability qualification remain open.
 
 These constraints are intentionally explicit. They should become focused issues rather than hidden claims of universal support.
+
+## Further reading
+
+For the development story behind the native input paths and audio-buffer choices, read [I Wanted Keyboard Sounds on Linux. Then I Fell Down the Audio Stack.](https://dev.to/muneer320/i-wanted-keyboard-sounds-on-linux-then-i-fell-down-the-audio-stack-3b1d). The [portfolio case study](https://muneer320.tech/projects/klicky/) follows the wider desktop and installation work.
