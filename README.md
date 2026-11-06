@@ -58,6 +58,14 @@ Allow **`~/.local/bin/klicky`** in **System Settings → Privacy & Security → 
 
 [macOS setup, source checkout and removal](docs/INSTALLATION.md#macos)
 
+Already use Homebrew? [Klicky's tap](docs/INSTALLATION.md#homebrew) includes the menu helper and sounds:
+
+```bash
+brew install muneer320/tap/klicky && brew services start muneer320/tap/klicky && klicky service enable
+```
+
+It builds from source; grant Accessibility to the executable shown by `brew info klicky`.
+
 </details>
 
 <details>
@@ -74,6 +82,8 @@ Downloads the published installer, verifies its SHA-256 and opens per-user setup
 Prefer a file? The [v0.5.0 release](https://github.com/Muneer320/klicky/releases/tag/v0.5.0) has an installer and portable ZIP. Extract the complete ZIP and open `klicky-desktop.exe`.
 
 [Windows controls and recovery](docs/WINDOWS.md) · [Installation options](docs/INSTALLATION.md#windows)
+
+Already use Scoop? [Install from Klicky's bucket](docs/INSTALLATION.md#scoop). WinGet is [submitted for review](https://github.com/microsoft/winget-pkgs/pull/473333).
 
 </details>
 
@@ -190,7 +200,7 @@ Compare speakers or wired output first; Bluetooth can add transport delay. Check
 
 Update through your package manager or rerun the appropriate installer. [Update steps](docs/INSTALLATION.md#updates-and-removal)
 
-Linux/macOS removal:
+Linux/macOS helper-installed removal:
 
 ```bash
 curl -fsSL https://klicky.muneer320.tech/uninstall.sh | bash
@@ -203,6 +213,8 @@ irm https://klicky.muneer320.tech/uninstall.ps1 | iex
 ```
 
 These stop the app and remove installed desktop controls. Settings/custom sounds stay by default. [Explicit purge and portable removal](docs/INSTALLATION.md#uninstall)
+
+For Homebrew or Scoop, use [package-specific removal](docs/INSTALLATION.md#package-manager-removal) so the manager and login services stay in sync.
 
 </details>
 
