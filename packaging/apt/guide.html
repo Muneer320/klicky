@@ -285,10 +285,10 @@ cd klicky
         </section>
         <section id="homebrew">
           <h2>Homebrew on macOS.</h2>
-          <p>With Homebrew and Apple Command Line Tools installed:</p>
+          <p>On <strong>Apple Silicon</strong>, with Homebrew and Apple Command Line Tools installed:</p>
           <pre><code>brew install muneer320/tap/klicky &amp;&amp; brew services start muneer320/tap/klicky &amp;&amp; klicky service enable</code></pre>
           <p>The tap builds the app, sounds and menu helper from source. Grant Accessibility to the actual binary shown by <code>brew info klicky</code>, then run <code>klicky service start</code>. To omit the menu, leave out <code>brew services start muneer320/tap/klicky</code>.</p>
-          <p>Remove a previous source installation without purge before switching. Keep one installation and one menu helper.</p>
+          <p>Intel Macs use the <a href="#macos">one-line source installer</a>. Klicky still supports Intel; Homebrew has <a href="https://docs.brew.sh/Support-Tiers#future-macos-support">ended its supported Intel coverage</a>. Remove a previous source installation without purge before switching. Keep one installation and one menu helper.</p>
           <details><summary>Update or remove Homebrew Klicky</summary>
             <p>Update:</p>
             <pre><code>klicky service stop &amp;&amp; brew update &amp;&amp; brew upgrade muneer320/tap/klicky &amp;&amp; brew services restart muneer320/tap/klicky &amp;&amp; klicky service start</code></pre>

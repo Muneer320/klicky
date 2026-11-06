@@ -58,13 +58,13 @@ Allow **`~/.local/bin/klicky`** in **System Settings → Privacy & Security → 
 
 [macOS setup, source checkout and removal](docs/INSTALLATION.md#macos)
 
-Already use Homebrew? [Klicky's tap](docs/INSTALLATION.md#homebrew) includes the menu helper and sounds:
+On Apple Silicon, [Klicky's Homebrew tap](docs/INSTALLATION.md#homebrew) includes the menu helper and sounds:
 
 ```bash
 brew install muneer320/tap/klicky && brew services start muneer320/tap/klicky && klicky service enable
 ```
 
-It builds from source; grant Accessibility to the executable shown by `brew info klicky`.
+It builds from source; grant Accessibility to the executable shown by `brew info klicky`. Intel Macs use the one-line installer above.
 
 </details>
 

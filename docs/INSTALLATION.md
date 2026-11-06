@@ -88,13 +88,13 @@ The installed binary is `~/.local/bin/klicky`; sound packs are in `~/Library/App
 
 ### Homebrew
 
-With [Homebrew](https://brew.sh/) and Apple's Command Line Tools installed:
+On **Apple Silicon**, with [Homebrew](https://brew.sh/) and Apple's Command Line Tools installed:
 
 ```bash
 brew install muneer320/tap/klicky && brew services start muneer320/tap/klicky && klicky service enable
 ```
 
-The project tap builds from source for Apple Silicon or Intel and includes all packs. Homebrew manages the menu helper; Klicky's `service` commands manage the sound daemon. Omit `brew services start muneer320/tap/klicky` to skip the menu.
+The project tap builds from source and includes all packs. **Intel Macs use the one-line installer above**: Klicky still supports Intel, while Homebrew has [ended supported Intel coverage and new Intel bottles](https://docs.brew.sh/Support-Tiers#future-macos-support). Homebrew manages the menu helper; Klicky's `service` commands manage the sound daemon. Omit `brew services start muneer320/tap/klicky` to skip the menu.
 
 Allow the **actual executable shown by `brew info klicky`** in Accessibility, then run `klicky service start`. This differs from the source-install path. Remove a previous source installation without purge before switching; do not run both menu helpers.
 
