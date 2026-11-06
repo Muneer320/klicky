@@ -30,6 +30,17 @@ git clone https://github.com/Muneer320/klicky.git
 cd klicky
 ```
 
+## macOS package builds
+
+Package builds on macOS may set `KLICKY_MACOS_INSTALL_BINARY` **at compile time**
+to a fixed, absolute launcher path in their managed prefix. That launcher must be
+a regular executable; its parent directories may include a package manager's
+stable symlink. Source installs keep the existing `~/.local/bin/klicky` checks.
+The launcher should set `KLICKY_SYSTEM_SOUNDS_DIR` for bundled sounds. The menu
+helper accepts `KLICKY_MENU_CLI` and `KLICKY_MENU_ICON` from its launcher to locate
+the matching CLI and template image. Package lifecycle tests must cover those
+paths after upgrades and must preserve the user's configuration on removal.
+
 ## Repository map
 
 | Path         | Purpose                                                                     |

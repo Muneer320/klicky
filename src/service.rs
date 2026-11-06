@@ -348,7 +348,12 @@ fn stop_launch_agent(
 
 #[cfg(any(target_os = "macos", test))]
 fn installed_binary(home: &std::path::Path) -> Result<std::path::PathBuf> {
-    let binary = std::fs::canonicalize(home)?.join(".local/bin/klicky");
+    // A package build may pin a stable launcher inside its managed prefix.
+    // This is a build-time setting, never an override from the running user's environment.
+    let binary = match option_env!("KLICKY_MACOS_INSTALL_BINARY") {
+        Some(path) => std::path::PathBuf::from(path),
+        None => std::fs::canonicalize(home)?.join(".local/bin/klicky"),
+    };
     validate_installed_binary(&binary)?;
     Ok(binary)
 }
@@ -357,19 +362,26 @@ fn installed_binary(home: &std::path::Path) -> Result<std::path::PathBuf> {
 fn validate_installed_binary(binary: &std::path::Path) -> Result<()> {
     use std::os::unix::fs::PermissionsExt;
     let validate = || -> Result<()> {
-        if !binary.is_absolute() || !binary.ends_with(".local/bin/klicky") {
-            bail!("expected the installed ~/.local/bin/klicky executable");
+        let package_binary = option_env!("KLICKY_MACOS_INSTALL_BINARY");
+        let expected = match package_binary {
+            Some(path) => binary == std::path::Path::new(path),
+            None => binary.ends_with(".local/bin/klicky"),
+        };
+        if !binary.is_absolute() || !expected {
+            bail!("expected the installed Klicky executable");
         }
         let metadata = std::fs::symlink_metadata(binary)?;
         if !metadata.is_file() || metadata.permissions().mode() & 0o111 == 0 {
             bail!("installed path must be a regular executable file, not a symlink");
         }
-        if std::fs::canonicalize(binary)? != binary {
+        // Homebrew's opt directory is a managed symlink to the current keg.
+        // Source installs retain the stricter no-redirection rule.
+        if package_binary.is_none() && std::fs::canonicalize(binary)? != binary {
             bail!("installed path must not redirect through symlinks or parent traversal");
         }
         Ok(())
     };
-    validate().with_context(|| format!("Invalid installed Klicky binary at {}. Run ./scripts/install-macos.sh from the repository to install a regular executable at ~/.local/bin/klicky", binary.display()))
+    validate().with_context(|| format!("Invalid installed Klicky binary at {}. Repair it using the installation method that owns this path", binary.display()))
 }
 
 #[cfg(any(target_os = "macos", test))]

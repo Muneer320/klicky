@@ -5,14 +5,14 @@ final class KlickyMenu: NSObject, NSApplicationDelegate {
     private var item: NSStatusItem!
     private let toggle = NSMenuItem(title: "Turn Klicky On", action: #selector(toggleKlicky), keyEquivalent: "")
     private let status = NSMenuItem(title: "Checking status…", action: nil, keyEquivalent: "")
-    private let binary = FileManager.default.homeDirectoryForCurrentUser
+    private let binary = ProcessInfo.processInfo.environment["KLICKY_MENU_CLI"] ?? FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent(".local/bin/klicky").path
     private var running = false
     private var enabled = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        let iconPath = FileManager.default.homeDirectoryForCurrentUser
+        let iconPath = ProcessInfo.processInfo.environment["KLICKY_MENU_ICON"] ?? FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Application Support/klicky/branding/klicky-menu-template.png").path
         if let data = try? Data(contentsOf: URL(fileURLWithPath: iconPath)),
            let standard = NSBitmapImageRep(data: data) {
