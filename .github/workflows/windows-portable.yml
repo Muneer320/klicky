@@ -1,6 +1,7 @@
-name: Windows unsigned test packages
+name: Windows packages
 
 on:
+  workflow_call:
   push:
     paths:
       - src/**
@@ -45,7 +46,7 @@ jobs:
       - uses: actions/checkout@v5
       - name: Install pinned MSVC Rust
         run: rustup toolchain install 1.87.0-x86_64-pc-windows-msvc --profile minimal
-      - name: Build and verify unsigned development bundle
+      - name: Build and verify unsigned Windows bundle
         shell: pwsh
         run: ./scripts/build-windows-portable.ps1
       - name: Prepare pinned portable installer compiler
@@ -68,7 +69,7 @@ jobs:
           ./scripts/build-windows-installer.ps1 -CompilerPath (Join-Path $env:RUNNER_TEMP 'inno-7.1.1-portable/ISCC.exe') -PortableArchive $archives[0].FullName
       - uses: actions/upload-artifact@v4
         with:
-          name: klicky-windows-x64-unsigned-preview
+          name: klicky-windows-x64-unsigned
           path: |
             target/windows-dist/*.zip*
             target/windows-dist/*-setup.exe*

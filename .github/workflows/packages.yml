@@ -1,6 +1,7 @@
 name: Packages
 
 on:
+  workflow_call:
   push:
   pull_request:
 
@@ -26,7 +27,8 @@ jobs:
           lintian --suppress-tags initial-upload-closes-no-bugs "$deb"
           root=$(mktemp -d)
           dpkg-deb -x "$deb" "$root"
-          test "$("$root/usr/bin/klicky" --version)" = "klicky 0.4.0"
+          version=$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["version"])')
+          test "$("$root/usr/bin/klicky" --version)" = "klicky $version"
           test -f "$root/usr/lib/systemd/user/klicky.service"
           test -f "$root/usr/lib/udev/rules.d/70-klicky.rules"
           test -f "$root/usr/share/man/man1/klicky.1.gz"
@@ -105,7 +107,8 @@ jobs:
           namcap PKGBUILD
           namcap "$package"
           pacman -U --noconfirm "$package"
-          test "$(klicky --version)" = "klicky 0.4.0"
+          version=$(python -c 'import tomllib; print(tomllib.load(open("../../Cargo.toml", "rb"))["package"]["version"])')
+          test "$(klicky --version)" = "klicky $version"
           test "$(find /usr/share/klicky/sounds -name sound.ogg | wc -l)" -eq 10
           systemd-analyze verify /usr/lib/systemd/user/klicky.service
           klicky list

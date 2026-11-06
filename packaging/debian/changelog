@@ -1,3 +1,12 @@
+klicky (0.5.0-1) unstable; urgency=medium
+
+  * Add native Windows desktop support alongside Linux and macOS.
+  * Preserve Unix platform backends behind shared library boundaries.
+  * Improve macOS installation, menu control and removal.
+  * Add one-command setup/removal and refresh documentation and branding.
+
+ -- Muneer Alam <muneer.alam320@gmail.com>  Fri, 06 Nov 2026 18:00:00 +0000
+
 klicky (0.4.0-1) unstable; urgency=medium
 
   * Harden daemon lifecycle with a persistent ownership lock and bounded stop.

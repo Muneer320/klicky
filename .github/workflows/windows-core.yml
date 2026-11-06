@@ -1,6 +1,7 @@
 name: Windows portable core
 
 on:
+  workflow_call:
   push:
     paths:
       - src/**

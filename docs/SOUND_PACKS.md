@@ -19,7 +19,7 @@ klicky switch my-pack
 
 Linux distribution packages can install shared packs under `/usr/share/klicky/sounds`. User packs take precedence over system packs with the same directory name. This allows local customization without modifying package-managed files.
 
-On macOS, user packs go in `~/Library/Application Support/klicky/sounds`. On Windows, use `%LOCALAPPDATA%\Klicky\sounds`; bundled packs stay in `sounds` beside the executable. Windows user packs override bundled names using Windows ordinal comparison. The preview validates pack names, bounds discovery/preparation and rejects malformed or incomplete OGG containers; see the [Windows guide](WINDOWS.md). Use the tray or CLI for live changes instead of editing active configuration.
+On macOS, user packs go in `~/Library/Application Support/klicky/sounds`. On Windows, use `%LOCALAPPDATA%\Klicky\sounds`; bundled packs stay in `sounds` beside the executable. Windows user packs override bundled names using Windows ordinal comparison. Windows validates pack names, bounds discovery/preparation and rejects malformed or incomplete OGG containers; see the [Windows guide](WINDOWS.md). Use the tray or CLI for live changes instead of editing active configuration.
 
 ## Configuration format
 

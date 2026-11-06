@@ -35,7 +35,7 @@ try {
     $versionLine = Get-Content -LiteralPath (Join-Path $repository 'Cargo.toml') | Where-Object { $_ -match '^version = "\d+\.\d+\.\d+"$' } | Select-Object -First 1
     if (-not $versionLine) { throw 'Missing numeric package version.' }
     $version = $versionLine.Split('"')[1]
-    $name = "klicky-$version-windows-x64-preview-$($revision.Substring(0, 12))"
+    $name = "klicky-$version-windows-x64"
     if (-not $PortableArchive) {
         $arguments = @{ OutputDirectory = $OutputDirectory }
         if ($TargetDirectory) { $arguments.TargetDirectory = $TargetDirectory }
@@ -76,7 +76,7 @@ try {
         } finally { $zip.Dispose() }
     } finally { $stream.Dispose() }
     $identity = Get-Content -LiteralPath (Join-Path $payload 'BUILD-INFO.json') -Raw | ConvertFrom-Json
-    if ($identity.source_revision -ne $revision -or $identity.source_tree -ne $tree -or $identity.version -ne $version -or $identity.target -ne 'x86_64-pc-windows-msvc' -or $identity.static_crt -ne $true -or $identity.signing -ne 'unsigned' -or $identity.qualification -ne 'development-unqualified') { throw 'Portable build identity does not match this unsigned installer source.' }
+    if ($identity.source_revision -ne $revision -or $identity.source_tree -ne $tree -or $identity.version -ne $version -or $identity.target -ne 'x86_64-pc-windows-msvc' -or $identity.static_crt -ne $true -or $identity.signing -ne 'unsigned') { throw 'Portable build identity does not match this unsigned installer source.' }
     $inventoried = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($file in $identity.files) {
         if (-not $inventoried.Add($file.path) -or -not $seen.Contains($file.path) -or (Get-FileHash -LiteralPath (Join-Path $payload $file.path) -Algorithm SHA256).Hash -ine $file.sha256) { throw "Portable payload verification failed: $($file.path)" }
@@ -87,7 +87,7 @@ try {
     [IO.File]::WriteAllText((Join-Path $payload 'INSTALLER-IDENTITY.ini'), $receipt, [Text.UTF8Encoding]::new($false))
     Invoke-Checked $CompilerPath @('--no-ide-signtools', '--no-signing', "--output-dir=$compiled", "--define=PayloadDirectory=$payload", "--define=AppVersion=$version", "--define=SourceRevision=$revision", (Join-Path $repository 'packaging/windows/installer.iss')) | Out-Host
     $installer = Join-Path $compiled "$name-setup.exe"
-    if ((Get-AuthenticodeSignature -LiteralPath $installer).Status -ne 'NotSigned') { throw 'Expected an unsigned development installer.' }
+    if ((Get-AuthenticodeSignature -LiteralPath $installer).Status -ne 'NotSigned') { throw 'Expected an unsigned Windows installer.' }
     if ((Invoke-Checked git @('rev-parse', 'HEAD')) -ne $revision -or (Invoke-Checked git @('status', '--porcelain=v1'))) { throw 'Source identity changed during packaging; inspect the staged installer.' }
     New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
     $finalPath = Join-Path $OutputDirectory "$name-setup.exe"
@@ -99,7 +99,7 @@ try {
         $bytes = [Text.UTF8Encoding]::new($false).GetBytes("$hash  $name-setup.exe`n")
         $sidecar.Write($bytes, 0, $bytes.Length)
     } finally { $sidecar.Dispose() }
-    Write-Output "Saved unsigned development installer: $finalPath"
+    Write-Output "Saved unsigned Windows installer: $finalPath"
     Write-Output "SHA-256: $hash"
     Write-Output 'Compilation is not installation, upgrade, rollback or physical-latency qualification.'
 } finally { Pop-Location }

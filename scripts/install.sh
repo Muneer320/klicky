@@ -3,6 +3,7 @@
 set -euo pipefail
 
 source_install=0
+version=0.5.0
 menu=1
 omarchy=1
 for argument in "$@"; do
@@ -30,14 +31,28 @@ platform=$(uname -s)
 work_dir=$(mktemp -d "${TMPDIR:-/tmp}/klicky-install.XXXXXXXX")
 trap 'rm -rf -- "$work_dir"' EXIT
 download() { curl --fail --silent --show-error --location --retry 2 --output "$2" "$1"; }
+verify_asset() {
+  local name=$1
+  need awk
+  awk -v name="$name" '$2 == name || $2 == "*" name {print}' "$work_dir/SHA256SUMS" > "$work_dir/asset.sha256"
+  [[ $(wc -l < "$work_dir/asset.sha256") -eq 1 ]] || die "Expected one release checksum for $name."
+  if command -v sha256sum >/dev/null 2>&1; then
+    (cd "$work_dir" && sha256sum --check --status asset.sha256) || die 'The download checksum does not match.'
+  else
+    need shasum
+    (cd "$work_dir" && shasum -a 256 --check --status asset.sha256) || die 'The download checksum does not match.'
+  fi
+}
 
 fetch_source() {
   [[ ! -d "$work_dir/source" ]] || return 0
   need tar
   printf 'Downloading Klicky source.\n'
-  download 'https://github.com/Muneer320/klicky/archive/refs/heads/master.tar.gz' "$work_dir/source.tar.gz"
+  download "https://github.com/Muneer320/klicky/releases/download/v$version/klicky-$version-source.tar.gz" "$work_dir/klicky-$version-source.tar.gz"
+  download "https://github.com/Muneer320/klicky/releases/download/v$version/SHA256SUMS" "$work_dir/SHA256SUMS"
+  verify_asset "klicky-$version-source.tar.gz"
   mkdir "$work_dir/source"
-  tar -xzf "$work_dir/source.tar.gz" -C "$work_dir/source" --strip-components=1
+  tar -xzf "$work_dir/klicky-$version-source.tar.gz" -C "$work_dir/source" --strip-components=1
 }
 
 prepare_rust() {
@@ -194,14 +209,11 @@ install_arch() {
   need systemctl
   [[ $(uname -m) == x86_64 ]] || die 'Arch packages are x86_64. Use --source for this architecture.'
   check_source_conflict
-  # Update with the next published Arch package, not an unpublished source version.
-  package='klicky-0.4.0-1-x86_64.pkg.tar.zst'
-  release='https://github.com/Muneer320/klicky/releases/download/v0.4.0'
+  package="klicky-$version-1-x86_64.pkg.tar.zst"
+  release="https://github.com/Muneer320/klicky/releases/download/v$version"
   download "$release/$package" "$work_dir/$package"
   download "$release/SHA256SUMS" "$work_dir/SHA256SUMS"
-  awk -v package="$package" '$2 == package || $2 == "*" package {print}' "$work_dir/SHA256SUMS" > "$work_dir/package.sha256"
-  [[ $(wc -l < "$work_dir/package.sha256") -eq 1 ]] || die 'The release must contain exactly one checksum for this package.'
-  (cd "$work_dir" && sha256sum --check --status package.sha256) || die 'The package checksum does not match.'
+  verify_asset "$package"
   stop_packaged_service
   sudo pacman -U --noconfirm "$work_dir/$package"
   systemctl --user enable --now klicky.service

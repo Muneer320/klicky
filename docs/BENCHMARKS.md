@@ -6,7 +6,7 @@ Klicky reports input-to-dispatch latency when started with `--benchmark`:
 klicky start --benchmark
 ```
 
-On Linux/macOS, each mapped keypress prints the elapsed time between the platform input callback and the call that adds the cached audio source to the persistent mixer. The Windows preview prints aggregate diagnostics at exit without key names. Neither mode measures physical key actuation, device scheduling, DAC or speaker onset.
+On Linux/macOS, each mapped keypress prints the elapsed time between the platform input callback and the call that adds the cached audio source to the persistent mixer. Windows prints aggregate diagnostics at exit without key names. Neither mode measures physical key actuation, device scheduling, DAC or speaker onset.
 
 Windows has no calibrated physical-to-audible result established by these figures. Preserve matched keyboard/output/measurement conditions when comparing platforms; requested buffer sizes, dispatch timings and subjective listening are separate evidence. Qualification tooling is documented in [the bounded harness guide](../tools/windows-qualification/USAGE.md).
 

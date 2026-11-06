@@ -4,12 +4,12 @@ All notable changes to Klicky are documented here.
 
 The project follows [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 0.5.0 - 2026-11-07
 
 ### Added
 
-- Windows 11 x64 development preview with passive Raw Input, native tray controls, protected local IPC, opt-in login startup and supervised audio recovery
-- Unsigned Windows portable and per-user installer test artifacts with build identity, bundled notices and guarded update/removal
+- Windows 11 x64 support with passive Raw Input, native tray controls, protected local IPC, opt-in login startup and supervised audio recovery
+- Unsigned Windows portable and per-user installer packages with build identity, bundled notices and guarded update/removal
 - Read-only Windows diagnostics for aggregate input and playback counters
 - Native macOS installation, menu helper and removal checks on Intel and Apple Silicon CI runners
 
@@ -26,6 +26,9 @@ The project follows [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Recover inactive Windows installations when their control executable is missing, while preserving settings and foreign startup entries
+- Prevent Windows background launch from holding PowerShell captured output open
+- Read Windows uninstall registration independently of caller PSDrives and forward removal switches correctly
 - Recognize macOS launchd's unloaded-service response so first startup and removal can proceed
 - Preserve existing macOS sound files without treating skipped copies as failed upgrades
 - Mark the Unix download installers and uninstaller executable for use from a checkout

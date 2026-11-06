@@ -42,18 +42,18 @@ Never commit private keys, passphrases, or revocation certificates.
 
 [The APT workflow](../.github/workflows/apt-repository.yml) publishes through the existing GitHub Pages artifact and deploy job. It runs for a published stable GitHub release, a manual dispatch, or a push to the workflow's listed `master` paths (including the website, public media and install/uninstall scripts). Its release-event path excludes drafts and prereleases. For manual dispatch, choose an already published stable release: the job validates the numeric tag and assets without independently rechecking its draft/prerelease flags. Pull requests do not receive signing secrets or deploy.
 
-**The tag-driven release workflow does not automatically chain into APT publication.** [The release workflow](../.github/workflows/release.yml) publishes using `GITHUB_TOKEN`; GitHub suppresses subsequent release-event workflow runs from that token. See [GitHub's workflow-trigger rules](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow).
+**Build, release publication and APT promotion are separate steps.** [The release workflow](../.github/workflows/release.yml) produces an Actions candidate artifact; it does not publish a GitHub release. After the [release checks and approval](RELEASE_READINESS.md), publish the stable release with its verified assets. That publication can trigger APT. If publication uses `GITHUB_TOKEN`, GitHub suppresses the subsequent release-event workflow, so dispatch APT manually. See [GitHub's workflow-trigger rules](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow).
 
-The release tag is resolved from the release event for `release: published`, from the required `tag` input for a manual dispatch, and from GitHub's latest non-draft, non-prerelease release for a qualifying push to `master`. Each path then downloads the `.deb` and `SHA256SUMS` for that exact tag, requires exactly one amd64 package and exactly one checksum entry for it, verifies the checksum, and checks that its Debian version matches the tag.
+The release tag is resolved from the release event for `release: published`, from the required `tag` input for a manual dispatch, and from GitHub's latest non-draft, non-prerelease release for a qualifying push to `master`. The selected source version must match that tag. A push ahead of the latest release preserves the current site; a mismatched manual/release request fails. Once matched, the workflow downloads the `.deb` and `SHA256SUMS` for that exact tag, requires exactly one amd64 package and exactly one checksum entry for it, verifies the checksum, and checks that its Debian version matches the tag.
 
-After the release workflow has finished uploading the `.deb` and `SHA256SUMS`, a maintainer can also dispatch publication for that release:
+After the approved stable GitHub release is published with its `.deb` and `SHA256SUMS`, a maintainer can also dispatch APT publication:
 
 ```bash
 gh workflow run apt-repository.yml --repo Muneer320/klicky \
-  --ref master -f tag=v0.4.0
+  --ref master -f tag=v0.5.0
 ```
 
-Replace the tag with the intended published release. The workflow accepts `vMAJOR.MINOR.PATCH`, requires exactly one matching amd64 `.deb`, verifies its checksum, and requires its Debian version to be `MAJOR.MINOR.PATCH-1`.
+Replace the tag with the intended published release and select a source ref with that version. The workflow accepts `vMAJOR.MINOR.PATCH`, requires exactly one matching amd64 `.deb`, verifies its checksum, and requires its Debian version to be `MAJOR.MINOR.PATCH-1`.
 
 Publication prerequisites:
 
@@ -79,7 +79,7 @@ The workflow:
 
 Pull requests never receive signing secrets and cannot publish the repository.
 
-The integration validator checks for the redesigned homepage and install instructions, public key files, all required APT metadata, every package file and its indexed size and SHA-256, and equality between the input package versions and the generated index. It then runs `apt-get update` against the built artifact using its exported keyring, checks that APT discovers every version, and confirms the correct Debian candidate. A manual dispatch of an older release does not remove newer packages; the repository index still selects the highest Debian version.
+The integration validator checks for the redesigned homepage and install instructions, public key files, all required APT metadata, every package file and its indexed size and SHA-256, and equality between the input package versions and the generated index. It then runs `apt-get update` against the built artifact using its exported keyring, checks that APT discovers every version, and confirms the correct Debian candidate. Historical packages remain in the index; promotion of a new release does not remove them.
 
 ## Validation coverage
 

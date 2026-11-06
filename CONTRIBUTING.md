@@ -21,7 +21,7 @@ All repository changes must be developed on a feature branch and submitted throu
 
 ## Development setup
 
-Use the README's build prerequisites for [Linux](docs/INSTALLATION.md#linux-from-source), [macOS](docs/INSTALLATION.md#macos) or the [Windows preview](docs/WINDOWS.md). Install Rust 1.87 or newer; distribution-provided Rust packages may be older. Windows uses the MSVC toolchain and Windows SDK resource compiler. Building and running the automated tests does not require installing a login service or granting keyboard access.
+Use the README's build prerequisites for [Linux](docs/INSTALLATION.md#linux-from-source), [macOS](docs/INSTALLATION.md#macos) or the [Windows guide](docs/WINDOWS.md). Install Rust 1.87 or newer; distribution-provided Rust packages may be older. Windows uses the MSVC toolchain and Windows SDK resource compiler. Building and running the automated tests does not require installing a login service or granting keyboard access.
 
 Clone the repository, then run the [checks below](#tests):
 
