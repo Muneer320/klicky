@@ -8,6 +8,47 @@ permissions:
   contents: read
 
 jobs:
+  macos-installation:
+    name: macOS lifecycle (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-15-intel]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install the native app and menu helper
+        run: |
+          uname -sm
+          ./scripts/install-macos.sh --no-start
+          ./scripts/install-macos-menu-bar.sh
+          launchctl print "gui/$(id -u)/dev.klicky.menu"
+      - name: Exercise offline CLI configuration
+        run: |
+          "$HOME/.local/bin/klicky" --version
+          "$HOME/.local/bin/klicky" list
+          "$HOME/.local/bin/klicky" switch cherrymx-blue-pbt
+          "$HOME/.local/bin/klicky" volume 0.4
+          "$HOME/.local/bin/klicky" status
+          shasum -a 256 "$HOME/Library/Application Support/klicky/config.toml" > "$RUNNER_TEMP/klicky-config.sha256"
+      - name: Remove while preserving settings, then purge
+        run: |
+          ./scripts/uninstall.sh
+          test ! -e "$HOME/.local/bin/klicky"
+          test ! -e "$HOME/.local/bin/klicky-menu"
+          test ! -e "$HOME/Library/LaunchAgents/dev.klicky.menu.plist"
+          shasum -a 256 --check "$RUNNER_TEMP/klicky-config.sha256"
+          ./scripts/install-macos.sh --no-start
+          ./scripts/uninstall.sh --purge
+          test ! -e "$HOME/Library/Application Support/klicky"
+      - name: Clean up a partial installation
+        if: always()
+        run: |
+          if [[ -e "$HOME/.local/bin/klicky" || -e "$HOME/.local/bin/klicky-menu" ]]; then
+            ./scripts/uninstall.sh --purge
+          fi
+
   powershell:
     name: PowerShell syntax
     runs-on: windows-latest

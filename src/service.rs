@@ -141,9 +141,16 @@ fn classify_launchctl_print(output: &Output, service: &str) -> Result<bool> {
         return Ok(true);
     }
     let details = command_output_text(output);
+    let missing_service = service
+        .strip_prefix("gui/")
+        .and_then(|target| target.split_once('/'))
+        .map(|(uid, label)| {
+            format!("Could not find service \"{label}\" in domain for user gui: {uid}")
+        });
     if output.status.code() == Some(113)
-        && details.contains("Could not find service")
-        && details.contains(service)
+        && details
+            .lines()
+            .any(|line| Some(line.trim()) == missing_service.as_deref())
     {
         return Ok(false);
     }
@@ -572,7 +579,7 @@ mod tests {
             Ok(mock_output(
                 113,
                 "",
-                "Could not find service \"gui/501/dev.klicky.daemon\" in domain for user gui: 501",
+                "Bad request.\nCould not find service \"dev.klicky.daemon\" in domain for user gui: 501",
             ))
         });
         assert!(!absent.unwrap());

@@ -27,7 +27,15 @@ fi
 
 mkdir -p "$bin_dir" "$sound_dir"
 install -m755 target/release/klicky "$bin_dir/klicky"
-cp -Rn sounds/. "$sound_dir/"
+# BSD cp -n returns failure when a destination already exists.
+# Keep custom samples while adding any newly bundled files on upgrade.
+find sounds -type f -print0 | while IFS= read -r -d '' source; do
+  destination="$sound_dir/${source#sounds/}"
+  mkdir -p "$(dirname "$destination")"
+  if [[ ! -e $destination && ! -L $destination ]]; then
+    cp "$source" "$destination"
+  fi
+done
 if [[ $start == 1 ]]; then "$bin_dir/klicky" service enable; fi
 
 printf '\nKlicky is installed.\n'
