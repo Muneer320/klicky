@@ -46,11 +46,9 @@ scoop install klicky/klicky
 klicky service start
 ```
 
-This installs the complete portable app, adds a Start shortcut and exposes `klicky` on PATH. Enable login startup with `klicky service enable`; installation alone does not start monitoring. Use one installation method: uninstall an existing EXE/WinGet copy first, preserving settings.
+This installs the complete portable app, adds a Start shortcut and exposes `klicky` on PATH. Enable login startup with `klicky service enable`; installation alone does not start monitoring. Use one installation method: uninstall an existing installer copy first, preserving settings.
 
 For updates, run `klicky service stop`, `scoop update`, `scoop update klicky`, then `klicky service start`. Scoop checks running apps before update hooks, so stopping first is required. [Bucket and lifecycle details](https://github.com/Muneer320/scoop-bucket)
-
-**WinGet:** [submission under review](https://github.com/microsoft/winget-pkgs/pull/473333). Use the installer or Scoop until it is accepted into the public catalogue.
 
 ## macOS
 
