@@ -1,3 +1,6 @@
+[CmdletBinding(SupportsShouldProcess)]
+param([switch]$Purge)
+
 & {
     [CmdletBinding(SupportsShouldProcess)]
     param([switch]$Purge)
@@ -6,8 +9,18 @@
     if ($env:OS -ne 'Windows_NT') { throw 'Use uninstall.sh on Linux or macOS.' }
     $local = [IO.Path]::GetFullPath($env:LOCALAPPDATA)
     $app = Join-Path $local 'Programs/Klicky'
-    $key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{B8E55779-4EDB-4D8F-962D-10460EC7C230}_is1'
-    $registration = Get-ItemProperty -LiteralPath $key -ErrorAction SilentlyContinue
+    $registrationPath = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{B8E55779-4EDB-4D8F-962D-10460EC7C230}_is1'
+    function Get-KlickyUninstallRegistration {
+        # Read the actual current-user hive, independent of the caller's PSDrives.
+        # Access errors must propagate, rather than masquerading as a missing key.
+        $entry = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($registrationPath)
+        if ($null -eq $entry) { return $null }
+        try {
+            [pscustomobject]@{ UninstallString = $entry.GetValue('UninstallString', $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames) }
+        }
+        finally { $entry.Dispose() }
+    }
+    $registration = Get-KlickyUninstallRegistration
     if (-not $PSCmdlet.ShouldProcess('Klicky for the current user', 'Uninstall app and desktop controls')) { return }
     if ($null -ne $registration) {
         $command = [string]$registration.UninstallString
@@ -18,6 +31,9 @@
             throw 'The registered uninstaller is outside the Klicky installation; no program was started.'
         }
         if (-not (Test-Path -LiteralPath $uninstaller -PathType Leaf)) { throw 'The registered uninstaller is missing. Repair the installation before removing it.' }
+        if (-not (Test-Path -LiteralPath (Join-Path $app 'klicky.exe') -PathType Leaf)) {
+            throw 'The installed Klicky control executable is missing, so its uninstaller cannot safely stop the app. Check Windows Security Protection history. If it was quarantined, resolve the detection before repair; do not disable protection. See https://github.com/Muneer320/klicky/blob/master/docs/TROUBLESHOOTING.md#windows'
+        }
         $logDirectory = Join-Path $local 'KlickyInstaller/logs'
         New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
         $log = Join-Path $logDirectory ('uninstall-' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff') + '.log')
@@ -25,8 +41,8 @@
         if (-not $process.WaitForExit(600000)) { throw 'The uninstaller is still open. Finish its wizard before removing settings.' }
         if ($process.ExitCode -ne 0) { throw "Uninstall did not finish successfully. Details: $log" }
         $deadline = [DateTime]::UtcNow.AddSeconds(10)
-        while (((Test-Path -LiteralPath $key) -or (Test-Path -LiteralPath (Join-Path $app 'klicky-desktop.exe'))) -and [DateTime]::UtcNow -lt $deadline) { Start-Sleep -Milliseconds 200 }
-        if ((Test-Path -LiteralPath $key) -or (Test-Path -LiteralPath (Join-Path $app 'klicky-desktop.exe'))) {
+        while ((($null -ne (Get-KlickyUninstallRegistration)) -or (Test-Path -LiteralPath (Join-Path $app 'klicky-desktop.exe'))) -and [DateTime]::UtcNow -lt $deadline) { Start-Sleep -Milliseconds 200 }
+        if (($null -ne (Get-KlickyUninstallRegistration)) -or (Test-Path -LiteralPath (Join-Path $app 'klicky-desktop.exe'))) {
             throw 'The installed app remains registered or present. Removal may have been cancelled; settings were kept.'
         }
     }
@@ -59,4 +75,4 @@
         Write-Output 'Klicky, its installed desktop controls and personal data have been removed.'
     }
     else { Write-Output 'Klicky and its installed desktop controls have been removed. Settings and custom sounds were kept.' }
-} @args
+} -Purge:$Purge
