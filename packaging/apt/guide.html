@@ -143,8 +143,10 @@
               href="https://github.com/Muneer320/klicky/blob/master/CHANGELOG.md"
               >source changelog</a
             >
-            cover downloads and changes. Homebrew, WinGet, Scoop, Chocolatey and
-            Cargo installation are not currently published routes.
+            cover downloads and changes. Project-owned <a href="#homebrew">Homebrew</a>
+            and <a href="#scoop">Scoop</a> packages are available. WinGet is
+            <a href="https://github.com/microsoft/winget-pkgs/pull/473333">under review</a>;
+            Chocolatey and Cargo installation are not published.
           </p>
         </section>
         <section id="installation">
@@ -261,7 +263,7 @@ cd klicky
             Prepares missing Rust and Apple tools, builds the app, installs the
             menu helper and enables login startup. Approve Apple's tools dialog
             if shown. First setup can take several minutes; this is a source
-            installation, not a prebuilt .app or Homebrew package.
+            installation. For Homebrew-managed setup, use the <a href="#homebrew">tap below</a>.
           </p>
           <div class="note">
             <p>
@@ -280,6 +282,37 @@ cd klicky
             The menu toggles the daemon; change packs/volume through the CLI.
             Quitting the helper closes the menu, not the daemon.
           </p>
+        </section>
+        <section id="homebrew">
+          <h2>Homebrew on macOS.</h2>
+          <p>On <strong>Apple Silicon</strong>, with Homebrew and Apple Command Line Tools installed:</p>
+          <pre><code>brew install muneer320/tap/klicky &amp;&amp; brew services start muneer320/tap/klicky &amp;&amp; klicky service enable</code></pre>
+          <p>The tap builds the app, sounds and menu helper from source. Grant Accessibility to the actual binary shown by <code>brew info klicky</code>, then run <code>klicky service start</code>. To omit the menu, leave out <code>brew services start muneer320/tap/klicky</code>.</p>
+          <p>Intel Macs use the <a href="#macos">one-line source installer</a>. Klicky still supports Intel; Homebrew has <a href="https://docs.brew.sh/Support-Tiers#future-macos-support">ended its supported Intel coverage</a>. Remove a previous source installation without purge before switching. Keep one installation and one menu helper.</p>
+          <details><summary>Update or remove Homebrew Klicky</summary>
+            <p>Update:</p>
+            <pre><code>klicky service stop &amp;&amp; brew update &amp;&amp; brew upgrade muneer320/tap/klicky &amp;&amp; brew services restart muneer320/tap/klicky &amp;&amp; klicky service start</code></pre>
+            <p>If you do not use the menu, omit <code>brew services restart muneer320/tap/klicky</code> from that line.</p>
+            <p>Remove both login registrations and the package:</p>
+            <pre><code>klicky service disable &amp;&amp; brew services stop muneer320/tap/klicky &amp;&amp; brew uninstall muneer320/tap/klicky</code></pre>
+            <p>Run the full removal line before uninstalling; plain <code>brew uninstall</code> cannot clean the independently managed daemon registration. Settings/custom packs stay in <code>~/Library/Application Support/klicky</code>. Delete that folder afterward only if you want to erase them too. <a href="https://github.com/Muneer320/homebrew-tap">Tap documentation</a>.</p>
+          </details>
+        </section>
+        <section id="scoop">
+          <h2>Scoop on Windows.</h2>
+          <p>With Scoop installed, run in normal PowerShell:</p>
+          <pre><code>scoop bucket add klicky https://github.com/Muneer320/scoop-bucket
+scoop install klicky/klicky
+klicky service start</code></pre>
+          <p>The complete portable package includes all sounds and a Start shortcut. Enable login startup with <code>klicky service enable</code>. Remove an existing installer copy before switching; settings can carry over.</p>
+          <details><summary>Update or remove Scoop Klicky</summary>
+            <p>Scoop checks running processes before updating, so stop first:</p>
+            <pre><code>klicky service stop
+scoop update
+scoop update klicky
+klicky service start</code></pre>
+            <p>Remove with <code>scoop uninstall klicky</code>. Its hook stops only the owned app and removes only its login shortcut. Shared settings/custom packs remain in <code>%LOCALAPPDATA%\Klicky</code>, including with Scoop's <code>--purge</code>. Delete that folder only after removing every Klicky copy if you also want to erase your data. <a href="https://github.com/Muneer320/scoop-bucket">Bucket documentation</a>.</p>
+          </details>
         </section>
         <section id="windows">
           <h2>Windows.</h2>

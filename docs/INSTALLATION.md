@@ -36,6 +36,22 @@ Prefer to read it first? [Download the script](https://klicky.muneer320.tech/ins
 
 [Windows controls, paths and developer builds](WINDOWS.md)
 
+### Scoop
+
+With [Scoop](https://scoop.sh/) installed, run in your normal PowerShell window:
+
+```powershell
+scoop bucket add klicky https://github.com/Muneer320/scoop-bucket
+scoop install klicky/klicky
+klicky service start
+```
+
+This installs the complete portable app, adds a Start shortcut and exposes `klicky` on PATH. Enable login startup with `klicky service enable`; installation alone does not start monitoring. Use one installation method: uninstall an existing EXE/WinGet copy first, preserving settings.
+
+For updates, run `klicky service stop`, `scoop update`, `scoop update klicky`, then `klicky service start`. Scoop checks running apps before update hooks, so stopping first is required. [Bucket and lifecycle details](https://github.com/Muneer320/scoop-bucket)
+
+**WinGet:** [submission under review](https://github.com/microsoft/winget-pkgs/pull/473333). Use the installer or Scoop until it is accepted into the public catalogue.
+
 ## macOS
 
 Run in Terminal:
@@ -69,6 +85,26 @@ The second script is optional. Existing-checkout builds need Rust 1.87+ and the 
 The installed binary is `~/.local/bin/klicky`; sound packs are in `~/Library/Application Support/klicky/sounds`. Grant Accessibility to the installed binary, rather than the copy under `target/release`.
 
 </details>
+
+### Homebrew
+
+On **Apple Silicon**, with [Homebrew](https://brew.sh/) and Apple's Command Line Tools installed:
+
+```bash
+brew install muneer320/tap/klicky && brew services start muneer320/tap/klicky && klicky service enable
+```
+
+The project tap builds from source and includes all packs. **Intel Macs use the one-line installer above**: Klicky still supports Intel, while Homebrew has [ended supported Intel coverage and new Intel bottles](https://docs.brew.sh/Support-Tiers#future-macos-support). Homebrew manages the menu helper; Klicky's `service` commands manage the sound daemon. Omit `brew services start muneer320/tap/klicky` to skip the menu.
+
+Allow the **actual executable shown by `brew info klicky`** in Accessibility, then run `klicky service start`. This differs from the source-install path. Remove a previous source installation without purge before switching; do not run both menu helpers.
+
+Update:
+
+```bash
+klicky service stop && brew update && brew upgrade muneer320/tap/klicky && brew services restart muneer320/tap/klicky && klicky service start
+```
+
+If you opted out of the menu, omit `brew services restart muneer320/tap/klicky` from that line. Settings survive updates; macOS may request Accessibility approval again after a rebuild. [Tap and maintenance details](https://github.com/Muneer320/homebrew-tap)
 
 ## Linux
 
@@ -186,6 +222,8 @@ Without systemd/udev, provide keyboard-device access and use your session's star
 
 Choose your system. The removal command stops Klicky, disables its login startup and removes the app plus its installed menu/tray/bar controls. **Settings and custom sound packs are kept by default.**
 
+Installed through Homebrew or Scoop? Use [package-manager removal](#package-manager-removal) instead of the download helpers.
+
 <details>
 <summary><strong>Linux or macOS</strong></summary>
 
@@ -232,6 +270,24 @@ Windows **Settings → Apps → Installed apps → Klicky → Uninstall** remain
 In the portable app's tray menu, turn off its login startup and choose Quit, then delete the extracted bundle. Keep unrelated files in the parent folder. The installer-removal helper does not search your drives or delete development/portable folders it cannot identify safely. After closing all copies, its `-Purge` command above can remove the shared Klicky settings too.
 
 </details>
+
+### Package-manager removal
+
+**Homebrew:** run the full line before removing the formula, so both daemon and menu are stopped and unregistered:
+
+```bash
+klicky service disable && brew services stop muneer320/tap/klicky && brew uninstall muneer320/tap/klicky
+```
+
+Plain `brew uninstall` cannot clean Klicky's independently managed daemon registration. Settings/custom packs remain in `~/Library/Application Support/klicky`.
+
+**Scoop:** removal stops the owned bundle and removes its owned login shortcut:
+
+```powershell
+scoop uninstall klicky
+```
+
+Settings/custom packs remain in `%LOCALAPPDATA%\Klicky`. Scoop's `--purge` removes its integration state only, not that shared folder. After removing every Klicky installation, delete the settings folder yourself if you also want to erase preferences and custom packs.
 
 ## Updates and removal
 
