@@ -1,5 +1,5 @@
 use std::io;
-use std::os::windows::ffi::OsStringExt;
+use std::os::windows::ffi::{OsStrExt, OsStringExt};
 use std::os::windows::io::{AsRawHandle, BorrowedHandle, FromRawHandle, OwnedHandle};
 use std::path::PathBuf;
 use std::time::Instant;
@@ -9,13 +9,83 @@ use ::windows::Win32::Security::Cryptography::{BCryptGenRandom, BCRYPT_USE_SYSTE
 use ::windows::Win32::Security::{GetTokenInformation, TokenSessionId, TOKEN_QUERY};
 use ::windows::Win32::System::Pipes::GetNamedPipeServerProcessId;
 use ::windows::Win32::System::Threading::{
-    GetCurrentProcess, GetCurrentProcessId, GetProcessTimes, OpenProcess, OpenProcessToken,
-    QueryFullProcessImageNameW, WaitForSingleObject, PROCESS_NAME_WIN32,
-    PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_SYNCHRONIZE,
+    CreateProcessW, GetCurrentProcess, GetCurrentProcessId, GetExitCodeProcess, GetProcessTimes,
+    OpenProcess, OpenProcessToken, QueryFullProcessImageNameW, WaitForSingleObject,
+    CREATE_NO_WINDOW, PROCESS_INFORMATION, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
+    PROCESS_SYNCHRONIZE, STARTUPINFOW,
 };
 use anyhow::{bail, Context, Result};
 
 use super::protocol::InstanceIdentity;
+
+/// A background app must not retain the CLI caller's redirected pipes or other
+/// inheritable handles. Rust 1.87 Command::spawn enables generic inheritance even
+/// with all three standard streams set to null, so use explicit Win32 creation.
+pub(super) struct LaunchedProcess(OwnedHandle);
+
+pub(super) fn spawn_desktop(paths: &super::Paths, paused: bool) -> Result<LaunchedProcess> {
+    use ::windows::core::{PCWSTR, PWSTR};
+    let executable = super::bundle::desktop_path(paths)?;
+    let executable: Vec<u16> = executable
+        .as_os_str()
+        .encode_wide()
+        .chain(Some(0))
+        .collect();
+    let directory: Vec<u16> = paths
+        .bundle_dir()
+        .as_os_str()
+        .encode_wide()
+        .chain(Some(0))
+        .collect();
+    // Application name is an explicit full path; no shell or PATH search. Only
+    // argv[0] and our fixed optional flag are passed in the mutable command line.
+    let command = if paused {
+        "klicky-desktop.exe --paused"
+    } else {
+        "klicky-desktop.exe"
+    };
+    let mut command: Vec<u16> = command.encode_utf16().chain(Some(0)).collect();
+    let startup = STARTUPINFOW {
+        cb: std::mem::size_of::<STARTUPINFOW>() as u32,
+        ..Default::default()
+    };
+    let mut process = PROCESS_INFORMATION::default();
+    unsafe {
+        CreateProcessW(
+            PCWSTR(executable.as_ptr()),
+            Some(PWSTR(command.as_mut_ptr())),
+            None,
+            None,
+            false,
+            CREATE_NO_WINDOW,
+            None,
+            PCWSTR(directory.as_ptr()),
+            &startup,
+            &mut process,
+        )
+        .context("launch sibling Klicky desktop")?;
+    }
+    // Both successful-create handles transfer immediately into owning wrappers.
+    let handle = unsafe { OwnedHandle::from_raw_handle(process.hProcess.0) };
+    drop(unsafe { OwnedHandle::from_raw_handle(process.hThread.0) });
+    Ok(LaunchedProcess(handle))
+}
+
+impl LaunchedProcess {
+    pub(super) fn try_wait(&self) -> Result<Option<u32>> {
+        let handle = HANDLE(self.0.as_raw_handle());
+        match unsafe { WaitForSingleObject(handle, 0) } {
+            WAIT_TIMEOUT => Ok(None),
+            WAIT_OBJECT_0 => {
+                let mut code = 0;
+                unsafe { GetExitCodeProcess(handle, &mut code)? };
+                Ok(Some(code))
+            }
+            WAIT_FAILED => Err(io::Error::last_os_error()).context("inspect launched desktop exit"),
+            result => bail!("unexpected process wait result: {}", result.0),
+        }
+    }
+}
 
 pub(super) fn current_identity() -> Result<InstanceIdentity> {
     let mut nonce = [0; 16];

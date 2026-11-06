@@ -1,6 +1,4 @@
 //! Per-user desktop launch and verified bundle-specific lifecycle commands.
-use std::os::windows::process::CommandExt;
-use std::process::{Child, Command as Process, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -8,6 +6,7 @@ use anyhow::{bail, Context, Result};
 
 use super::bundle;
 use super::control::{Client, ControlError, COMMAND_TIMEOUT};
+use super::process::{spawn_desktop, LaunchedProcess};
 use super::protocol::{Command, EngineState, Outcome, Snapshot, UpdateState};
 use super::startup::{ForeignShortcut, Startup, Status};
 use super::{InstanceOwner, Paths, ServerProcess};
@@ -19,7 +18,7 @@ pub(super) fn start(paths: &Paths) -> Result<Snapshot> {
 pub(super) fn start_with_pause(paths: &Paths, paused: bool) -> Result<Snapshot> {
     let client = Client::current()?;
     let deadline = Instant::now() + Duration::from_secs(15);
-    let mut child: Option<Child> = None;
+    let mut child: Option<LaunchedProcess> = None;
     let mut attempts = 0;
     loop {
         if Instant::now() >= deadline {
@@ -63,21 +62,7 @@ pub(super) fn start_with_pause(paths: &Paths, paused: bool) -> Result<Snapshot> 
                                 "Readiness deadline expired before launch; no process was started"
                             );
                         }
-                        let executable = bundle::desktop_path(paths)?;
-                        let mut command = Process::new(executable);
-                        if paused {
-                            command.arg("--paused");
-                        }
-                        child = Some(
-                            command
-                                .current_dir(paths.bundle_dir())
-                                .stdin(Stdio::null())
-                                .stdout(Stdio::null())
-                                .stderr(Stdio::null())
-                                .creation_flags(0x0800_0000) // CREATE_NO_WINDOW; never a shell command
-                                .spawn()
-                                .context("launch sibling Klicky desktop")?,
-                        );
+                        child = Some(spawn_desktop(paths, paused)?);
                         attempts += 1;
                     }
                 }
