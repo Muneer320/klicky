@@ -43,7 +43,7 @@ The Pages/APT workflow holds the current site when a source-version bump is merg
 
 Create the GitHub release with the approved notes, attach the five payloads, Windows sidecars, manifest and `SHA256SUMS`, mark it non-prerelease and latest, then verify public downloads. Windows code signing is separate from versioning; describe the unsigned installer plainly.
 
-Publish the signed APT archive using the [maintenance procedure](MAINTAINING_APT.md#publication), retaining every authenticated existing package version. A release created with GitHub's workflow token does not automatically trigger another workflow. Confirm the archive and Pages deployment completed before announcing the updated one-line commands.
+Publish the signed APT archive using the [maintenance procedure](MAINTAINING_APT.md#publication), retaining every authenticated existing package version. Dispatch its workflow on `master`: the current Pages environment rejects deployments from version tags, even when their release-event build succeeds. A release created with GitHub's workflow token does not automatically trigger another workflow. Confirm the archive and Pages deployment completed before announcing the updated one-line commands.
 
 ## After publication
 

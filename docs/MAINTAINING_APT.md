@@ -44,9 +44,11 @@ Never commit private keys, passphrases, or revocation certificates.
 
 **Build, release publication and APT promotion are separate steps.** [The release workflow](../.github/workflows/release.yml) produces an Actions candidate artifact; it does not publish a GitHub release. After the [release checks and approval](RELEASE_READINESS.md), publish the stable release with its verified assets. That publication can trigger APT. If publication uses `GITHUB_TOKEN`, GitHub suppresses the subsequent release-event workflow, so dispatch APT manually. See [GitHub's workflow-trigger rules](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow).
 
+The current `github-pages` environment permits deployments from `master` and `gh-pages`, not version tags. A release-event run can build the signed archive successfully and still be refused at deployment. For a release, use the manual dispatch on `master` below and verify its deploy job succeeds. Keep the environment protections in place.
+
 The release tag is resolved from the release event for `release: published`, from the required `tag` input for a manual dispatch, and from GitHub's latest non-draft, non-prerelease release for a qualifying push to `master`. The selected source version must match that tag. A push ahead of the latest release preserves the current site; a mismatched manual/release request fails. Once matched, the workflow downloads the `.deb` and `SHA256SUMS` for that exact tag, requires exactly one amd64 package and exactly one checksum entry for it, verifies the checksum, and checks that its Debian version matches the tag.
 
-After the approved stable GitHub release is published with its `.deb` and `SHA256SUMS`, a maintainer can also dispatch APT publication:
+After the approved stable GitHub release is published with its `.deb` and `SHA256SUMS`, dispatch APT publication from the permitted branch:
 
 ```bash
 gh workflow run apt-repository.yml --repo Muneer320/klicky \
