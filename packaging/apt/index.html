@@ -406,8 +406,9 @@
             <p class="eyebrow">Make a little room</p>
             <h2 id="install-title">A new resident.<br />A familiar setup.</h2>
             <p class="intro">
-              Pick your system. Copy one command. The installer takes it from
-              there, with any permissions explained along the way.
+              Pick your system, then choose a command, a download or a source
+              build. The one-line installer handles setup, with any permissions
+              explained along the way.
             </p>
             <img
               src="assets/branding/klicky.svg"
@@ -423,121 +424,286 @@
             </p>
           </div>
           <div>
-            <details class="os" open>
-              <summary>
-                Linux<span class="system-note"
-                  >Ubuntu / compatible Debian · Arch / Omarchy</span
-                >
-              </summary>
-              <div class="os-content">
-                <div class="command">
-                  <pre><code id="install-linux">curl -fsSL https://klicky.muneer320.tech/install.sh | bash</code></pre>
-                  <button
-                    class="copy"
-                    data-copy="install-linux"
-                    hidden
-                    aria-label="Copy Linux install command"
+            <p class="small muted" id="os-hint">
+              Choose your desktop system and an installation method.
+            </p>
+            <div data-tabs="Operating system" id="install-platforms">
+              <section class="os" id="os-linux" data-tab-label="Linux">
+                <h3>
+                  Linux<span class="system-note"
+                    >Ubuntu / compatible Debian · Arch / Omarchy · source</span
                   >
-                    Copy
-                  </button>
-                </div>
-                <p>
-                  Uses the signed APT repository on Ubuntu 24.04+ / compatible
-                  Debian amd64, or the verified Arch x86_64 package. Includes
-                  all sounds and enables the user service at login.
-                  Package/device setup asks for <code>sudo</code>; Klicky runs
-                  as your user.
-                </p>
-                <p>
-                  Compatible Omarchy shells get their bar toggle too. Other
-                  distributions and architectures can use the automatic
-                  <a href="guide.html#linux-source">source installer</a>.
-                </p>
-                <div class="method-links">
-                  <a href="guide.html#linux">All Linux methods</a
-                  ><a href="guide.html#verify">Verify &amp; first steps</a>
-                </div>
-              </div>
-            </details>
-            <details class="os">
-              <summary>
-                macOS<span class="system-note"
-                  >Source build · menu bar included</span
-                >
-              </summary>
-              <div class="os-content">
-                <div class="command">
-                  <pre><code id="install-macos">curl -fsSL https://klicky.muneer320.tech/install.sh | bash</code></pre>
-                  <button
-                    class="copy"
-                    data-copy="install-macos"
-                    hidden
-                    aria-label="Copy macOS install command"
+                </h3>
+                <div class="os-content" data-tabs="Linux installation method">
+                  <section id="linux-command" data-tab-label="One-line install">
+                    <h4 class="tab-heading">One-line install</h4>
+                    <div class="command">
+                      <pre><code id="install-linux">curl -fsSL https://klicky.muneer320.tech/install.sh | bash</code></pre>
+                      <button
+                        class="copy"
+                        data-copy="install-linux"
+                        hidden
+                        aria-label="Copy Linux install command"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <p>
+                      Uses the signed APT repository on Ubuntu 24.04+ /
+                      compatible Debian amd64, or the verified Arch x86_64
+                      package. Includes all sounds and enables the user service
+                      at login. Package/device setup asks for <code>sudo</code>;
+                      Klicky runs as your user.
+                    </p>
+                    <p>
+                      Compatible Omarchy shells get their bar toggle too. Other
+                      distributions and architectures use the source installer.
+                    </p>
+                  </section>
+                  <section
+                    id="linux-download"
+                    data-tab-label="Download packages"
                   >
-                    Copy
-                  </button>
+                    <h4 class="tab-heading">Download packages</h4>
+
+                    <div class="download-links">
+                      <a
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.5.0/klicky_0.5.0-1_amd64.deb"
+                        >Download .deb</a
+                      ><a
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.5.0/klicky-0.5.0-1-x86_64.pkg.tar.zst"
+                        >Download Arch package</a
+                      >
+                    </div>
+                    <p>
+                      For x86_64 desktops. The DEB needs glibc 2.39+,
+                      libasound2t64, systemd and udev (Ubuntu 24.04+ /
+                      compatible Debian). Choose the package for your
+                      distribution, then follow the
+                      <a href="guide.html#linux">package setup steps</a> to
+                      install it and start Klicky.
+                    </p>
+                    <p>
+                      <a
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.5.0/SHA256SUMS"
+                        >SHA-256 checksums</a
+                      >. The one-line installer handles verification and service
+                      setup for you.
+                    </p>
+                  </section>
+                  <section id="linux-source" data-tab-label="From source">
+                    <h4 class="tab-heading">From source</h4>
+                    <div class="command">
+                      <pre><code id="source-linux">curl -fsSL https://klicky.muneer320.tech/install.sh | bash -s -- --source</code></pre>
+                      <button
+                        class="copy"
+                        data-copy="source-linux"
+                        hidden
+                        aria-label="Copy Linux source install command"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <p>
+                      Builds the release, installs sounds and starts the user
+                      service. Prepares missing build dependencies on supported
+                      APT, pacman and dnf systems. Needs systemd/udev for
+                      automatic setup.
+                    </p>
+                    <div class="method-links">
+                      <a
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.5.0/klicky-0.5.0-source.tar.gz"
+                        >Download source archive</a
+                      ><a href="guide.html#linux-source"
+                        >Manual build &amp; dependencies</a
+                      >
+                    </div>
+                  </section>
                 </div>
-                <p>
-                  Prepares missing Rust and Apple build tools, builds Klicky,
-                  installs its menu bar control and enables login startup. First
-                  setup can take several minutes.
+                <p class="small">
+                  <a href="guide.html#linux">Full Linux guide</a> ·
+                  <a href="guide.html#verify">Verify &amp; first steps</a>
                 </p>
-                <p>
-                  Approve Apple's tools dialog if shown, then grant
-                  Accessibility access to <code>~/.local/bin/klicky</code> when
-                  requested. Setup opens the permission pane and retries while
-                  you approve it.
-                </p>
-                <div class="method-links">
-                  <a href="guide.html#macos">macOS setup &amp; options</a
-                  ><a href="guide.html#verify">Verify &amp; first steps</a>
-                </div>
-              </div>
-            </details>
-            <details class="os">
-              <summary>
-                Windows<span class="system-note"
-                  >Windows 11 x64</span
-                >
-              </summary>
-              <div class="os-content">
-                <div class="command">
-                  <pre><code id="install-windows">irm https://klicky.muneer320.tech/install.ps1 | iex</code></pre>
-                  <button
-                    class="copy"
-                    data-copy="install-windows"
-                    hidden
-                    aria-label="Copy Windows install command"
+              </section>
+              <section class="os" id="os-macos" data-tab-label="macOS">
+                <h3>
+                  macOS<span class="system-note"
+                    >Intel &amp; Apple Silicon · menu bar included</span
                   >
-                    Copy
-                  </button>
+                </h3>
+                <div class="os-content" data-tabs="macOS installation method">
+                  <section id="macos-command" data-tab-label="One-line install">
+                    <h4 class="tab-heading">One-line install</h4>
+                    <div class="command">
+                      <pre><code id="install-macos">curl -fsSL https://klicky.muneer320.tech/install.sh | bash</code></pre>
+                      <button
+                        class="copy"
+                        data-copy="install-macos"
+                        hidden
+                        aria-label="Copy macOS install command"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <p>
+                      Prepares missing Rust and Apple build tools, builds
+                      Klicky, installs its menu bar control and enables login
+                      startup. First setup can take several minutes.
+                    </p>
+                    <p>
+                      Approve Apple's tools dialog if shown, then grant
+                      Accessibility access to
+                      <code>~/.local/bin/klicky</code> when requested. Setup
+                      opens the permission pane and retries while you approve
+                      it.
+                    </p>
+                  </section>
+                  <section id="macos-source" data-tab-label="From source">
+                    <h4 class="tab-heading">From source</h4>
+
+                    <div class="download-links">
+                      <a
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.5.0/klicky-0.5.0-source.tar.gz"
+                        >Download source archive</a
+                      >
+                    </div>
+                    <p>
+                      Extract the archive and open a terminal in the extracted
+                      folder. With Rust 1.87+ and Apple build tools installed:
+                    </p>
+                    <pre><code>./scripts/install-macos.sh
+./scripts/install-macos-menu-bar.sh</code></pre>
+                    <p>
+                      Grant Accessibility access to
+                      <code>~/.local/bin/klicky</code>.
+                      <a
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.5.0/SHA256SUMS"
+                        >SHA-256 checksums</a
+                      >. There is no prebuilt macOS app download yet; the
+                      one-line installer above prepares the tools and builds it
+                      for you.
+                    </p>
+                  </section>
                 </div>
-                <p>
-                  Run in PowerShell. The helper downloads the published installer,
-                  verifies its SHA-256 and opens the per-user setup wizard. It
-                  starts the installed app afterward. No Rust or Visual Studio
-                  required.
+                <p class="small">
+                  <a href="guide.html#macos">Full macOS guide</a> ·
+                  <a href="guide.html#verify">Verify &amp; first steps</a>
                 </p>
-                <p>
-                  Use the tray for packs, volume, Pause/Resume and optional
-                  login startup. Windows downloads are unsigned;
-                  <a href="guide.html#windows-security"
-                    >stop setup if Windows Security reports a threat</a
-                  >.
-                </p>
-                <div class="method-links">
-                  <a
-                    href="https://github.com/Muneer320/klicky/releases/tag/v0.5.0"
-                    >Installer &amp; portable ZIP</a
-                  ><a href="guide.html#windows">Windows guide</a>
+              </section>
+              <section class="os" id="os-windows" data-tab-label="Windows">
+                <h3>
+                  Windows<span class="system-note">Windows 11 x64 desktop</span>
+                </h3>
+                <div class="os-content" data-tabs="Windows installation method">
+                  <section
+                    id="windows-command"
+                    data-tab-label="One-line install"
+                  >
+                    <h4 class="tab-heading">One-line install</h4>
+                    <div class="command">
+                      <pre><code id="install-windows">irm https://klicky.muneer320.tech/install.ps1 | iex</code></pre>
+                      <button
+                        class="copy"
+                        data-copy="install-windows"
+                        hidden
+                        aria-label="Copy Windows install command"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <p>
+                      Run in PowerShell. The helper downloads the published
+                      installer, verifies its SHA-256 and opens the per-user
+                      setup wizard. It starts the installed app afterward. No
+                      Rust or Visual Studio required.
+                    </p>
+                    <p>
+                      Use the tray for packs, volume, Pause/Resume and optional
+                      login startup. Downloads are unsigned;
+                      <a href="guide.html#windows-security"
+                        >see Windows security help</a
+                      >.
+                    </p>
+                  </section>
+                  <section id="windows-download" data-tab-label="Download app">
+                    <h4 class="tab-heading">Download app</h4>
+
+                    <div class="download-links">
+                      <a
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.5.0/klicky-0.5.0-windows-x64-setup.exe"
+                        >Download setup .exe</a
+                      ><a
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.5.0/klicky-0.5.0-windows-x64.zip"
+                        >Download portable .zip</a
+                      >
+                    </div>
+                    <p>
+                      <strong>Setup:</strong> open the downloaded installer and
+                      follow the wizard. It installs Klicky and its tray app for
+                      your Windows account.
+                    </p>
+                    <p>
+                      <strong>Portable:</strong> extract the whole ZIP into a
+                      stable folder and open <code>klicky-desktop.exe</code>.
+                      Keep both executables, sounds and notices together.
+                    </p>
+                    <p>
+                      <a
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.5.0/SHA256SUMS"
+                        >SHA-256 checksums</a
+                      >. Windows downloads are unsigned;
+                      <a href="guide.html#windows-security"
+                        >stop setup if Windows Security reports a threat</a
+                      >.
+                    </p>
+                  </section>
+                  <section id="windows-source" data-tab-label="From source">
+                    <h4 class="tab-heading">From source</h4>
+
+                    <div class="download-links">
+                      <a
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.5.0/klicky-0.5.0-source.tar.gz"
+                        >Download source archive</a
+                      >
+                    </div>
+                    <p>
+                      For development: Rust 1.87+ with the MSVC toolchain,
+                      Visual Studio C++ build tools and the Windows SDK are
+                      required. Extract the archive, open PowerShell in that
+                      folder, then build and run:
+                    </p>
+                    <pre><code>cargo build --locked --release
+$env:KLICKY_SYSTEM_SOUNDS_DIR = (Resolve-Path .\sounds).Path
+.\target\release\klicky-desktop.exe --paused</code></pre>
+                    <p>
+                      Choose Resume in the tray when ready. See the
+                      <a
+                        href="https://github.com/Muneer320/klicky/blob/master/CONTRIBUTING.md#development-setup"
+                        >development guide</a
+                      >
+                      for checks and contributing.
+                    </p>
+                    <p>
+                      <a
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.5.0/SHA256SUMS"
+                        >SHA-256 checksums</a
+                      >. Use the installer or portable ZIP if you just want to
+                      run Klicky.
+                    </p>
+                  </section>
                 </div>
-              </div>
-            </details>
+                <p class="small">
+                  <a href="guide.html#windows">Full Windows guide</a> ·
+                  <a href="guide.html#verify">Verify &amp; first steps</a>
+                </p>
+              </section>
+            </div>
             <p class="small muted">
               Inspect the scripts before running them if you prefer.
               <a href="install.sh">Linux/macOS script</a> ·
               <a href="install.ps1">Windows script</a>. Settings and custom
               sounds are preserved on normal upgrades and removal.
+              <a href="guide.html#remove">Uninstall instructions</a>.
             </p>
           </div>
         </div>
