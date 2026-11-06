@@ -1,104 +1,81 @@
-name: Release packages
+name: Release candidate
 
 on:
   push:
-    tags:
-      - "v*"
+    tags: ["v*"]
+  workflow_dispatch:
 
+# Building a tag never publishes it. Approval and publication are separate.
 permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.ref_name }}
+  group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  debian:
+  source:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.identity.outputs.version }}
+      revision: ${{ steps.identity.outputs.revision }}
+      tree: ${{ steps.identity.outputs.tree }}
     steps:
       - uses: actions/checkout@v5
-      - name: Verify version
+      - name: Verify version and archive exact source
+        id: identity
+        env:
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           version=$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["version"])')
-          test "v$version" = "$GITHUB_REF_NAME"
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libasound2-dev lintian
-          cargo install cargo-deb --version 3.8.0 --locked
-      - name: Build and lint package
-        run: |
-          cargo deb
-          deb=$(find target/debian -name 'klicky_*_amd64.deb' -print -quit)
-          lintian --suppress-tags initial-upload-closes-no-bugs "$deb"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          if [[ "$EVENT_NAME" == push ]]; then test "v$version" = "$GITHUB_REF_NAME"; fi
+          revision=$(git rev-parse HEAD)
+          tree=$(git rev-parse 'HEAD^{tree}')
+          printf 'version=%s\nrevision=%s\ntree=%s\n' "$version" "$revision" "$tree" >> "$GITHUB_OUTPUT"
+          mkdir dist
+          git archive --format=tar.gz --prefix="klicky-$version/" --output="dist/klicky-$version-source.tar.gz" HEAD
       - uses: actions/upload-artifact@v4
         with:
-          name: debian-package
-          path: target/debian/klicky_*_amd64.deb
+          name: klicky-source
+          path: dist/*.tar.gz
           if-no-files-found: error
 
-  arch:
+  unix-checks:
+    uses: ./.github/workflows/ci.yml
+
+  windows-checks:
+    uses: ./.github/workflows/windows-core.yml
+
+  linux-packages:
+    uses: ./.github/workflows/packages.yml
+
+  windows-packages:
+    uses: ./.github/workflows/windows-portable.yml
+
+  assemble:
+    needs: [source, unix-checks, windows-checks, linux-packages, windows-packages]
     runs-on: ubuntu-latest
-    container: archlinux:latest
     steps:
-      - name: Install dependencies
-        run: pacman -Syu --noconfirm base-devel git rust alsa-lib systemd namcap
       - uses: actions/checkout@v5
-      - name: Prepare builder
-        run: |
-          useradd -m builder
-          chown -R builder:builder "$GITHUB_WORKSPACE"
-      - name: Build and inspect package
-        run: |
-          runuser -u builder -- bash -lc '
-            cd "$GITHUB_WORKSPACE/packaging/arch"
-            makepkg --printsrcinfo > .SRCINFO.generated
-            diff -u .SRCINFO .SRCINFO.generated
-            makepkg --cleanbuild --noconfirm
-          '
-          cd packaging/arch
-          package=$(find . -maxdepth 1 -name 'klicky-*.pkg.tar.zst' -print -quit)
-          test -n "$package"
-          namcap PKGBUILD
-          namcap "$package"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: arch-package
-          path: packaging/arch/klicky-*.pkg.tar.zst
-          if-no-files-found: error
-
-  publish:
-    needs: [debian, arch]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
       - uses: actions/download-artifact@v5
         with:
+          pattern: klicky-*
           path: dist
           merge-multiple: true
-      - name: Create checksums
-        working-directory: dist
-        run: sha256sum klicky_*.deb klicky-*.pkg.tar.zst > SHA256SUMS
-      - name: Publish assets
+      - name: Verify assets and write release manifest
         env:
-          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.source.outputs.version }}
+          REVISION: ${{ needs.source.outputs.revision }}
+          TREE: ${{ needs.source.outputs.tree }}
+        run: python3 scripts/assemble-release.py dist --version "$VERSION" --revision "$REVISION" --tree "$TREE"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: klicky-${{ needs.source.outputs.version }}-release-candidate
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 30
+      - name: Record approval boundary
         run: |
-          release_id=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
-            --jq ".[] | select(.tag_name == \"$GITHUB_REF_NAME\") | .id")
-          if [ -z "$release_id" ]; then
-            release_id=$(gh api --method POST "repos/$GITHUB_REPOSITORY/releases" \
-              -f tag_name="$GITHUB_REF_NAME" \
-              -f name="Klicky $GITHUB_REF_NAME" \
-              -F draft=true \
-              -F prerelease=false \
-              -F generate_release_notes=true \
-              --jq .id)
-          fi
-          gh release upload "$GITHUB_REF_NAME" dist/* \
-            --repo "$GITHUB_REPOSITORY" \
-            --clobber
-          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$release_id" \
-            -F draft=false \
-            -F prerelease=false \
-            -f make_latest=true >/dev/null
+          printf '%s\n' 'Candidate built and checked. Nothing was published.' \
+            'Review the manifest, exact-file antivirus results and hardware limits before approving release.' >> "$GITHUB_STEP_SUMMARY"

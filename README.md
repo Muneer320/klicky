@@ -2,7 +2,7 @@
 
 <p align="center"><img src="assets/branding/social-preview.jpg" width="1280" height="640" alt="Klicky, a tiny cream creature with sound-wave ears, making a home beneath a violet keycap."></p>
 
-<p align="center"><strong>A little sound for every keystroke.</strong><br>Mechanical keyboard sounds for Linux, macOS and Windows 11 preview. Built with Rust.</p>
+<p align="center"><strong>A little sound for every keystroke.</strong><br>Mechanical keyboard sounds for Linux, macOS and Windows 11. Built with Rust.</p>
 
 <p align="center"><a href="https://klicky.muneer320.tech/">Meet Klicky</a> · <a href="#install">Install</a> · <a href="https://klicky.muneer320.tech/guide.html">Field guide</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
 
@@ -61,7 +61,7 @@ Allow **`~/.local/bin/klicky`** in **System Settings → Privacy & Security → 
 </details>
 
 <details>
-<summary><strong>Windows 11 · x64 unsigned preview</strong></summary>
+<summary><strong>Windows 11 · x64</strong></summary>
 
 Run in PowerShell:
 
@@ -71,16 +71,16 @@ irm https://klicky.muneer320.tech/install.ps1 | iex
 
 Downloads the published installer, verifies its SHA-256 and opens per-user setup. Choose login startup in the wizard; the helper starts Klicky afterward. No Rust, Visual Studio or elevation needed. Use the tray for packs, volume and Pause/Resume.
 
-Prefer a file? The [Windows preview](https://github.com/Muneer320/klicky/releases/tag/windows-preview-2026-11-06) has an installer and portable ZIP. Extract the complete ZIP and open `klicky-desktop.exe`.
+Prefer a file? The [v0.5.0 release](https://github.com/Muneer320/klicky/releases/tag/v0.5.0) has an installer and portable ZIP. Extract the complete ZIP and open `klicky-desktop.exe`.
 
 [Windows controls and recovery](docs/WINDOWS.md) · [Installation options](docs/INSTALLATION.md#windows)
 
 </details>
 
 > [!NOTE]
-> Windows downloads are development previews. If Windows Security reports a threat, stop setup and use the [security-block troubleshooting steps](docs/TROUBLESHOOTING.md#windows).
+> The Windows installer is unsigned and may show an unknown-publisher warning. If Windows Security reports a threat, stop setup and use the [security-block troubleshooting steps](docs/TROUBLESHOOTING.md#windows).
 
-Current downloads: **v0.4.0 Linux packages**, a separate **Windows preview**, and **macOS source setup**. [Releases](https://github.com/Muneer320/klicky/releases) · [Full installation guide](https://klicky.muneer320.tech/guide.html#installation)
+**v0.5.0** supports Linux, macOS and Windows 11 x64: Linux packages, Windows installer/portable downloads, and macOS source setup. [Releases](https://github.com/Muneer320/klicky/releases) · [Full installation guide](https://klicky.muneer320.tech/guide.html#installation)
 
 ## Make yourself at home
 

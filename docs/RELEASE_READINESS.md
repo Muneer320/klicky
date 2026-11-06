@@ -1,46 +1,51 @@
 # Release checklist
 
-This guide covers preparing and publishing Klicky. For installation, use the [user guide](INSTALLATION.md); for package layouts and build commands, see [packaging](PACKAGING.md).
+Klicky v0.5.0 brings Linux, macOS and Windows 11 x64 into one release. Linux ships Debian/Arch packages; Windows ships an unsigned per-user installer and portable ZIP; macOS uses the versioned source installer, with its menu helper included by default.
 
-## Published channels
+This source tree prepares v0.5.0. A candidate build is not a published release. Keep the release-preparation PR open until approval to transition the public installation commands and website. The older Windows preview remains a historical download; new Windows users should use the stable installer after publication.
 
-- [v0.4.0](https://github.com/Muneer320/klicky/releases/tag/v0.4.0) is the latest stable Linux package release, with Debian/Arch assets and SHA-256 checksums.
-- [Windows November preview](https://github.com/Muneer320/klicky/releases/tag/windows-preview-2026-11-06) provides an unsigned Windows 11 x64 installer and portable ZIP. It is a prerelease, separate from stable Linux publication.
-- macOS uses the source installer and optional menu bar helper. The one-command installer includes the helper by default.
+## Build a candidate without publishing
 
-Check the actual release assets before changing download instructions. A source commit, CI artifact and published release are different distribution states.
+The [release workflow](../.github/workflows/release.yml) accepts a manual run on a reviewed branch or a `v*` tag. Tag runs verify the Cargo version. It has read-only repository permissions and **does not publish**, mark a release latest or deploy APT.
+
+```bash
+gh workflow run release.yml --ref YOUR_REVIEWED_BRANCH
+gh run list --workflow release.yml
+gh run download RUN_ID --name klicky-0.5.0-release-candidate --dir candidate
+```
+
+The workflow reuses Linux/macOS CI, macOS Intel/Apple Silicon installation/removal, Windows core checks, Debian/Arch packaging and signed APT integration checks. It builds the Windows packages using the pinned toolchain and Inno compiler, archives the exact source, then verifies the combined asset set. `RELEASE-MANIFEST.json` records source revision/tree, signing status, sizes and hashes; `SHA256SUMS` also covers the manifest.
+
+Expected payloads:
+
+- `klicky_0.5.0-1_amd64.deb`
+- `klicky-0.5.0-1-x86_64.pkg.tar.zst`
+- `klicky-0.5.0-windows-x64-setup.exe` and its `.sha256`
+- `klicky-0.5.0-windows-x64.zip` and its `.sha256`
+- `klicky-0.5.0-source.tar.gz`
 
 ## Before approval
 
-1. Work on a dedicated branch and link its issue/PR. Follow existing commit conventions and preserve the platform backends.
-2. Choose a semantic version and synchronize Cargo/package metadata, changelog, help text, direct download links and installer selection. Adding a supported platform belongs in the next feature release; a dated preview need not replace the stable channel.
-3. Pass applicable formatting, build, tests, Clippy, script, package and asset checks. Validate Linux/macOS regressions for shared changes and the Windows bundle for Windows packaging changes.
-4. Exercise the affected user lifecycle: first install, running/paused update, settings/custom-pack preservation, startup controls and removal. Check failure/recovery paths when changing installers. Keep test data separate from a daily installation.
-5. For input/audio changes, use appropriate listening and physical input-to-audible checks. Internal dispatch timing and requested buffer sizes cannot establish acoustic latency. Record the output route and limits of the evidence.
-6. Verify bundled sounds, dependency notices/source obligations, exact source identity and payload hashes. Keep private notes, recordings, credentials and local test fixtures out of release assets.
-7. Complete review, resolve comments and obtain explicit release authorization. Merging code does not by itself authorize a new release.
+1. Use focused issues/PRs and dedicated branches. Complete independent review and resolve valid findings. Verify the candidate source matches the intended merged tree.
+2. Synchronize Cargo/lockfile, Debian/Arch/resource versions, changelog, installer selection, README, guides and website. Check the source archive retains executable script modes.
+3. Pass all candidate jobs. Verify bundled sounds, dependency notices/source obligations, payload hashes and exact source identity. Exclude personal configuration, recordings, credentials and local fixtures.
+4. Exercise Windows first install, running/paused update, startup, configuration/custom-pack preservation, normal removal and `-Purge` with disposable data. Verify the missing-CLI recovery path, modified/foreign-file refusal and active-bundle interlock. Keep a recoverable backup when testing a daily installation.
+5. Exercise Linux package/source lifecycle and native macOS setup/removal. Containers and hosted runners cover packaging and control behavior; they do not provide physical keyboards or audible output.
+6. Scan the exact Windows files with current antivirus protection enabled. A prior Microsoft determination applies to the submitted file, not all later builds. Keep signatures, hashes and results with the candidate evidence.
+7. Check user-facing sound timing and recovery on the available desktop/output routes. Retain measured results separately from listening feedback. Record unavailable physical-latency/baseline and additional-hardware checks as deferred, never as passed. Review their release impact explicitly.
+8. Obtain explicit approval for the concrete version, assets, unsigned Windows status and any deferred validation. A merge, green CI or candidate artifact does not authorize publication.
 
-## Linux stable packages
+## Approved publication
 
-The [release workflow](../.github/workflows/release.yml) runs on `v*` tag pushes and checks that the tag equals `v` plus Cargo's package version. It builds Debian/Arch packages, uploads `SHA256SUMS`, and publishes a non-prerelease marked latest.
+Only after approval, merge the preparation PR, create the version tag on the approved source and run the candidate workflow for that tag. Verify/download the resulting final assets and repeat exact-byte security/hash checks. Do not overwrite published assets with a rebuild.
 
-**Do not use a `v*` tag for an experimental preview.** The current workflow is a stable Linux publisher, not a generic prerelease workflow. Push an approved stable tag only after the preparation PR is merged and release checks pass.
+Create the GitHub release with the approved notes, attach the five payloads, Windows sidecars, manifest and `SHA256SUMS`, mark it non-prerelease and latest, then verify public downloads. Windows code signing is separate from versioning; describe the unsigned installer plainly.
 
-After the assets finish uploading, publish the signed APT archive using the [APT maintenance procedure](MAINTAINING_APT.md#publication). Its GitHub-token release event does not automatically chain into another workflow. Preserve every package version in the authenticated live index; do not replace the archive with a single-package upload.
-
-## Windows preview packages
-
-Use the [Windows package workflow](../.github/workflows/windows-portable.yml) or the identified local build scripts described in the [Windows guide](WINDOWS.md). Confirm both executables, packs, notices, embedded source identity and installer/ZIP SHA-256 sidecars.
-
-An approved platform preview uses a distinct non-`v*` tag, is marked **prerelease**, and is **not latest**. Attach the identified installer, complete portable ZIP and their exact sidecars. The APT release-event path excludes prereleases so this does not replace stable Linux packages. CI artifacts alone are temporary downloads, not permanent release links.
-
-The Windows helper selects an identified published installer/checksum pair. Verify its real GitHub release response and download/hash behavior before announcing the command; avoid launching a second app during network-only checks. Signing status and supported Windows architecture belong in the release notes.
+Publish the signed APT archive using the [maintenance procedure](MAINTAINING_APT.md#publication), retaining every authenticated existing package version. A release created with GitHub's workflow token does not automatically trigger another workflow. Confirm the archive and Pages deployment completed before announcing the updated one-line commands.
 
 ## After publication
 
-- Verify public asset names, sizes and checksums, plus the correct stable/prerelease/latest state.
-- Confirm the website's installation/removal commands and direct downloads match published assets. Check the README, Windows guide, changelog and social image for drift.
-- For Pages/APT changes, verify the deployed page, installer scripts, sound previews, signed metadata, retained package versions and custom domain. Use [website checks](WEBSITE.md#preview-and-check); the page and archive deploy together.
-- Record release evidence in the PR or approved internal continuity notes. Keep recovery information until the update is confirmed, then remove merged branches according to the project's workflow.
-
-Publication to additional package managers or public launch channels is a separate step with its own versioned manifests, review and authorization.
+- Verify public asset names/sizes/hashes and stable/latest state. Run the downloaded Windows installer, not just a local build with similar source.
+- Check website install/removal endpoints, README/download links, source checksums, sound previews and custom domain. Verify APT signatures, candidate version and retained historical packages.
+- Record exact release evidence in the PR or private continuity notes. Preserve unresolved recovery material and remove merged branches when no longer needed.
+- Package-manager submissions such as WinGet or Homebrew are separate reviewed publications. Do not advertise a command until that channel is actually available.

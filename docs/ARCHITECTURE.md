@@ -1,6 +1,6 @@
 # Architecture
 
-Klicky uses one resident process per user session. Linux/macOS retain their Unix daemon and service lifecycle; the Windows development preview has a native tray coordinator with separate input, audio and control adapters. Sound-pack preparation and mixer-facing types are shared. The library entrypoint selects the platform at compile time.
+Klicky uses one resident process per user session. Linux/macOS retain their Unix daemon and service lifecycle; Windows has a native tray coordinator with separate input, audio and control adapters. Sound-pack preparation and mixer-facing types are shared. The library entrypoint selects the platform at compile time.
 
 ## Data flow
 
@@ -52,7 +52,7 @@ flowchart LR
 | `src/windows/bundle.rs` | Cross-session bundle reader lease retained through process exit |
 | `src/windows/startup.rs` | Per-user Startup shortcut ownership, atomic creation and exact-object removal |
 | `src/windows/service.rs` | Background desktop launch and verified bundle-specific lifecycle |
-| `src/bin/klicky-desktop.rs` | Windows GUI subsystem entrypoint; see the [development preview guide](WINDOWS.md) |
+| `src/bin/klicky-desktop.rs` | Windows GUI subsystem entrypoint; see the [Windows guide](WINDOWS.md) |
 
 ## Input backends
 
@@ -78,7 +78,7 @@ The included udev rule adds `uaccess` only to devices tagged with `ID_INPUT_KEYB
 
 Standard keys use `rdev`, which is backed by a macOS event tap. A second session-level event tap handles function-row media behavior on Mac keyboards. Both paths emit the same internal key names used by Linux.
 
-### Windows preview
+### Windows
 
 A message-only window on a dedicated thread receives passive Raw Input. Mapping tracks pressed keys per device and suppresses repeats. The callback sends bounded events without decoding audio, persisting settings or logging key names. The coordinator discards stale/obsolete events and disables capture when the session is inactive, locked or suspending.
 
@@ -174,14 +174,14 @@ macOS typically resolves under:
 ~/Library/Application Support/klicky/
 ```
 
-Windows stores configuration/custom packs under `%LOCALAPPDATA%\Klicky`, with session-specific runtime ownership under `run\session-<id>`. Bundled packs resolve beside the executable, independently of its working directory. A retained `.klicky.bundle.lock` reader protects each active bundle through native process exit. The installer takes that marker exclusively before replacing/removing files; another logged-on session blocks mutation. The installer preview and its recovery limits are described in the [Windows guide](WINDOWS.md).
+Windows stores configuration/custom packs under `%LOCALAPPDATA%\Klicky`, with session-specific runtime ownership under `run\session-<id>`. Bundled packs resolve beside the executable, independently of its working directory. A retained `.klicky.bundle.lock` reader protects each active bundle through native process exit. The installer takes that marker exclusively before replacing/removing files; another logged-on session blocks mutation. The installer and its recovery behavior are described in the [Windows guide](WINDOWS.md).
 
 ## Known constraints
 
 - Linux input devices are discovered at daemon startup. A newly added keyboard requires a daemon restart, while a lost reader causes a systemd-managed process to restart and rediscover devices.
 - Linux/macOS physical audio-device replacement and suspend/resume need additional runtime testing after the Rodio 0.22 migration. Windows implements recovery, with its hardware matrix still under qualification.
 - Benchmark mode measures input callback to mixer dispatch, not microphone-observed audible latency.
-- Windows 11 x64 is a development preview. Calibrated physical latency, matched Linux/macOS baselines, additional hardware and full installation/session/reliability qualification remain open.
+- Windows support targets Windows 11 x64 interactive desktops. Windows 10, ARM64, remote sessions and secure desktops are outside the initial support scope. See the [measurement guide](BENCHMARKS.md) for the distinction between internal timing and audible latency.
 
 These constraints are intentionally explicit. They should become focused issues rather than hidden claims of universal support.
 

@@ -1,4 +1,4 @@
-; Unsigned Windows 11 x64 development installer. Build through the PowerShell wrapper.
+; Windows 11 x64 per-user installer. Build through the PowerShell wrapper.
 #ifndef PayloadDirectory
   #error PayloadDirectory is required
 #endif
@@ -20,12 +20,12 @@
 AppId={{B8E55779-4EDB-4D8F-962D-10460EC7C230}
 AppName=Klicky
 AppVersion={#AppVersion}
-AppVerName=Klicky {#AppVersion} Windows development preview
+AppVerName=Klicky {#AppVersion}
 AppPublisher=Muneer Alam and Sauhard Gupta
 AppPublisherURL=https://github.com/Muneer320/klicky
 AppSupportURL=https://github.com/Muneer320/klicky/issues
 AppUpdatesURL=https://github.com/Muneer320/klicky/releases
-AppComments=Unsigned development preview; physical and installation qualification remain open.
+AppComments=Mechanical keyboard sounds for your desktop. Unsigned Windows build.
 DefaultDirName={localappdata}\Programs\Klicky
 DisableDirPage=yes
 DisableProgramGroupPage=yes
@@ -37,7 +37,7 @@ ArchitecturesAllowed=x64os
 MinVersion=10.0.22000
 SetupIconFile=klicky.ico
 UninstallDisplayIcon={app}\klicky-desktop.exe
-UninstallDisplayName=Klicky Windows development preview
+UninstallDisplayName=Klicky
 UninstallLogMode=append
 CloseApplications=no
 RestartApplications=no
@@ -47,10 +47,10 @@ AllowCancelDuringInstall=no
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
-OutputBaseFilename=klicky-{#AppVersion}-windows-x64-preview-{#Copy(SourceRevision, 1, 12)}-setup
+OutputBaseFilename=klicky-{#AppVersion}-windows-x64-setup
 VersionInfoVersion={#AppVersion}.0
-VersionInfoProductTextVersion={#AppVersion} Windows development preview
-VersionInfoDescription=Klicky unsigned development installer
+VersionInfoProductTextVersion={#AppVersion}
+VersionInfoDescription=Klicky installer
 VersionInfoOriginalFileName=klicky-setup.exe
 SignedUninstaller=no
 
@@ -211,7 +211,7 @@ begin
   Path := ExpandConstant('{app}');
   if (Length(Path) < 3) or (Path[2] <> ':') or
      (CompareText(RemoveBackslashUnlessRoot(Path), ExpandConstant('{localappdata}\Programs\Klicky')) <> 0) then
-    RaiseException('This preview installs only in the current user''s local Programs\Klicky folder. Custom or network install locations are not supported.');
+    RaiseException('Klicky installs only in the current user''s local Programs\Klicky folder. Custom or network install locations are not supported.');
   CheckParents(Path);
 end;
 

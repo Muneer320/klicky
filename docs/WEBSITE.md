@@ -58,4 +58,4 @@ The reviewed Pages/APT workflow rebuilds the complete signed archive, verifies r
 
 The custom-domain CNAME points to `muneer320.github.io`; GitHub Pages must retain the same domain and HTTPS setting. Installation endpoints are `/install.sh` and `/install.ps1`; removal uses `/uninstall.sh` and `/uninstall.ps1`.
 
-Publishing website changes does not publish application releases or update installed icons. Keep preview/stable wording aligned with real release assets. The APT release-event path skips prereleases so a Windows preview cannot replace stable Linux packages.
+Publishing website changes does not publish application releases or update installed icons. Keep version/download wording aligned with real release assets. The APT release-event path skips prereleases, and candidate builds do not publish a release.

@@ -13,8 +13,9 @@
     $installer = $null
     $checksum = $null
     foreach ($release in $releases) {
-        if ($release.draft) { continue }
-        $candidates = @($release.assets | Where-Object { $_.name -cmatch '^klicky-[0-9]+\.[0-9]+\.[0-9]+-windows-x64-preview-[0-9a-f]{12}-setup\.exe$' })
+        if ($release.draft -or $release.prerelease -or $release.tag_name -cnotmatch '^v[0-9]+\.[0-9]+\.[0-9]+$') { continue }
+        $version = $release.tag_name.Substring(1)
+        $candidates = @($release.assets | Where-Object { $_.name -ceq "klicky-$version-windows-x64-setup.exe" })
         if ($candidates.Count -ne 1) { continue }
         $checksums = @($release.assets | Where-Object { $_.name -ceq ($candidates[0].name + '.sha256') })
         if ($checksums.Count -ne 1) { continue }

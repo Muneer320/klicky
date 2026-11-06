@@ -48,14 +48,14 @@ The daemon receives raw global key-down events, including events generated while
 - Klicky uses listen-only event taps.
 - No key data leaves the process.
 
-### Windows preview
+### Windows
 
 - The application runs in the user's interactive session without elevation or an input driver.
 - Passive Raw Input does not suppress or synthesize typing. Capture is gated while the desktop is locked or inactive.
 - Normal playback and aggregate benchmark diagnostics do not log key names or reconstruct typed text. Neither executable accesses the microphone.
 - Local-only control pipes restrict access to the current logon and validate the server process identity. Shutdown waits retain the actual native process handle.
 - Bundle leases protect against cooperating installer/process races; they do not protect a user from other software already running as that same user.
-- Unsigned previews remain under qualification and are not a stable Windows release.
+- Windows packages are unsigned. Verify release checksums and keep antivirus protection enabled. Report detections through the guidance above; a version number is not an antivirus determination.
 
 ### Network behavior
 

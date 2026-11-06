@@ -50,7 +50,7 @@ After the release workflow has finished uploading the `.deb` and `SHA256SUMS`, a
 
 ```bash
 gh workflow run apt-repository.yml --repo Muneer320/klicky \
-  --ref master -f tag=v0.4.0
+  --ref master -f tag=v0.5.0
 ```
 
 Replace the tag with the intended published release. The workflow accepts `vMAJOR.MINOR.PATCH`, requires exactly one matching amd64 `.deb`, verifies its checksum, and requires its Debian version to be `MAJOR.MINOR.PATCH-1`.

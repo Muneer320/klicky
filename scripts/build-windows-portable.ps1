@@ -69,7 +69,7 @@ try {
     } finally { Remove-Item Env:CARGO_ENCODED_RUSTFLAGS -ErrorAction SilentlyContinue }
     $rootPackage = $metadata.packages | Where-Object { $_.id -eq $metadata.resolve.root }
     $version = $rootPackage.version
-    $bundleName = "klicky-$version-windows-x64-preview-$($revision.Substring(0, 12))"
+    $bundleName = "klicky-$version-windows-x64"
     $binaries = Join-Path $TargetDirectory "$target/release"
     $imports = [ordered]@{}
     $systemDlls = @('advapi32.dll', 'bcrypt.dll', 'bcryptprimitives.dll', 'combase.dll', 'gdi32.dll', 'kernel32.dll', 'mmdevapi.dll', 'ntdll.dll', 'ole32.dll', 'oleaut32.dll', 'shell32.dll', 'shlwapi.dll', 'user32.dll', 'userenv.dll', 'wtsapi32.dll')
@@ -81,7 +81,7 @@ try {
         $subsystem = [BitConverter]::ToUInt16($data, $pe + 24 + 68)
         if ($subsystem -ne $(if ($binary -eq 'klicky.exe') { 3 } else { 2 })) { throw "Wrong executable subsystem: $binary" }
         $info = [Diagnostics.FileVersionInfo]::GetVersionInfo($path)
-        if ($info.OriginalFilename -ne $binary -or $info.ProductVersion -ne "$version Windows development preview" -or -not $info.IsPreRelease) { throw "Missing preview metadata: $binary" }
+        if ($info.OriginalFilename -ne $binary -or $info.ProductVersion -ne $version -or $info.IsPreRelease) { throw "Unexpected version metadata: $binary" }
         if ((Get-AuthenticodeSignature -LiteralPath $path).Status -ne 'NotSigned') { throw "Expected an unsigned test executable: $binary" }
         $dependencies = @(Invoke-Checked $dumpbin @('/DEPENDENTS', $path) | ForEach-Object {
             if ($_ -match '^\s+([\w.-]+\.dll)\s*$') { $Matches[1].ToLowerInvariant() }
@@ -117,11 +117,11 @@ try {
     $identity = [ordered]@{
         product = 'Klicky'; version = $version; source_revision = $revision; source_tree = $tree
         target = $target; rustc = @(Invoke-Checked rustc @("+$toolchain", '-Vv'))
-        static_crt = $true; signing = 'unsigned'; qualification = 'development-unqualified'
+        static_crt = $true; signing = 'unsigned'
         direct_dll_imports = $imports; runtime_crates = $licenses; files = $inventory
     }
     $notice = @'
-This is an unsigned Klicky Windows development preview, not a qualified release.
+This Klicky Windows build is unsigned. Source identity is recorded in BUILD-INFO.json.
 Klicky and its sound recordings: see LICENSE and sounds/LICENSE.md.
 Third-party crate notices: licenses/crates. Exact versions and source URLs: BUILD-INFO.json.
 Unmodified MPL-2.0 source archives are included in third-party-sources and are made
@@ -165,6 +165,6 @@ They cover Rust's supported targets; not every listed component is linked here.
     [IO.File]::Move($partialPath, $archivePath)
     $checksum = [IO.File]::Open("$archivePath.sha256", [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
     try { $bytes = [Text.UTF8Encoding]::new($false).GetBytes("$sha  $bundleName.zip`n"); $checksum.Write($bytes, 0, $bytes.Length) } finally { $checksum.Dispose() }
-    Write-Output "Saved unsigned development bundle: $archivePath"
+    Write-Output "Saved unsigned Windows bundle: $archivePath"
     Write-Output "SHA-256: $sha"
 } finally { Pop-Location }
