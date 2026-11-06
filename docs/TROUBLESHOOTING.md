@@ -127,7 +127,7 @@ Bluetooth can add transport delay. Compare laptop speakers or wired output. Smal
 <details>
 <summary><strong>A live pack or volume change did not apply</strong></summary>
 
-Check `klicky status` after the change. Use the app controls instead of editing config while it runs. Linux/macOS commands confirm request delivery; logs show whether loading and saving succeeded. Windows confirms its prepared change or reports an error. A custom pack with the same name overrides the bundled pack. [Pack format](SOUND_PACKS.md)
+Check `klicky status` after the change. Use the app controls instead of editing config while it runs. Successful live pack/volume commands confirm the change was loaded, saved and applied. If a response fails or times out, inspect status and logs before retrying. A custom pack with the same name overrides the bundled pack. [Pack format](SOUND_PACKS.md)
 
 </details>
 

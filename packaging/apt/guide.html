@@ -434,9 +434,9 @@ klicky volume 0.5</code></pre>
             exist on Unix.
           </p>
           <p>
-            Unix pack/volume commands confirm request delivery; logs show
-            load/save completion. Windows confirms prepared/persisted activation
-            or reports an error.
+            A successful live pack/volume command confirms the change was
+            loaded, saved and applied. If a response fails or times out, check
+            status and logs before retrying.
             <a
               href="https://github.com/Muneer320/klicky/blob/master/docs/CLI.md"
               >Full CLI reference →</a
@@ -715,10 +715,11 @@ launchctl print "gui/$(id -u)/dev.klicky.menu"</code></pre>
             <details>
               <summary>A pack or volume change did not apply</summary>
               <p>
-                Check status, custom-pack precedence and daemon logs. Unix
-                confirms delivery, not load/save completion. Use controls
-                instead of editing active configuration. A rejected pack must
-                not replace a working one.
+                Check status, custom-pack precedence and daemon logs. Successful
+                live commands confirm loading, saving and activation; a timeout
+                needs investigation before retrying. Use controls instead of
+                editing active configuration. A rejected pack must not replace a
+                working one.
               </p>
             </details>
           </div>

@@ -149,7 +149,7 @@ klicky switch my-pack
 journalctl --user -u klicky.service -f
 ```
 
-A malformed JSON file or undecodable OGG stream produces a load error and leaves the current pack active. The CLI reports delivery of a switch request, not daemon-side completion; inspect the foreground output or service logs to confirm loading. On macOS, custom packs live under `~/Library/Application Support/klicky/sounds/`.
+A malformed JSON file or undecodable OGG stream produces a load error and leaves the current pack active. A successful CLI response confirms the pack was loaded, saved and activated. If a response fails or times out, inspect status and logs before retrying. On macOS, custom packs live under `~/Library/Application Support/klicky/sounds/`.
 
 ## Redistribution
 

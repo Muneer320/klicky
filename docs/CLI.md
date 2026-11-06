@@ -43,7 +43,7 @@ klicky volume 0.5
 klicky status
 ```
 
-On Linux/macOS, live configuration commands confirm request delivery; inspect foreground output or service logs for load/save completion. Windows confirms preparation and persistence before activation or reports an error. Use controls rather than editing configuration while the app runs.
+A successful live pack/volume command confirms the change was prepared, saved and applied. An error or timeout means the change is not confirmed; inspect status and logs before retrying. Use controls rather than editing configuration while the app runs.
 
 Service commands manage systemd user units on Linux, LaunchAgents on macOS and a per-user desktop app/Startup shortcut on Windows. They do not install an elevated Windows service. Windows can independently disable or defer login startup.
 

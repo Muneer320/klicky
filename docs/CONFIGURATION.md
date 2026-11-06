@@ -45,7 +45,7 @@ These are environment variables, not extra `config.toml` fields. Avoid manually 
 
 ## Saving changes and keeping your data
 
-When stopped, pack/volume commands save for the next start. During playback, use the app's controls: Unix confirms delivery and logs load/save results; Windows confirms prepared/persisted activation.
+When stopped, pack/volume commands save for the next start. During playback, a successful command confirms loading, saving and applying the change. If a response fails or times out, check status/logs before retrying.
 
 Normal upgrades and removal keep personal configuration and custom sounds. `--purge` / `-Purge` explicitly removes them. The Windows uninstaller refuses linked/junction data trees rather than following them into unrelated locations.
 
