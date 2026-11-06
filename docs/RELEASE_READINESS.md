@@ -50,4 +50,4 @@ Publish the signed APT archive using the [maintenance procedure](MAINTAINING_APT
 - Verify public asset names/sizes/hashes and stable/latest state. Run the downloaded Windows installer, not just a local build with similar source.
 - Check website install/removal endpoints, README/download links, source checksums, sound previews and custom domain. Verify APT signatures, candidate version and retained historical packages.
 - Record exact release evidence in the PR or private continuity notes. Preserve unresolved recovery material and remove merged branches when no longer needed.
-- Package-manager submissions such as WinGet or Homebrew are separate reviewed publications. Do not advertise a command until that channel is actually available.
+- Additional package-manager submissions are separate reviewed publications. Do not advertise a command until that channel is actually available.

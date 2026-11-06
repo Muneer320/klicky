@@ -80,7 +80,7 @@ Downloads the installer, verifies its SHA-256 and opens setup for your user. Cho
 
 Prefer to click a download? Get the [Windows installer](https://github.com/Muneer320/klicky/releases/download/v0.5.0/klicky-0.5.0-windows-x64-setup.exe) or [portable ZIP](https://github.com/Muneer320/klicky/releases/download/v0.5.0/klicky-0.5.0-windows-x64.zip). For the ZIP, extract the whole folder and open `klicky-desktop.exe`.
 
-Already use Scoop? Follow the [Scoop setup guide](docs/INSTALLATION.md#scoop). WinGet is [awaiting review](https://github.com/microsoft/winget-pkgs/pull/473333).
+Already use Scoop? Follow the [Scoop setup guide](docs/INSTALLATION.md#scoop).
 
 [Windows controls and troubleshooting](docs/WINDOWS.md) · [All Windows installation methods](docs/INSTALLATION.md#windows)
 
