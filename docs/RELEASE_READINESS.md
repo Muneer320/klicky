@@ -39,6 +39,8 @@ Expected payloads:
 
 Only after approval, merge the preparation PR, create the version tag on the approved source and run the candidate workflow for that tag. Verify/download the resulting final assets and repeat exact-byte security/hash checks. Do not overwrite published assets with a rebuild.
 
+The Pages/APT workflow holds the current site when a source-version bump is merged before its matching stable release exists. Publication of the matching release allows the new installation commands and site to deploy together; a manual run with a mismatched source version is refused.
+
 Create the GitHub release with the approved notes, attach the five payloads, Windows sidecars, manifest and `SHA256SUMS`, mark it non-prerelease and latest, then verify public downloads. Windows code signing is separate from versioning; describe the unsigned installer plainly.
 
 Publish the signed APT archive using the [maintenance procedure](MAINTAINING_APT.md#publication), retaining every authenticated existing package version. A release created with GitHub's workflow token does not automatically trigger another workflow. Confirm the archive and Pages deployment completed before announcing the updated one-line commands.

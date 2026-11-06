@@ -28,21 +28,22 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  release:
     if: github.event_name != 'release' || (!github.event.release.prerelease && !github.event.release.draft)
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    env:
-      GNUPGHOME: /tmp/klicky-gnupg
-      PUBLIC_URL: https://muneer320.github.io/klicky
-      EXPECTED_APT_GPG_FINGERPRINT: DBB67AE478D2FFCEC6637B559899E554D3580D8F
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      ready: ${{ steps.release.outputs.ready }}
     steps:
+      - uses: actions/checkout@v5
       - name: Resolve release tag
         id: release
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
           INPUT_TAG: ${{ inputs.tag }}
+          EVENT_NAME: ${{ github.event_name }}
           GH_TOKEN: ${{ github.token }}
         run: |
           if [[ -n "$RELEASE_TAG" ]]; then
@@ -56,7 +57,30 @@ jobs:
             printf 'Invalid release tag: %s\n' "$tag" >&2
             exit 1
           fi
+          version=$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["version"])')
+          if [[ "$tag" != "v$version" ]]; then
+            if [[ "$EVENT_NAME" == push ]]; then
+              printf 'Keeping the current site: source prepares v%s, latest release is %s.\n' "$version" "$tag" >> "$GITHUB_STEP_SUMMARY"
+              printf 'ready=false\n' >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            printf 'Release %s does not match source version %s.\n' "$tag" "$version" >&2
+            exit 1
+          fi
           printf 'tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
+          printf 'ready=true\n' >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: release
+    if: needs.release.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      GNUPGHOME: /tmp/klicky-gnupg
+      PUBLIC_URL: https://muneer320.github.io/klicky
+      EXPECTED_APT_GPG_FINGERPRINT: DBB67AE478D2FFCEC6637B559899E554D3580D8F
+    steps:
       - uses: actions/checkout@v5
         with:
           ref: ${{ github.sha }}
@@ -67,7 +91,7 @@ jobs:
       - name: Download and verify release package
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_TAG: ${{ needs.release.outputs.tag }}
         run: |
           mkdir download incoming
           gh release download "$RELEASE_TAG" \
