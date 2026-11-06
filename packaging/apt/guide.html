@@ -292,6 +292,7 @@ cd klicky
           <details><summary>Update or remove Homebrew Klicky</summary>
             <p>Update:</p>
             <pre><code>klicky service stop &amp;&amp; brew update &amp;&amp; brew upgrade muneer320/tap/klicky &amp;&amp; brew services restart muneer320/tap/klicky &amp;&amp; klicky service start</code></pre>
+            <p>If you do not use the menu, omit <code>brew services restart muneer320/tap/klicky</code> from that line.</p>
             <p>Remove both login registrations and the package:</p>
             <pre><code>klicky service disable &amp;&amp; brew services stop muneer320/tap/klicky &amp;&amp; brew uninstall muneer320/tap/klicky</code></pre>
             <p>Run the full removal line before uninstalling; plain <code>brew uninstall</code> cannot clean the independently managed daemon registration. Settings/custom packs stay in <code>~/Library/Application Support/klicky</code>. Delete that folder afterward only if you want to erase them too. <a href="https://github.com/Muneer320/homebrew-tap">Tap documentation</a>.</p>

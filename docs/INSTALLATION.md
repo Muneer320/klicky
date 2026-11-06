@@ -104,7 +104,7 @@ Update:
 klicky service stop && brew update && brew upgrade muneer320/tap/klicky && brew services restart muneer320/tap/klicky && klicky service start
 ```
 
-Settings survive updates; macOS may request Accessibility approval again after a rebuild. [Tap and maintenance details](https://github.com/Muneer320/homebrew-tap)
+If you opted out of the menu, omit `brew services restart muneer320/tap/klicky` from that line. Settings survive updates; macOS may request Accessibility approval again after a rebuild. [Tap and maintenance details](https://github.com/Muneer320/homebrew-tap)
 
 ## Linux
 
