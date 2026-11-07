@@ -20,8 +20,56 @@ param([switch]$Purge)
         }
         finally { $entry.Dispose() }
     }
+    function Get-KlickyRecoveryRegistration {
+        # A missing registry entry does not erase Inno's on-disk uninstall log.
+        # Recover only the known installer layout; never remove files ourselves.
+        $directory = $app
+        while ($directory) {
+            $item = Get-Item -LiteralPath $directory -Force
+            if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+                throw 'The installation path contains a link. Repair with the installer before removing it.'
+            }
+            $directory = [IO.Path]::GetDirectoryName($directory)
+        }
+        $identity = Join-Path $app 'INSTALLER-IDENTITY.ini'
+        if (-not (Test-Path -LiteralPath $identity -PathType Leaf)) {
+            throw 'Klicky files have no installer identity. Use the portable removal guide, or repair an installer copy first.'
+        }
+        $identityFile = Get-Item -LiteralPath $identity -Force
+        if (($identityFile.Attributes -band [IO.FileAttributes]::ReparsePoint) -or $identityFile.Length -gt 8192) {
+            throw 'The installer identity is redirected or invalid. Repair with the installer before removing it.'
+        }
+        $identityLines = [IO.File]::ReadAllLines($identity)
+        if (-not ($identityLines -ccontains '[Klicky]') -or
+            -not ($identityLines -ccontains 'AppId={B8E55779-4EDB-4D8F-962D-10460EC7C230}') -or
+            -not ($identityLines -ccontains 'RecoveryVersion=1')) {
+            throw 'This folder has no supported Klicky installer identity. Repair with the current installer before removing it.'
+        }
+        $candidates = @(Get-ChildItem -LiteralPath $app -Filter 'unins*.exe' -File -Force |
+            Where-Object { $_.Name -match '^unins[0-9]{3}\.exe$' })
+        if ($candidates.Count -ne 1) {
+            throw 'A unique local Klicky uninstaller was not found. Repair with the installer before removing it.'
+        }
+        $candidate = $candidates[0]
+        $dataPath = [IO.Path]::ChangeExtension($candidate.FullName, '.dat')
+        if (($candidate.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+            -not (Test-Path -LiteralPath $dataPath -PathType Leaf)) {
+            throw 'The local uninstaller is redirected or its removal data is missing. Repair with the installer first.'
+        }
+        $dataFile = Get-Item -LiteralPath $dataPath -Force
+        if (($dataFile.Attributes -band [IO.FileAttributes]::ReparsePoint) -or $dataFile.Length -eq 0 -or
+            ([string]$candidate.VersionInfo.ProductName).Trim() -cne 'Klicky' -or
+            ([string]$candidate.VersionInfo.OriginalFilename).Trim() -cne 'klicky-setup.exe') {
+            throw 'The local uninstaller identity or removal data is invalid. Repair with the installer first.'
+        }
+        Write-Host 'Windows uninstall registration is missing; using the local Klicky uninstaller.'
+        [pscustomobject]@{ UninstallString = '"' + $candidate.FullName + '"' }
+    }
     $registration = Get-KlickyUninstallRegistration
     if (-not $PSCmdlet.ShouldProcess('Klicky for the current user', 'Uninstall app and desktop controls')) { return }
+    if ($null -eq $registration -and (Test-Path -LiteralPath (Join-Path $app 'klicky-desktop.exe'))) {
+        $registration = Get-KlickyRecoveryRegistration
+    }
     if ($null -ne $registration) {
         $command = [string]$registration.UninstallString
         if ($command -notmatch '^"([^"]+\.exe)"$') { throw 'The registered uninstall command is unexpected; no program was started.' }
@@ -49,9 +97,6 @@ param([switch]$Purge)
         if (($null -ne (Get-KlickyUninstallRegistration)) -or (Test-Path -LiteralPath (Join-Path $app 'klicky-desktop.exe'))) {
             throw 'The installed app remains registered or present. Removal may have been cancelled; settings were kept.'
         }
-    }
-    elseif (Test-Path -LiteralPath (Join-Path $app 'klicky-desktop.exe')) {
-        throw 'Klicky files exist without an uninstall registration. Repair with its installer before removing it.'
     }
     if (@(Get-Process -Name klicky,klicky-desktop -ErrorAction SilentlyContinue).Count -ne 0) {
         throw 'A Klicky process remains open. Close remaining portable copies or other sessions before completing removal. See the portable removal guide.'
