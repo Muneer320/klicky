@@ -19,6 +19,17 @@ The app runs quietly in the background. Pick a pack, set the volume and carry on
 
 ## Install
 
+**Prefer a package manager?** Klicky is available through these routes:
+
+| Your system | Install with | Setup |
+|---|---|---|
+| Ubuntu / compatible Debian | **APT** | [Add Klicky's signed repository](docs/APT_REPOSITORY.md) |
+| macOS · Apple Silicon | **Homebrew** | [Install from Klicky's tap](docs/INSTALLATION.md#homebrew) |
+| Windows 11 · x64 | **Scoop** | [Install from Klicky's bucket](docs/INSTALLATION.md#scoop) |
+| Arch / Omarchy · x86_64 | **pacman** | [Download and install the release package](docs/INSTALLATION.md#linux) |
+
+The Arch route uses `pacman -U` with a downloaded package, not an AUR or `pacman -S` listing. Each setup guide includes the required repository or bucket and startup steps.
+
 **Open your system below and copy the command.** The setup helpers install the app and sounds, then start Klicky. Follow any setup or permission prompts. For downloads and more methods, use the [installation picker](https://klicky.muneer320.tech/#install).
 
 <details>
