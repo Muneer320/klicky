@@ -2,6 +2,16 @@
 & {
     Set-StrictMode -Version Latest
     $ErrorActionPreference = 'Stop'
+    $securityHelp = 'Check Windows Security > Protection history. If a threat is reported, stop here and keep protection enabled; do not add an exclusion or restore a quarantined file to finish setup. See https://github.com/Muneer320/klicky/blob/master/docs/TROUBLESHOOTING.md#windows'
+    function Start-KlickyProcess {
+        param([hashtable]$Options, [string]$Stage)
+        try {
+            Start-Process @Options -PassThru -ErrorAction Stop
+        }
+        catch {
+            throw "$Stage could not start. Installer log (if created): $log`n$securityHelp`nWindows reported: $($_.Exception.Message)"
+        }
+    }
     if ($env:OS -ne 'Windows_NT') { throw 'This installer is for Windows 11 x64.' }
     $architecture = [Environment]::GetEnvironmentVariable('PROCESSOR_ARCHITECTURE', 'Machine')
     if ($architecture -ne 'AMD64') { throw 'The Windows download currently supports x64 PCs.' }
@@ -56,14 +66,22 @@
         New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
         $log = Join-Path $logDirectory ('install-' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff') + '.log')
         Write-Output 'Opening the Klicky installer. Choose your startup preferences in the wizard.'
-        $process = Start-Process -FilePath $setup -ArgumentList @('/NORESTART', ('/LOG="' + $log + '"')) -PassThru
+        $process = Start-KlickyProcess -Stage 'The Klicky installer' -Options @{
+            FilePath = $setup; ArgumentList = @('/NORESTART', ('/LOG="' + $log + '"'))
+        }
         $process.WaitForExit()
-        if ($process.ExitCode -ne 0) { throw "Installer finished with code $($process.ExitCode). Details: $log" }
+        if ($process.ExitCode -ne 0) { throw "Installation did not complete (installer exit code $($process.ExitCode)). Details: $log`n$securityHelp" }
         $cli = Join-Path $env:LOCALAPPDATA 'Programs/Klicky/klicky.exe'
-        if (-not (Test-Path -LiteralPath $cli -PathType Leaf)) { throw "The installed CLI is missing: $cli" }
-        $launch = Start-Process -FilePath $cli -ArgumentList @('service', 'start') -WindowStyle Hidden -PassThru
-        if (-not $launch.WaitForExit(30000)) { throw 'Klicky startup was not confirmed within 30 seconds. Open it from Start for details.' }
-        if ($launch.ExitCode -ne 0) { throw 'Klicky installed, but startup reported an error. Open it from Start for details.' }
+        if (-not (Test-Path -LiteralPath $cli -PathType Leaf)) {
+            throw "Setup finished, but Klicky could not start because its control executable is missing: $cli. Details: $log`n$securityHelp`nIf there is no security detection, repair the installation with the official installer."
+        }
+        $launch = Start-KlickyProcess -Stage 'Klicky startup after installation' -Options @{
+            FilePath = $cli; ArgumentList = @('service', 'start'); WindowStyle = 'Hidden'
+        }
+        if (-not $launch.WaitForExit(30000)) { throw "Klicky startup was not confirmed within 30 seconds. Do not assume it is running. Details: $log`n$securityHelp" }
+        if ($launch.ExitCode -ne 0) {
+            throw ("Klicky installed, but startup failed (exit code $($launch.ExitCode)). Installer log: $log`n$securityHelp`nIf no security product reports a threat, run this in PowerShell to see the startup error:`n" + '& "$env:LOCALAPPDATA\Programs\Klicky\klicky.exe" service start')
+        }
         Write-Output 'Klicky is installed and running. Its tray menu changes sounds and volume. Choose Resume if you selected a paused launch.'
         Write-Output 'A little sound for every keystroke.'
     }
