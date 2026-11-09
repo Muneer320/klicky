@@ -7,6 +7,7 @@ import re
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parent.parent
 SKIP_PARTS = {".git", "target", "node_modules"}
@@ -41,7 +42,7 @@ def check_markdown_links(errors: list[str]) -> None:
             if target.startswith(("http://", "https://", "mailto:", "#")):
                 continue
             target = target.split("#", 1)[0]
-            if target and not (path.parent / target).resolve().exists():
+            if target and not (path.parent / unquote(target)).resolve().exists():
                 errors.append(f"broken link: {path.relative_to(ROOT)} -> {target}")
 
 
