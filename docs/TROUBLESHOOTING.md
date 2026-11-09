@@ -43,6 +43,8 @@ Close Klicky in other signed-in sessions and retry. Do not force-replace a runni
 
 Stop setup if Windows Security reports a threat. Keep protection enabled; do not add an exclusion or restore a quarantined file just to finish installation. An unsigned-app reputation warning and an antivirus threat detection require different investigations.
 
+The Windows install command reports whether the installer failed to open, installation failed, or startup failed after installation. A completed wizard does not mean Klicky started successfully. For a blocked launch or missing control executable, check **Windows Security → Protection history** before retrying. The helper includes the Windows launch error or process exit code when available, and the installer log path after setup runs. A missing file alone does not prove a security detection; if Protection history shows none, repair with the official installer. For a startup timeout, check the tray and current status before retrying.
+
 Note the Klicky build and detection name, and contact the maintainer through the [security reporting guide](../SECURITY.md). Keep full protection-history logs private. A suspected incorrect detection can be submitted to [Microsoft for analysis](https://www.microsoft.com/en-us/wdsi/filesubmission); it needs confirmation before being treated as a false positive.
 
 </details>
