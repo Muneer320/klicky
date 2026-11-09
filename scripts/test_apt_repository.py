@@ -124,6 +124,7 @@ class AptRepositoryTests(unittest.TestCase):
                     "klicky.sources", "klicky-archive-keyring.gpg",
                     "klicky-archive-keyring.asc", "dists/stable/InRelease",
                     "./", "install.sh", "install.ps1",
+                    "assets/demo/klicky-demo.mp4",
                 })
         for pack in (MODULE_PATH.parent.parent / "sounds").iterdir():
             if pack.is_dir():

@@ -48,3 +48,5 @@ Contributors adding or replacing sounds must provide a clear source and redistri
 The Klicky mascot identity and selected cozy keyboard artwork establish the project's visual direction. The public asset library contains selected final illustrations and simplified application marks; private reference boards are not distributed.
 
 The website and outlined wordmarks use Nunito by The Nunito Project Authors. The typeface and web subset retain the [SIL Open Font License](assets/website/fonts/OFL.txt), separately from Klicky's MIT-licensed application code.
+
+The [sound demo](https://klicky.muneer320.tech/#demo) uses Linux, Apple and Windows icons from Font Awesome Free 6.7.2 by Fonticons, Inc. under CC BY 4.0. See the [demo credits and icon license](assets/website/demo/CREDITS.md) for attribution and reuse.

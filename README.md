@@ -2,9 +2,9 @@
 
 **Mechanical keyboard sounds for Linux, macOS and Windows 11.** Give the keyboard you already own a sound you enjoy, whether you're writing code, taking notes or chatting with friends.
 
-<p align="center"><img src="assets/branding/social-preview.jpg" width="1280" height="640" alt="Klicky enjoying the sounds beneath a violet keycap."></p>
+<p align="center"><a href="https://klicky.muneer320.tech/#demo"><img src="assets/branding/social-preview.jpg" width="1280" height="640" alt="Watch Klicky's sound demo: a little character beneath a violet keycap."></a></p>
 
-<p align="center"><strong>A little sound for every keystroke.</strong><br><a href="https://klicky.muneer320.tech/#sounds">Listen to the packs</a> · <a href="#install">Install</a> · <a href="#everyday-use">Everyday use</a> · <a href="#help-and-faq">Help</a> · <a href="https://klicky.muneer320.tech/guide.html">Full guide</a></p>
+<p align="center"><strong>A little sound for every keystroke.</strong><br><a href="https://klicky.muneer320.tech/#demo">Watch the 45-second demo</a> · <a href="https://klicky.muneer320.tech/#sounds">Listen to the packs</a> · <a href="#install">Install</a> · <a href="#everyday-use">Everyday use</a> · <a href="#help-and-faq">Help</a> · <a href="https://klicky.muneer320.tech/guide.html">Full guide</a></p>
 
 <p align="center"><a href="https://github.com/Muneer320/klicky/actions/workflows/ci.yml"><img src="https://github.com/Muneer320/klicky/actions/workflows/ci.yml/badge.svg" alt="CI status"></a> <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-7435b4" alt="MIT license"></a> <a href="docs/SOUND_PACKS.md"><img src="https://img.shields.io/badge/sound_packs-10-c084fc" alt="10 included sound packs"></a></p>
 

@@ -95,19 +95,20 @@ for (const button of document.querySelectorAll("[data-copy]")) {
   });
 }
 const previews = [...document.querySelectorAll("audio")];
+const players = [...document.querySelectorAll("audio, video")];
 const soundRoom = document.getElementById("sounds");
 const reflectPlayback = () =>
   soundRoom?.classList.toggle(
     "is-playing",
     previews.some((audio) => !audio.paused && !audio.ended),
   );
-for (const audio of previews) {
-  audio.addEventListener("play", () => {
-    for (const other of document.querySelectorAll("audio")) {
-      if (other !== audio) other.pause();
+for (const player of players) {
+  player.addEventListener("play", () => {
+    for (const other of players) {
+      if (other !== player) other.pause();
     }
     reflectPlayback();
   });
-  audio.addEventListener("pause", reflectPlayback);
-  audio.addEventListener("ended", reflectPlayback);
+  player.addEventListener("pause", reflectPlayback);
+  player.addEventListener("ended", reflectPlayback);
 }
