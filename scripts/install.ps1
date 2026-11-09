@@ -79,7 +79,9 @@
             FilePath = $cli; ArgumentList = @('service', 'start'); WindowStyle = 'Hidden'
         }
         if (-not $launch.WaitForExit(30000)) { throw "Klicky startup was not confirmed within 30 seconds. Do not assume it is running. Details: $log`n$securityHelp" }
-        if ($launch.ExitCode -ne 0) { throw "Klicky installed, but startup failed (exit code $($launch.ExitCode)). Details: $log`n$securityHelp" }
+        if ($launch.ExitCode -ne 0) {
+            throw ("Klicky installed, but startup failed (exit code $($launch.ExitCode)). Installer log: $log`n$securityHelp`nIf no security product reports a threat, run this in PowerShell to see the startup error:`n" + '& "$env:LOCALAPPDATA\Programs\Klicky\klicky.exe" service start')
+        }
         Write-Output 'Klicky is installed and running. Its tray menu changes sounds and volume. Choose Resume if you selected a paused launch.'
         Write-Output 'A little sound for every keystroke.'
     }
