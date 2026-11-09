@@ -16,10 +16,14 @@ Klicky is the tiny fictional creature behind the keyboard-sound app. Its warm cr
 | [Under the keys](../assets/branding/under-the-keys.png) | Keyboard-world illustration |
 | [Social preview JPEG](../assets/branding/social-preview.jpg) | Preferred GitHub upload: **1280 × 640, under 1 MB** |
 | [Social preview PNG](../assets/branding/social-preview.png) | Compatibility version, also 1280 × 640 and under 1 MB |
+| [Sound demo MP4](../assets/website/demo/klicky-demo.mp4) / [watch online](https://klicky.muneer320.tech/#demo) | 45 seconds, 1920 × 1080, about 2.6 MB; character, three packs and all three operating systems |
+| [Demo poster](../assets/website/demo/klicky-demo-poster.jpg) / [English captions](../assets/website/demo/klicky-demo.en.vtt) | Thumbnail and accessible captions for the sound demo |
 | [Menu template](../assets/branding/klicky-menu-template.png) / [2x](../assets/branding/klicky-menu-template@2x.png) | 18/36px macOS template assets |
 | [Windows ICO](../packaging/windows/klicky.ico) | Executable, tray and installer; nine sizes from 16 to 256px |
 
 The final illustrations were prepared from the established character references. The social poster uses the selected cozy keyboard artwork. Original reference boards and internal character briefs are not public project assets.
+
+The sound demo is click-to-play with no background music. When sharing it, include its [asset credits](../assets/website/demo/CREDITS.md), which cover the sound recordings, Nunito and the platform icons. Use the demo poster for the video; keep the cozy artwork as the repository's social preview.
 
 ## Colour and type
 

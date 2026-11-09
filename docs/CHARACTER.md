@@ -12,6 +12,8 @@ And when you stop? Klicky settles down. A little quiet is good, too.
 
 **Klicky. A little sound for every keystroke.**
 
+[Watch Klicky find its rhythm](https://klicky.muneer320.tech/#demo) in the 45-second sound demo.
+
 ## A recognizable little mystery
 
 Klicky is curious, cheerful, affectionate and a little mischievous. It is never needy: no guilt for taking breaks, no demand to keep typing. Its species, age, origins and wider world stay deliberately unexplained.
