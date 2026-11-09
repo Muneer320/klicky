@@ -46,6 +46,13 @@ a,
 audio {
   touch-action: manipulation;
 }
+video {
+  touch-action: manipulation;
+  outline-offset: 5px;
+}
+video:focus-visible {
+  outline: 3px solid #a551e1;
+}
 button,
 input {
   font: inherit;
@@ -170,6 +177,21 @@ details > p:last-child {
 }
 .section {
   padding-block: 100px;
+}
+.demo-player video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--plum);
+}
+.demo-player figcaption {
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.75;
 }
 .eyebrow {
   font-size: 0.73rem;

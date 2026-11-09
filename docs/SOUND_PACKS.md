@@ -2,6 +2,8 @@
 
 Klicky uses the same single-file slicing model as KeyEcho sound packs. One OGG file stores every recorded key sound, and one JSON file maps platform-neutral key names to time ranges.
 
+Hear three included packs in the [45-second demo](https://klicky.muneer320.tech/#demo), or [listen to each pack](https://klicky.muneer320.tech/#sounds) before choosing one.
+
 ## Directory layout
 
 ```text
