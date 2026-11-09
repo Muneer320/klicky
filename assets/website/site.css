@@ -193,16 +193,6 @@ details > p:last-child {
   font-size: 0.95rem;
   line-height: 1.75;
 }
-.demo-transcript {
-  margin-top: 24px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 22px;
-  background: var(--surface);
-}
-.demo-transcript[open] summary {
-  margin-bottom: 18px;
-}
 .eyebrow {
   font-size: 0.73rem;
   letter-spacing: 0.16em;
