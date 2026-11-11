@@ -47,6 +47,8 @@ These are environment variables, not extra `config.toml` fields. Avoid manually 
 
 When stopped, pack/volume commands save for the next start. During playback, a successful command confirms loading, saving and applying the change. If a response fails or times out, check status/logs before retrying.
 
-Normal upgrades and removal keep personal configuration and custom sounds. `--purge` / `-Purge` explicitly removes them. The Windows uninstaller refuses linked/junction data trees rather than following them into unrelated locations.
+The EXE/ZIP, Linux and macOS installation methods keep personal configuration and custom sounds during normal upgrades and removal. `--purge` / `-Purge` explicitly removes them. The Windows uninstaller refuses linked/junction data trees rather than following them into unrelated locations.
+
+Microsoft Store packages use Windows-managed app data for new settings. Repair preserves that data; Reset and removal clear it. Files retained from an earlier EXE installation can remain in `%LOCALAPPDATA%\Klicky`. See the [Store data lifecycle](WINDOWS_STORE.md#runtime-integration) before clearing app data or removing a Store package.
 
 [Install, update and remove](INSTALLATION.md) · [Troubleshooting](TROUBLESHOOTING.md)

@@ -289,7 +289,7 @@ Settings/custom packs remain in `%LOCALAPPDATA%\Klicky`. Scoop's `--purge` remov
 
 ## Updates and removal
 
-Choose the method you used to install. Settings and custom sounds are kept unless you explicitly purge them.
+Choose the method you used to install. The methods below keep settings and custom sounds unless you explicitly purge them. Microsoft Store package removal clears package-private data; see the [Store data lifecycle](WINDOWS_STORE.md#runtime-integration) for the difference between new Store settings and files retained from an EXE installation.
 
 <details>
 <summary><strong>Windows</strong></summary>

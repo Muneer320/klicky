@@ -174,7 +174,7 @@ macOS typically resolves under:
 ~/Library/Application Support/klicky/
 ```
 
-Windows stores configuration/custom packs under `%LOCALAPPDATA%\Klicky`, with session-specific runtime ownership under `run\session-<id>`. Bundled packs resolve beside the executable, independently of its working directory. A retained `.klicky.bundle.lock` reader protects each active bundle through native process exit. The installer takes that marker exclusively before replacing/removing files; another logged-on session blocks mutation. The installer and its recovery behavior are described in the [Windows guide](WINDOWS.md).
+Windows EXE/ZIP installations store configuration/custom packs under `%LOCALAPPDATA%\Klicky`, with session-specific runtime ownership under `run\session-<id>`. Windows redirects newly created MSIX app data into the package's per-user data area; existing EXE data can remain in the host folder. See the [Store data lifecycle](WINDOWS_STORE.md#runtime-integration). Bundled packs resolve beside the executable, independently of its working directory. A retained `.klicky.bundle.lock` reader protects each active bundle through native process exit. The installer takes that marker exclusively before replacing/removing files; another logged-on session blocks mutation. The installer and its recovery behavior are described in the [Windows guide](WINDOWS.md).
 
 ## Known constraints
 
