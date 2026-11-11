@@ -169,7 +169,7 @@ def main() -> None:
             fingerprint[index: index + 4] for index in range(0, len(fingerprint), 4)
         )
         for content in (
-            "<title>Klicky / A little sound for every keystroke</title>",
+            "<title>Klicky | Free Keyboard Sounds for Windows, macOS &amp; Linux</title>",
             "sudo apt install klicky",
             grouped_fingerprint,
         ):
