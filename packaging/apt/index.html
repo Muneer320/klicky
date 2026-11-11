@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
+    <meta name="author" content="Muneer Alam" />
+    <link rel="author" href="https://muneer320.tech/" />
     <title>Klicky | Free Keyboard Sounds for Windows, macOS &amp; Linux</title>
     <meta
       name="description"
@@ -11,7 +13,9 @@
     />
     <link rel="canonical" href="https://klicky.muneer320.tech/" />
     <meta name="robots" content="max-image-preview:large" />
+    <link rel="icon" type="image/png" sizes="512x512" href="assets/branding/klicky.png" />
     <link rel="icon" type="image/svg+xml" href="assets/branding/klicky.svg" />
+    <link rel="apple-touch-icon" href="assets/branding/klicky.png" />
     <link rel="stylesheet" href="assets/site.css" />
     <script src="assets/site.js" defer></script>
     <link rel="preload" as="image" href="assets/mascot/under-the-keys.webp" />
@@ -31,6 +35,7 @@
       content="https://klicky.muneer320.tech/assets/social-preview.jpg"
     />
     <meta property="og:image:width" content="1280" />
+    <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:height" content="640" />
     <meta
       property="og:image:alt"
@@ -49,16 +54,25 @@
       name="twitter:image"
       content="https://klicky.muneer320.tech/assets/social-preview.jpg"
     />
+    <meta name="twitter:image:alt" content="Klicky beneath a violet keycap. A little sound for every keystroke." />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@graph": [
+          {
+            "@type": "Person",
+            "@id": "https://muneer320.tech/#person",
+            "name": "Muneer Alam",
+            "alternateName": "muneer320",
+            "url": "https://muneer320.tech/"
+          },
           {
             "@type": "WebSite",
             "@id": "https://klicky.muneer320.tech/#website",
             "name": "Klicky",
             "alternateName": "Klicky Keyboard Sounds",
             "url": "https://klicky.muneer320.tech/",
+            "publisher": { "@id": "https://muneer320.tech/#person" },
             "inLanguage": "en"
           },
           {
@@ -82,8 +96,12 @@
             "image": "https://klicky.muneer320.tech/assets/social-preview.jpg",
             "installUrl": "https://klicky.muneer320.tech/#install",
             "softwareHelp": "https://klicky.muneer320.tech/guide.html",
+            "maintainer": { "@id": "https://muneer320.tech/#person" },
             "license": "https://github.com/Muneer320/klicky/blob/master/LICENSE",
-            "sameAs": "https://github.com/Muneer320/klicky",
+            "sameAs": [
+              "https://github.com/Muneer320/klicky",
+              "https://alternativeto.net/software/klicky/about/"
+            ],
             "offers": {
               "@type": "Offer",
               "price": "0",
@@ -1052,6 +1070,7 @@ $env:KLICKY_SYSTEM_SOUNDS_DIR = (Resolve-Path .\sounds).Path
             ><a href="https://github.com/Muneer320/klicky">Source</a
             ><a href="https://github.com/Muneer320/klicky/releases">Releases</a
             ><a href="https://github.com/Muneer320/klicky/issues">Get help</a
+            ><a href="https://alternativeto.net/software/klicky/about/">AlternativeTo</a
             ><a href="https://muneer320.tech/projects/klicky/"
               >The engineering story</a
             ><a
