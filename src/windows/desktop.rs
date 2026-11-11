@@ -792,13 +792,22 @@ fn show_menu(hwnd: HWND) -> Result<()> {
             Some(StartupStatus::Absent) => "Not added to startup",
             Some(StartupStatus::Registered) => "Added; Windows controls startup approval",
             Some(StartupStatus::Foreign) => "Different or edited startup entry; preserved",
+            Some(StartupStatus::DisabledByUser) => "Disabled in Windows Startup settings",
+            Some(StartupStatus::DisabledByPolicy) => "Disabled by Windows policy",
             None => "Startup status unavailable",
         }
     };
     login.item(0, login_label, MF_GRAYED)?;
     let login_disabled =
         login_busy || view.snapshot.state == EngineState::Stopping || view.finished;
-    let conflict = login_status == Some(StartupStatus::Foreign);
+    let conflict = matches!(
+        login_status,
+        Some(
+            StartupStatus::Foreign
+                | StartupStatus::DisabledByUser
+                | StartupStatus::DisabledByPolicy
+        )
+    );
     login.item(
         LOGIN_ENABLE,
         "Add Klicky to startup",

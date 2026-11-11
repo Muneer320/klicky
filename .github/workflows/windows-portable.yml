@@ -14,6 +14,9 @@ on:
       - scripts/build-windows-portable.ps1
       - scripts/build-windows-installer.ps1
       - scripts/windows-license-files.ps1
+      - scripts/windows-portable-payload.ps1
+      - scripts/build-windows-msix.ps1
+      - assets/branding/klicky.png
       - docs/WINDOWS.md
       - LICENSE
       - ACKNOWLEDGEMENTS.md
@@ -30,6 +33,9 @@ on:
       - scripts/build-windows-portable.ps1
       - scripts/build-windows-installer.ps1
       - scripts/windows-license-files.ps1
+      - scripts/windows-portable-payload.ps1
+      - scripts/build-windows-msix.ps1
+      - assets/branding/klicky.png
       - docs/WINDOWS.md
       - LICENSE
       - ACKNOWLEDGEMENTS.md
@@ -73,5 +79,17 @@ jobs:
           path: |
             target/windows-dist/*.zip*
             target/windows-dist/*-setup.exe*
+          if-no-files-found: error
+          retention-days: 14
+      - name: Build and validate development MSIX without installation or signing
+        shell: pwsh
+        run: |
+          $archives = @(Get-ChildItem -LiteralPath target/windows-dist -Filter '*.zip')
+          if ($archives.Count -ne 1) { throw 'Expected exactly one identified portable archive.' }
+          ./scripts/build-windows-msix.ps1 -PortableArchive $archives[0].FullName -Development
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-msix-development
+          path: target/windows-msix/*.msix*
           if-no-files-found: error
           retention-days: 14

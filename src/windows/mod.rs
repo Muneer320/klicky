@@ -8,6 +8,7 @@ pub mod desktop;
 mod files;
 pub mod input;
 mod lifecycle;
+mod package;
 mod paths;
 pub mod pipe;
 mod process;

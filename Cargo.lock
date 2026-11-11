@@ -766,6 +766,7 @@ dependencies = [
  "toml 0.8.23",
  "windows",
  "windows-core",
+ "windows-future",
 ]
 
 [[package]]
