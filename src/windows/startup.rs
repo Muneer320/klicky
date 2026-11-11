@@ -58,6 +58,7 @@ pub(super) enum Status {
     Foreign,
     DisabledByUser,
     DisabledByPolicy,
+    EnabledByPolicy,
 }
 
 #[derive(Debug)]

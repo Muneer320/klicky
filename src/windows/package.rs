@@ -65,6 +65,12 @@ pub(super) fn startup(enabled: Option<bool>) -> Result<Status> {
         }
         return Ok(Status::DisabledByPolicy);
     }
+    if state == StartupTaskState::EnabledByPolicy {
+        if enabled == Some(false) {
+            bail!("Klicky startup is enabled by Windows policy and cannot be disabled here");
+        }
+        return Ok(Status::EnabledByPolicy);
+    }
     match enabled {
         Some(true) if state == StartupTaskState::Disabled => {
             let state = complete(task.RequestEnableAsync()?, deadline)?;
@@ -80,6 +86,7 @@ pub(super) fn startup(enabled: Option<bool>) -> Result<Status> {
         StartupTaskState::Disabled => Ok(Status::Absent),
         StartupTaskState::DisabledByUser => Ok(Status::DisabledByUser),
         StartupTaskState::DisabledByPolicy => Ok(Status::DisabledByPolicy),
+        StartupTaskState::EnabledByPolicy => Ok(Status::EnabledByPolicy),
         _ => bail!("Unrecognized Windows startup task state"),
     }
 }

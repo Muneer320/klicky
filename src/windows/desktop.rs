@@ -794,6 +794,7 @@ fn show_menu(hwnd: HWND) -> Result<()> {
             Some(StartupStatus::Foreign) => "Different or edited startup entry; preserved",
             Some(StartupStatus::DisabledByUser) => "Disabled in Windows Startup settings",
             Some(StartupStatus::DisabledByPolicy) => "Disabled by Windows policy",
+            Some(StartupStatus::EnabledByPolicy) => "Enabled by Windows policy",
             None => "Startup status unavailable",
         }
     };
@@ -806,6 +807,7 @@ fn show_menu(hwnd: HWND) -> Result<()> {
             StartupStatus::Foreign
                 | StartupStatus::DisabledByUser
                 | StartupStatus::DisabledByPolicy
+                | StartupStatus::EnabledByPolicy
         )
     );
     login.item(
