@@ -56,6 +56,9 @@ pub(super) enum Status {
     Absent,
     Registered,
     Foreign,
+    DisabledByUser,
+    DisabledByPolicy,
+    EnabledByPolicy,
 }
 
 #[derive(Debug)]
@@ -80,6 +83,9 @@ impl Startup {
         Ok(Self { paths, folder })
     }
     pub fn status(&self) -> Result<Status> {
+        if super::package::current()? {
+            return super::package::startup(None);
+        }
         self.paths.ensure_data_dir()?;
         let _writer = files::lock(&self.paths.data_dir().join("startup.lock"), deadline())?;
         self.inspect(false).map(|entry| {
@@ -93,6 +99,9 @@ impl Startup {
         })
     }
     pub fn set(&self, enabled: bool) -> Result<Status> {
+        if super::package::current()? {
+            return super::package::startup(Some(enabled));
+        }
         self.paths.ensure_data_dir()?;
         let _writer = files::lock(&self.paths.data_dir().join("startup.lock"), deadline())?;
         match self.inspect(!enabled)? {

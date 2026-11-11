@@ -45,14 +45,18 @@ pub(super) fn is_busy(error: &anyhow::Error) -> bool {
 
 pub(super) fn acquire(directory: &Path) -> Result<File> {
     let marker = directory.join(MARKER);
-    match OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(&marker)
-    {
-        Ok(file) => drop(file),
-        Err(error) if error.kind() == io::ErrorKind::AlreadyExists => (),
-        Err(error) => return Err(error).context("create bundle ownership marker"),
+    // Windows protects installed MSIX payloads. The packager includes the empty
+    // marker; only unpackaged copies need to create it on first launch.
+    if !super::package::current()? {
+        match OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&marker)
+        {
+            Ok(file) => drop(file),
+            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => (),
+            Err(error) => return Err(error).context("create bundle ownership marker"),
+        }
     }
     let deadline = Instant::now() + Duration::from_millis(250);
     let lease = loop {

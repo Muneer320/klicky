@@ -120,6 +120,6 @@ The installer compiler is official Inno Setup 7.1.1 x64. Output is under `target
 
 For unattended installation, use `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART` and an explicit `/LOG="C:\path\to\install.log"`. Fresh silent installs do not launch the app. `/TASKS="startup"` opts in to login startup; custom `/DIR` locations are refused. Exit 10 means files installed but startup registration or restarting was not confirmed; inspect the log and tray.
 
-[Release engineering checklist](https://github.com/Muneer320/klicky/blob/master/docs/RELEASE_READINESS.md) · [Measurement tooling](https://github.com/Muneer320/klicky/blob/master/tools/windows-qualification/USAGE.md)
+[Release engineering checklist](https://github.com/Muneer320/klicky/blob/master/docs/RELEASE_READINESS.md) · [Measurement tooling](https://github.com/Muneer320/klicky/blob/master/tools/windows-qualification/USAGE.md) · [Microsoft Store packaging](https://github.com/Muneer320/klicky/blob/master/docs/WINDOWS_STORE.md)
 
 </details>
