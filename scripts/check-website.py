@@ -92,7 +92,7 @@ def main():
                 for width in [320, 360, 768, 1440]:
                     page.set_viewport_size({"width": width, "height": 1000})
                     assert page.goto(url).status == 200
-                    assert page.title() == "Klicky / A little sound for every keystroke"
+                    assert page.title() == "Klicky | Free Keyboard Sounds for Windows, macOS & Linux"
                     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
                     assert page.locator("h1").count() == 1
                     assert page.locator('script[src="assets/site.js"]').count() == 1
