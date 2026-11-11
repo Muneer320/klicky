@@ -18,6 +18,8 @@ mod soundpack;
 // Compile the production PCM source and mixer unchanged. Alternative buffer
 // requests are confined to this tool; the application policy is not modified.
 #[cfg(target_os = "windows")]
+// The shared player also exposes pause/clear controls, unused by this tool.
+#[allow(dead_code)]
 mod player {
     include!("../../../src/player.rs");
 
@@ -32,7 +34,11 @@ mod player {
                     let sink = DeviceSinkBuilder::from_device(device)?
                         .with_buffer_size(BufferSize::Default)
                         .open_stream()?;
-                    Ok(Self { sink, volume: 0.8 })
+                    Ok(Self {
+                        sink,
+                        volume: 0.8,
+                        generation: Arc::new(AtomicU64::new(0)),
+                    })
                 }
             }
         }

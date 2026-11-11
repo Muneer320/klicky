@@ -78,6 +78,7 @@ fn missing_daemon_has_structured_offline_preferences_and_pack_list() {
 fn live_status_uses_confirmed_playback_instead_of_saved_config() {
     let home = Home::new();
     fs::create_dir_all(home.runtime()).unwrap();
+    fs::create_dir_all(home.config()).unwrap();
     fs::write(
         home.config().join("config.toml"),
         "sound_pack = 'saved'\nvolume = 0.1\n",
