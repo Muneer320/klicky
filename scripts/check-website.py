@@ -29,7 +29,8 @@ class Preview(BaseHTTPRequestHandler):
         content_type = "text/html; charset=utf-8"
         if path != "/klicky/":
             asset = None
-            if path in ("/klicky/guide.html", "/klicky/sitemap.xml", "/klicky/robots.txt"):
+            if path in ("/klicky/guide.html", "/klicky/privacy.html",
+                        "/klicky/sitemap.xml", "/klicky/robots.txt"):
                 asset = ROOT / "packaging/apt" / path.rsplit("/", 1)[1]
             elif path in ("/klicky/install.sh", "/klicky/install.ps1",
                         "/klicky/uninstall.sh", "/klicky/uninstall.ps1"):

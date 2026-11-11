@@ -28,6 +28,9 @@ Reports will be acknowledged as soon as practical. Please allow time for a fix b
 
 ## Security model
 
+The [privacy policy](https://klicky.muneer320.tech/privacy.html) explains input
+handling, local settings, diagnostics and website hosting.
+
 Klicky listens for global physical key events, which is inherently sensitive.
 
 The daemon receives raw global key-down events, including events generated while passwords or other sensitive text are entered. Klicky discards those events after selecting a sound, but the permission itself carries keylogging capability and should be granted only to trusted software.

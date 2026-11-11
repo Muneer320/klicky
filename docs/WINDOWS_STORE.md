@@ -50,6 +50,14 @@ Existing EXE/ZIP installations continue using their owned startup shortcuts and
 installer reader leases. They do not acquire package identity from an environment
 variable or a file placed beside the executable.
 
+For a new Store installation, Windows redirects newly created settings into the
+package's per-user data area. Repair preserves that data; Reset and package
+removal clear it. Existing files from an EXE installation can remain in
+`%LOCALAPPDATA%\Klicky` and survive Store package removal. Back up custom sounds
+before clearing app data. Close Klicky before choosing Repair in Windows Settings;
+Windows refuses repair while the application is running. Prefer one distribution
+for login startup when both EXE and Store installations are present.
+
 ## Qualification before submission
 
 1. Validate the exact source build and package with MakeAppx and the Windows App

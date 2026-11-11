@@ -8,6 +8,7 @@ Klicky's product site, field guide and signed APT archive share GitHub Pages at 
 |---|---|
 | [Landing template](../packaging/apt/index.html) | Mascot-led introduction, sound room, OS setup and archive links |
 | [Field guide](../packaging/apt/guide.html) | On-site installation, CLI/configuration, architecture and troubleshooting |
+| [Privacy policy](../packaging/apt/privacy.html) | Input handling, local data, diagnostics and hosting |
 | [Styles](../assets/website/site.css) | Shared responsive light/dark design and reduced-motion behavior |
 | [Small enhancement script](../assets/website/site.js) | Copy buttons and one-preview-at-a-time audio |
 | [Website media](../assets/website) | Optimized illustrations, sound previews and locally hosted Nunito font/license |
@@ -19,7 +20,7 @@ There is no frontend framework, remote font service, account, analytics or globa
 
 Keep the archive template markers `PUBLIC_URL`, `LATEST_VERSION`, `VERSIONS` and `FINGERPRINT`. The builder escapes dynamic metadata. Preserve relative links to `klicky.sources`, both signing-key formats and `dists/stable/InRelease`; the site must work at `/` and `/klicky/`.
 
-`copy_site_assets` publishes the curated website/branding folders, field guide and four install/remove scripts. The preferred social image is `/assets/social-preview.jpg`; `/assets/social-preview.png` remains compatible with older links. Both are 1280 × 640 and under 1 MB. Never copy reference boards, internal character briefs, planning files, local test output or unrelated directories into public assets.
+`copy_site_assets` publishes the curated website/branding folders, field guide, privacy policy and four install/remove scripts. The preferred social image is `/assets/social-preview.jpg`; `/assets/social-preview.png` remains compatible with older links. Both are 1280 × 640 and under 1 MB. Never copy reference boards, internal character briefs, planning files, local test output or unrelated directories into public assets.
 
 ## Preview and validate
 
