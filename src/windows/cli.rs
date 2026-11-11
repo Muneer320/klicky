@@ -61,7 +61,7 @@ enum Commands {
 enum ServiceAction {
     /// Register login startup and start now; Windows may independently disable startup
     Enable,
-    /// Remove this bundle's login shortcut and stop its running instance
+    /// Disable this bundle's login startup and stop its running instance
     Disable,
     /// Start this bundle's desktop app for the current session
     Start {
@@ -71,7 +71,7 @@ enum ServiceAction {
     },
     /// Stop this bundle's verified running instance
     Stop,
-    /// Show shortcut registration and live session state
+    /// Show login startup registration and live session state
     Status,
     /// Installer hook; other bundles are preserved and every matching exit is verified
     #[command(hide = true)]
