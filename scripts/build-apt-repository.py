@@ -140,7 +140,7 @@ def copy_site_assets(output: Path) -> None:
                  output / "assets/social-preview.png")
     shutil.copy2(root / "assets/branding/social-preview.jpg",
                  output / "assets/social-preview.jpg")
-    for name in ("guide.html", "sitemap.xml", "robots.txt"):
+    for name in ("guide.html", "privacy.html", "sitemap.xml", "robots.txt"):
         shutil.copy2(root / "packaging/apt" / name, output / name)
     for name in ("install.sh", "install.ps1", "uninstall.sh", "uninstall.ps1"):
         shutil.copy2(root / "scripts" / name, output / name)

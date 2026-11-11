@@ -123,7 +123,7 @@ class AptRepositoryTests(unittest.TestCase):
                 self.assertIn(link, {
                     "klicky.sources", "klicky-archive-keyring.gpg",
                     "klicky-archive-keyring.asc", "dists/stable/InRelease",
-                    "./", "install.sh", "install.ps1",
+                    "./", "install.sh", "install.ps1", "privacy.html",
                     "assets/demo/klicky-demo.mp4",
                 })
         for pack in (MODULE_PATH.parent.parent / "sounds").iterdir():

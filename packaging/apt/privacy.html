@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Klicky privacy / Your typing stays on your device</title>
+    <meta name="description" content="How Klicky handles keyboard events, local settings, diagnostics and website visits." />
+    <link rel="canonical" href="https://klicky.muneer320.tech/privacy.html" />
+    <link rel="icon" href="assets/branding/klicky.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="masthead">
+      <nav class="nav wrap" aria-label="Main navigation">
+        <a class="brand" href="./"><img src="assets/branding/klicky.svg" width="46" height="46" alt="" />Klicky</a>
+        <div class="nav-links"><a href="guide.html">Field guide</a><a href="https://github.com/Muneer320/klicky">Source</a></div>
+      </nav>
+    </header>
+    <div class="docs-header">
+      <div class="wrap">
+        <p class="eyebrow">A little sound. A little clarity.</p>
+        <h1>Your typing stays on your device.</h1>
+        <p class="intro">Klicky plays keyboard sounds locally. There is no Klicky account, cloud service, advertising or analytics in the app.</p>
+        <p>Last updated: November 11, 2026. Maintained by <a href="https://muneer320.tech/">Muneer Alam</a> and the Klicky contributors.</p>
+      </div>
+    </div>
+    <main class="wrap docs-layout" id="main">
+      <nav class="toc" aria-label="Privacy contents">
+        <strong>On this page</strong><a href="#keyboard">Keyboard events</a><a href="#settings">Settings and removal</a><a href="#diagnostics">Diagnostics</a><a href="#website">Website and downloads</a><a href="#contact">Questions</a>
+      </nav>
+      <div class="docs-content">
+        <section id="keyboard">
+          <h2>What happens when you press a key?</h2>
+          <p>Klicky receives keyboard events so it can choose and play a sound while you use other apps. Normal playback does not record your typed text, save a history of keypresses or transmit those events. The Windows app does not access your microphone.</p>
+          <p>Global input access is sensitive: keyboard events can occur while you enter a password or other private information. Klicky does not need that text, but you should grant input access only to software you trust. On Windows, playback is paused while the desktop is locked or inactive.</p>
+          <p>The desktop app contains no network client and makes no network requests. It does not send your typing, sound choices or usage statistics to me or to another service.</p>
+        </section>
+        <section id="settings">
+          <h2>Settings and custom sounds stay local.</h2>
+          <p>Klicky saves preferences such as the selected sound pack and volume on your device. Custom sound packs remain local files. No account is needed to use them.</p>
+          <p>Windows manages new Microsoft Store installations in the app's own data area. Repair keeps those settings; Reset clears that app data. If Klicky finds settings or custom sounds from an earlier EXE installation, those existing files can remain in your local Klicky folder after the Store package is removed.</p>
+          <p>Use Windows Settings to repair, reset or remove a Store installation. For other installation methods, the <a href="guide.html#remove">removal guide</a> explains how to keep settings or remove them with <code>--purge</code>. Back up custom sounds you want to keep before clearing app data.</p>
+        </section>
+        <section id="diagnostics">
+          <h2>Diagnostics are something you choose.</h2>
+          <p>The Windows diagnostics command reports aggregate counters and local app state, including volume, sound-pack name and process identifiers. It does not include key names, typed text or microphone recordings. Nothing is uploaded automatically; share reports only if you choose to.</p>
+          <p>Developer tools and other platforms have their own diagnostic modes. In particular, Linux benchmark mode can log mapped key names and timing. Do not run that mode while entering passwords or other sensitive text. See the <a href="https://github.com/Muneer320/klicky/blob/master/SECURITY.md">security policy</a> for platform details.</p>
+        </section>
+        <section id="website">
+          <h2>Visiting the website and downloading Klicky.</h2>
+          <p>This site has no analytics scripts, advertising trackers or account system. Sound previews play only when you choose them, and the site does not listen to global keyboard input.</p>
+          <p>GitHub Pages hosts this site, and GitHub hosts the source and direct downloads. Those services receive normal web-request information, such as your IP address, under <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's privacy statement</a>. Install helpers and package managers contact their download services to install or update the app.</p>
+          <p>Microsoft handles Store downloads, account information and platform diagnostics under <a href="https://privacy.microsoft.com/privacystatement">Microsoft's privacy statement</a>. Klicky is free. Opening external support or project links takes you to the relevant site's own privacy policy.</p>
+        </section>
+        <section id="contact">
+          <h2>Questions or concerns?</h2>
+          <p>For a privacy question, <a href="https://github.com/Muneer320/klicky/issues">open an issue</a> without including private information. For a vulnerability or possible keystroke exposure, use <a href="https://github.com/Muneer320/klicky/security/advisories/new">GitHub's private reporting form</a> instead.</p>
+          <p>This policy will be updated here if Klicky's data handling changes. The <a href="https://github.com/Muneer320/klicky/commits/master/packaging/apt/privacy.html">public history</a> records those changes.</p>
+        </section>
+      </div>
+    </main>
+    <footer class="site-footer"><div class="wrap footer-top"><a class="brand" href="./">Klicky</a><p>A little sound for every keystroke. <a href="guide.html">Field guide →</a></p></div></footer>
+  </body>
+</html>
