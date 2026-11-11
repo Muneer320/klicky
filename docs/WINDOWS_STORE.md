@@ -27,7 +27,12 @@ For a Store candidate, replace `-Development` with the exact `-IdentityName`,
 `-Publisher` and `-PublisherDisplayName` values from **Partner Center → Klicky →
 View product identity**. Do not use development identities for submission.
 `-PackageVersion` accepts four numeric components; the last must be zero because
-the Store reserves it. Keep the identity stable across upgrades.
+the Store reserves it, and the first must be nonzero. By default the package
+version is `(application major + 1).minor.patch.0`: Klicky 0.5.0 becomes package
+1.5.0.0. This supports pre-1.0 application releases and keeps upgrades monotonic
+when Klicky reaches 1.0. The app's displayed/CLI version remains 0.5.0. An explicit
+package version must also increase from the previous Store submission. Keep the
+identity stable across upgrades.
 
 The package includes all ten sound packs, copyright notices, dependency notices
 and source archives required by the portable distribution. It also includes the

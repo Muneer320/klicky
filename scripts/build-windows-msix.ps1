@@ -17,7 +17,10 @@ if (-not $IsWindows -or [Runtime.InteropServices.RuntimeInformation]::OSArchitec
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 function Invoke-Checked([string]$Program, [string[]]$Arguments) {
     $result = & $Program @Arguments
-    if ($LASTEXITCODE -ne 0) { throw "$Program failed with exit code $LASTEXITCODE" }
+    if ($LASTEXITCODE -ne 0) {
+        $result | Out-Host
+        throw "$Program failed with exit code $LASTEXITCODE"
+    }
     return $result
 }
 if ($Development) {
@@ -46,9 +49,12 @@ try {
     $versionLine = Get-Content -LiteralPath Cargo.toml | Where-Object { $_ -match '^version = "\d+\.\d+\.\d+"$' } | Select-Object -First 1
     if (-not $versionLine) { throw 'Missing numeric package version.' }
     $version = $versionLine.Split('"')[1]
-    if (-not $PackageVersion) { $PackageVersion = "$version.0" }
-    if ($PackageVersion -notmatch '^\d+\.\d+\.\d+\.0$' -or @($PackageVersion.Split('.') | Where-Object { [long]$_ -gt 65535 }).Count) {
-        throw 'MSIX versions require four components from 0 to 65535 and a final zero reserved for the Store.'
+    if (-not $PackageVersion) {
+        $parts = $version.Split('.')
+        $PackageVersion = "$([long]$parts[0] + 1).$($parts[1]).$($parts[2]).0"
+    }
+    if ($PackageVersion -notmatch '^[1-9]\d*\.\d+\.\d+\.0$' -or @($PackageVersion.Split('.') | Where-Object { [long]$_ -gt 65535 }).Count) {
+        throw 'MSIX versions need a nonzero major, components no greater than 65535 and a final zero reserved for the Store.'
     }
     $staging = Join-Path $repository ('target/windows-msix-staging/' + [guid]::NewGuid().ToString('N'))
     $payload = Join-Path $staging 'payload'
@@ -94,10 +100,10 @@ try {
     $package = Join-Path $OutputDirectory $name
     if ((Test-Path -LiteralPath $package) -or (Test-Path -LiteralPath "$package.sha256")) { throw 'Package output already exists; choose a new output directory.' }
     $partial = Join-Path $staging $name
-    Invoke-Checked $MakeAppxPath @('pack', '/d', $payload, '/p', $partial, '/no') | Out-Host
+    Invoke-Checked $MakeAppxPath @('pack', '/d', $payload, '/p', $partial, '/no') | Select-Object -Last 3 | Out-Host
     # Never use /nv: MakeAppx must perform its manifest and payload validation.
     $unpacked = Join-Path $staging 'verified'
-    Invoke-Checked $MakeAppxPath @('unpack', '/p', $partial, '/d', $unpacked, '/no') | Out-Host
+    Invoke-Checked $MakeAppxPath @('unpack', '/p', $partial, '/d', $unpacked, '/no') | Select-Object -Last 3 | Out-Host
     foreach ($file in Get-ChildItem -LiteralPath $payload -Recurse -File -Force) {
         $relative = [IO.Path]::GetRelativePath($payload, $file.FullName)
         if ((Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath (Join-Path $unpacked $relative) -Algorithm SHA256).Hash) { throw "MSIX round-trip mismatch: $relative" }
@@ -105,7 +111,11 @@ try {
     if ((Invoke-Checked git @('rev-parse', 'HEAD')) -ne $revision -or (Invoke-Checked git @('status', '--porcelain=v1'))) { throw 'Source changed while packaging.' }
     $hash = (Get-FileHash -LiteralPath $partial -Algorithm SHA256).Hash.ToLowerInvariant()
     [IO.File]::Move($partial, $package)
-    [IO.File]::WriteAllText("$package.sha256", "$hash  $name`n", [Text.UTF8Encoding]::new($false))
+    $sidecar = [IO.File]::Open("$package.sha256", [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+    try {
+        $bytes = [Text.UTF8Encoding]::new($false).GetBytes("$hash  $name`n")
+        $sidecar.Write($bytes, 0, $bytes.Length)
+    } finally { $sidecar.Dispose() }
     Write-Output "Saved unsigned MSIX: $package"
     Write-Output "Verified layout: $unpacked"
     Write-Output 'No certificate was installed, no package was registered, and nothing was published.'
