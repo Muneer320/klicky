@@ -2,7 +2,7 @@
 
 [Field guide](https://klicky.muneer320.tech/guide.html#configuration) · [CLI](CLI.md) · [Custom sounds](SOUND_PACKS.md)
 
-For everyday changes, use the Windows tray or CLI. On macOS the menu helper toggles sounds; pack/volume changes use the CLI. Edit files only while Klicky is stopped.
+For everyday changes, use the Windows tray, macOS menu helper or CLI. The macOS menu offers pause/resume, volume (including mute), sound-pack selection and refresh, service start/stop and login startup. Edit files only while Klicky is stopped.
 
 ## Settings
 

@@ -21,6 +21,9 @@ pub enum Command {
     Switch { pack: String },
     Volume { level: f32 },
     Status,
+    PlaybackStatus,
+    Pause,
+    Resume,
 }
 
 pub struct Request {
@@ -28,11 +31,20 @@ pub struct Request {
     stream: UnixStream,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PlaybackState {
+    pub sound_pack: String,
+    pub volume: f32,
+    pub paused: bool,
+}
+
 #[derive(Serialize, Deserialize)]
 struct Response {
     pid: i32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     error: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    playback: Option<PlaybackState>,
 }
 
 impl Request {
@@ -45,9 +57,22 @@ impl Request {
     }
 
     fn respond(&mut self, error: Option<String>) -> Result<()> {
+        self.respond_with_state(error, None)
+    }
+
+    pub fn playback(&mut self, state: PlaybackState) -> Result<()> {
+        self.respond_with_state(None, Some(state))
+    }
+
+    fn respond_with_state(
+        &mut self,
+        error: Option<String>,
+        playback: Option<PlaybackState>,
+    ) -> Result<()> {
         let response = serde_json::to_string(&Response {
             pid: std::process::id() as i32,
             error,
+            playback,
         })?;
         writeln!(self.stream, "{response}")?;
         Ok(())
@@ -202,6 +227,26 @@ fn read_line(stream: &mut UnixStream, deadline: Instant) -> Result<Vec<u8>> {
 }
 
 pub fn request(path: &Path, command: &Command, deadline: Instant) -> Result<i32> {
+    Ok(request_response(path, command, deadline)?.pid)
+}
+
+pub fn playback_status() -> Result<PlaybackState> {
+    let response = request_response(
+        &config::socket_path(),
+        &Command::PlaybackStatus,
+        Instant::now() + COMMAND_TIMEOUT,
+    )?;
+    if crate::lifecycle::read_pid(&config::runtime_dir())? != Some(response.pid)
+        || !crate::lifecycle::process_exists(response.pid)
+    {
+        bail!("playback response does not match the live daemon");
+    }
+    response
+        .playback
+        .context("daemon does not support structured playback status")
+}
+
+fn request_response(path: &Path, command: &Command, deadline: Instant) -> Result<Response> {
     let mut stream = connect(path, deadline)?;
     let message = format!("{}\n", serde_json::to_string(command)?);
     let mut bytes = message.as_bytes();
@@ -224,7 +269,7 @@ pub fn request(path: &Path, command: &Command, deadline: Instant) -> Result<i32>
     if let Some(error) = response.error {
         bail!("daemon rejected command: {error}");
     }
-    Ok(response.pid)
+    Ok(response)
 }
 
 #[cfg(test)]

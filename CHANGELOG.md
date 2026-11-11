@@ -4,6 +4,17 @@ All notable changes to Klicky are documented here.
 
 The project follows [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+- macOS menu playback controls for pause/resume, volume, sound packs, service start/stop and independent login startup
+- Linux/macOS pause/resume, structured playback status and login-startup commands that preserve the current session
+
+### Fixed
+
+- Keep macOS menu requests asynchronous, bound subprocess time and output, and display command failures
+
 ## 0.5.0 - 2026-11-07
 
 ### Added
