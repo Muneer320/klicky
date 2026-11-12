@@ -80,6 +80,8 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
         cfg.sound_pack, cfg.volume
     );
 
+    let mut playback = PlaybackControl::default();
+
     // Main event loop
     loop {
         if let Ok(error) = listener_error_rx.try_recv() {
@@ -132,6 +134,18 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
                         eprintln!("Failed to respond to volume request: {error:#}");
                     }
                 }
+                ipc::Command::Pause | ipc::Command::Resume => {
+                    player.clear();
+                    playback.set_paused(matches!(request.command, ipc::Command::Pause));
+                    let _ = request.acknowledge();
+                }
+                ipc::Command::PlaybackStatus => {
+                    let _ = request.playback(ipc::PlaybackState {
+                        sound_pack: cfg.sound_pack.clone(),
+                        volume: cfg.volume,
+                        paused: playback.paused,
+                    });
+                }
                 ipc::Command::Status => {
                     let _ = request.acknowledge();
                 }
@@ -140,6 +154,9 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
 
         // Play sounds for key events (non-blocking, drain all pending)
         while let Ok(key_event) = key_rx.try_recv() {
+            if !playback.accepts(key_event.timestamp) {
+                continue;
+            }
             if let Some(samples) = pack.samples.get(key_event.key_name) {
                 if is_function_key(key_event.key_name) {
                     player.play_with_volume(
@@ -171,6 +188,31 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
 
         // Small sleep to avoid busy-spinning
         thread::sleep(std::time::Duration::from_micros(500));
+    }
+}
+
+struct PlaybackControl {
+    paused: bool,
+    accept_events_since: std::time::Instant,
+}
+
+impl Default for PlaybackControl {
+    fn default() -> Self {
+        Self {
+            paused: false,
+            accept_events_since: std::time::Instant::now(),
+        }
+    }
+}
+
+impl PlaybackControl {
+    fn set_paused(&mut self, paused: bool) {
+        self.paused = paused;
+        self.accept_events_since = std::time::Instant::now();
+    }
+
+    fn accepts(&self, timestamp: std::time::Instant) -> bool {
+        !self.paused && timestamp >= self.accept_events_since
     }
 }
 
@@ -235,6 +277,19 @@ fn set_config_volume(
 mod tests {
     use super::*;
     use std::path::PathBuf;
+
+    #[test]
+    fn pause_and_resume_discard_old_events_without_replaying_them() {
+        let mut playback = PlaybackControl::default();
+        assert!(playback.accepts(std::time::Instant::now()));
+        playback.set_paused(true);
+        let during_pause = std::time::Instant::now();
+        assert!(!playback.accepts(during_pause));
+        playback.set_paused(false);
+        // Avoid depending on clock resolution at the transition boundary.
+        assert!(!playback.accepts(during_pause - std::time::Duration::from_millis(1)));
+        assert!(playback.accepts(std::time::Instant::now()));
+    }
 
     #[test]
     fn key_playback_volume_keeps_zero_silent_for_all_key_categories() {

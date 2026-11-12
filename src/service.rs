@@ -5,7 +5,7 @@ use std::process::{Command, Output, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::cli::ServiceAction;
+use crate::cli::{AutostartAction, ServiceAction};
 
 const COMMAND_TIMEOUT: Duration = Duration::from_secs(10);
 const COMMAND_POLL: Duration = Duration::from_millis(10);
@@ -178,6 +178,13 @@ fn launchctl_loaded(service: &str) -> Result<bool> {
 fn linux(action: ServiceAction) -> Result<()> {
     let unit = "klicky.service";
     match action {
+        ServiceAction::Autostart { action } => {
+            let command_name = match action {
+                AutostartAction::Enable => "enable",
+                AutostartAction::Disable => "disable",
+            };
+            command("systemctl", &["--user", command_name, unit])?;
+        }
         ServiceAction::Enable => {
             command("systemctl", &["--user", "enable", "--now", unit])?;
             crate::lifecycle::wait_ready(&crate::config::runtime_dir())?;
@@ -226,6 +233,24 @@ fn macos(action: ServiceAction) -> Result<()> {
     let domain = format!("gui/{}", unsafe { libc::getuid() });
     let service = format!("{domain}/{LABEL}");
     match action {
+        ServiceAction::Autostart { action } => {
+            match action {
+                AutostartAction::Enable => {
+                    write_plist(&plist, LABEL, &installed_binary(&home)?)?;
+                }
+                AutostartAction::Disable => {
+                    if plist.exists() {
+                        // Preserve the installed path for a currently loaded session job.
+                        fs::create_dir_all(
+                            session_plist
+                                .parent()
+                                .context("missing session directory")?,
+                        )?;
+                        fs::rename(&plist, &session_plist)?;
+                    }
+                }
+            }
+        }
         ServiceAction::Enable => {
             let binary = installed_binary(&home)?;
             if launchctl_loaded(&service)? {
@@ -428,6 +453,54 @@ fn xml_escape(value: &str) -> String {
         .replace('>', "&gt;")
         .replace('"', "&quot;")
         .replace('\'', "&apos;")
+}
+
+pub fn autostart_enabled() -> Result<bool> {
+    #[cfg(target_os = "macos")]
+    {
+        let home = dirs::home_dir().context("home directory is unavailable")?;
+        Ok(home
+            .join("Library/LaunchAgents/dev.klicky.daemon.plist")
+            .try_exists()?)
+    }
+    #[cfg(target_os = "linux")]
+    {
+        // An absent or disabled unit has no matching rows. Unlike is-enabled,
+        // this does not produce a diagnostic for a missing unit.
+        let output = match command_output(
+            "systemctl",
+            &[
+                "--user",
+                "list-unit-files",
+                "--no-legend",
+                "--no-pager",
+                "--state=enabled,enabled-runtime",
+                "klicky.service",
+            ],
+        ) {
+            Ok(output) => output,
+            Err(error)
+                if error.downcast_ref::<io::Error>().map(io::Error::kind)
+                    == Some(io::ErrorKind::NotFound) =>
+            {
+                return Ok(false);
+            }
+            Err(error) => return Err(error),
+        };
+        // Older systemd versions return 1 for an empty list, without a diagnostic.
+        if output.status.code() == Some(1) && output.stdout.is_empty() && output.stderr.is_empty() {
+            return Ok(false);
+        }
+        if !output.status.success() {
+            bail!(
+                "could not query automatic startup: {}",
+                command_output_text(&output)
+            );
+        }
+        Ok(String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .any(|line| line.split_whitespace().next() == Some("klicky.service")))
+    }
 }
 
 #[cfg(test)]

@@ -31,7 +31,15 @@ enum Commands {
     /// Set volume (0.0 - 1.0)
     Volume { level: f32 },
     /// Show current status
-    Status,
+    Status {
+        /// Emit structured playback and service state for desktop helpers
+        #[arg(long)]
+        json: bool,
+    },
+    /// Silence playback without stopping the daemon
+    Pause,
+    /// Resume playback without replaying paused events
+    Resume,
     /// Manage automatic startup and the background service
     Service {
         #[command(subcommand)]
@@ -41,6 +49,11 @@ enum Commands {
 
 #[derive(Subcommand)]
 pub(crate) enum ServiceAction {
+    /// Change login startup without changing current playback
+    Autostart {
+        #[command(subcommand)]
+        action: AutostartAction,
+    },
     /// Start at login and start now
     Enable,
     /// Stop now and do not start at login
@@ -53,6 +66,12 @@ pub(crate) enum ServiceAction {
     Status,
 }
 
+#[derive(Subcommand)]
+pub(crate) enum AutostartAction {
+    Enable,
+    Disable,
+}
+
 pub fn run() -> Result<()> {
     let cli = Cli::parse();
 
@@ -62,7 +81,14 @@ pub fn run() -> Result<()> {
         Commands::List => cmd_list()?,
         Commands::Switch { name } => cmd_switch(name)?,
         Commands::Volume { level } => cmd_volume(level)?,
-        Commands::Status => cmd_status()?,
+        Commands::Status { json: false } => cmd_status()?,
+        Commands::Status { json: true } => cmd_json_status()?,
+        Commands::Pause => {
+            ipc::send_command(&ipc::Command::Pause)?;
+        }
+        Commands::Resume => {
+            ipc::send_command(&ipc::Command::Resume)?;
+        }
         Commands::Service { action } => service::run(action)?,
     }
 
@@ -159,5 +185,34 @@ fn cmd_status() -> Result<()> {
     );
     println!("  sound pack: {}", cfg.sound_pack);
     println!("  volume:     {:.1}", cfg.volume);
+    Ok(())
+}
+
+fn cmd_json_status() -> Result<()> {
+    let cfg = config::Config::load()?;
+    let health = lifecycle::status(&config::runtime_dir())?;
+    // Never substitute saved preferences for a live daemon's confirmed state.
+    let playback = if health.responsive {
+        ipc::playback_status()?
+    } else {
+        ipc::PlaybackState {
+            sound_pack: cfg.sound_pack,
+            volume: cfg.volume,
+            paused: false,
+        }
+    };
+    println!(
+        "{}",
+        serde_json::to_string(&serde_json::json!({
+            "schema_version": 1,
+            "running": health.responsive,
+            "process_exists": health.process_exists,
+            "paused": playback.paused,
+            "sound_pack": playback.sound_pack,
+            "volume": playback.volume,
+            "packs": config::available_sound_packs(&config::sound_roots())?,
+            "autostart": service::autostart_enabled()?,
+        }))?
+    );
     Ok(())
 }

@@ -29,6 +29,8 @@ The examples below use `klicky`. In Windows, substitute the installed invocation
 | `status` | Show current configuration and responsive live state. |
 | `start` | Run the engine in the foreground. Stop the managed instance first. |
 | `stop` | Stop the current instance and wait for confirmed process exit. |
+| `pause` | Silence playback for this session without stopping the process. |
+| `resume` | Resume sounds without replaying paused events. |
 | `service enable` | Register login startup and start now. |
 | `service disable` | Disable owned login startup and stop now. |
 | `service start` | Start this session without changing login startup. |
@@ -47,12 +49,18 @@ A successful live pack/volume command confirms the change was prepared, saved an
 
 Service commands manage systemd user units on Linux, LaunchAgents on macOS and a per-user desktop app/Startup shortcut on Windows. They do not install an elevated Windows service. Windows can independently disable or defer login startup.
 
+## Linux/macOS helper controls
+
+`status --json` emits schema version 1 with `running`, `process_exists`, `paused`, `sound_pack`, `volume`, `packs` and `autostart`. A responsive daemon supplies the live playback fields; when stopped, pack and volume come from saved preferences and `paused` is false. A live process that does not answer is reported as `running: false, process_exists: true`. Invalid or unsupported live responses fail rather than being replaced with saved preferences. IPC requests have a three-second deadline.
+
+`service autostart enable` and `service autostart disable` change login startup without starting, stopping or resuming the current daemon. Existing `service enable` and `service disable` keep their start/stop behavior.
+
+Pause is independent of volume and login startup, and resets on a daemon restart. It cancels active and queued sources. Resume discards input captured before the resume transition. Muting with `volume 0` keeps the daemon active.
+
 ## Windows-only controls
 
 | Command | What it does |
 |---|---|
-| `pause` | Pause sounds for the session. |
-| `resume` | Resume when the desktop and audio are available. |
 | `retry-audio` | Reopen the default multimedia output. |
 | `diagnostics` | Read aggregate input/playback counters. No typed text or microphone recording. |
 | `service start --paused` | Launch a new background desktop instance paused. Does not pause an existing one. |
@@ -73,6 +81,6 @@ See [Windows diagnostics and recovery](WINDOWS.md) for counter meanings and bund
 klicky start --benchmark
 ```
 
-This prints mapped key names and internal timing. Use only with controlled input; do not type passwords or private text. It does not measure physical keypress-to-audible latency. Windows-only `pause`, `resume`, `retry-audio`, `diagnostics`, `--paused` and `--seconds` are not Unix CLI features.
+This prints mapped key names and internal timing. Use only with controlled input; do not type passwords or private text. It does not measure physical keypress-to-audible latency. Windows-only `retry-audio`, `diagnostics`, `--paused` and `--seconds` are not Unix CLI features.
 
 [Measurement guide](BENCHMARKS.md) · [Architecture](ARCHITECTURE.md)
