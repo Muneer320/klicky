@@ -90,6 +90,21 @@ cargo build --release
 
 For APT changes, run `python3 -B -m unittest scripts/test_apt_repository.py` and, on Linux with GnuPG and reprepro, `python3 -B scripts/test_apt_repository_integration.py PACKAGE.deb`. See [APT validation coverage](docs/MAINTAINING_APT.md#validation-coverage) for what these checks establish. For website changes, follow the [website checks](docs/WEBSITE.md#preview-and-check). In PowerShell, set `$env:PYTHONUTF8 = '1'` before running Python.
 
+## macOS menu checks
+
+Run `python3 -B scripts/test-macos-menu.py` on macOS to test the helper's subprocess client and native menu state. Run `cargo test` for playback, JSON status, and CLI regression coverage. These checks do not require installing a login service or granting keyboard access.
+
+For manual validation, record the macOS version, CPU architecture, audio hardware, and installation method:
+
+- Use keyboard navigation and VoiceOver in light and dark appearance. Check labels, submenus, disabled Pause/Resume actions, and pack/volume checkmarks.
+- Pause while typing, then resume. Confirm sound stops without changing the daemon PID or replaying old input. Check that mute and pause remain separate.
+- Set a non-preset CLI volume such as `0.73`, switch packs from the menu and CLI, and refresh after adding or removing a custom pack. Check the current selections.
+- Try an invalid pack, unavailable CLI, and stalled command. Confirm errors remain visible, the last working pack remains selected, and the menu and Quit stay responsive.
+- Toggle login startup while paused. Confirm the PID and pause state stay unchanged. Test service start/stop separately and confirm quitting the menu helper leaves the daemon running.
+- Check source/Homebrew CLI and icon overrides, upgrades, and removal. Record Intel and Apple Silicon results separately.
+
+Compilation and automated fixtures do not establish physical keyboard, audio, or VoiceOver behavior. Record those results separately in the PR, along with any checks that remain pending.
+
 ## Commits
 
 - Use a feature branch.

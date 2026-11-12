@@ -313,11 +313,8 @@ cd klicky
           <pre><code>./scripts/install-macos.sh
 ./scripts/install-macos-menu-bar.sh</code></pre>
           <p>
-            The menu offers Pause/Resume, volume with a separate mute setting,
-            sound-pack selection and refresh, service start/stop and login
-            startup. Changing login startup preserves current playback.
-            Quitting the helper leaves the daemon running. Failed actions appear
-            in the menu; use Refresh Status to retry.
+            The menu toggles the daemon; change packs/volume through the CLI.
+            Quitting the helper closes the menu, not the daemon.
           </p>
         </section>
         <section id="homebrew">
@@ -423,8 +420,8 @@ klicky volume 0.5</code></pre>
           <pre><code>&amp; "$env:LOCALAPPDATA\Programs\Klicky\klicky.exe" status</code></pre>
           <p>
             Select the intended speakers/headphones and type briefly. On
-            Windows or macOS, Resume if paused. Linux also offers CLI pause/resume
-            and service controls.
+            Windows, Resume if paused. The macOS menu toggles sounds; Linux uses
+            its service controls.
           </p>
         </section>
         <section id="cli">

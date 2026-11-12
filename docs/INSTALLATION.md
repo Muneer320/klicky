@@ -64,7 +64,7 @@ macOS requires you to allow `~/.local/bin/klicky` in **System Settings → Priva
 
 The menu offers Pause/Resume, Volume, Sound Pack, Refresh Sound Packs, Start/Stop Klicky and Start Klicky at Login. Volume zero mutes without pausing. Quitting the menu helper leaves the daemon running. Changing login startup preserves current playback. Menu actions run asynchronously; failures appear in the menu. Refresh Status retries a failed check. The helper checks for CLI changes every two seconds and when reopened.
 
-Install the CLI and helper from the same revision. `KLICKY_MENU_CLI` and `KLICKY_MENU_ICON` launcher overrides remain supported. Output-device selection, unavailable-device recovery and Retry Audio depend on the separate output-routing backend and are not included in these playback controls. See [menu validation](MACOS_MENU.md).
+Install the CLI and helper from the same revision. `KLICKY_MENU_CLI` and `KLICKY_MENU_ICON` launcher overrides remain supported. Output-device selection, unavailable-device recovery and Retry Audio depend on the separate output-routing backend and are not included in these playback controls. See [macOS menu checks](../CONTRIBUTING.md#macos-menu-checks).
 
 To skip the menu bar helper:
 
