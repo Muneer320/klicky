@@ -191,7 +191,7 @@ final class KlickyMenu: NSObject, NSApplicationDelegate, NSMenuDelegate {
         add("Sound Pack", enabled: state != nil)
         menu.items.last?.submenu = packs
         for pack in state?.packs ?? [] {
-            add(pack, action: #selector(performAction(_:)), arguments: ["switch", pack],
+            add(pack, action: #selector(performAction(_:)), arguments: ["switch", "--", pack],
                 checked: pack == state?.sound_pack, to: packs)
         }
         if let state = state, !state.packs.contains(state.sound_pack) {
