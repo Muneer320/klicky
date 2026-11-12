@@ -465,18 +465,41 @@ pub fn autostart_enabled() -> Result<bool> {
     }
     #[cfg(target_os = "linux")]
     {
-        let output = command_output(
+        // An absent or disabled unit has no matching rows. Unlike is-enabled,
+        // this does not produce a diagnostic for a missing unit.
+        let output = match command_output(
             "systemctl",
-            &["--user", "is-enabled", "--quiet", "klicky.service"],
-        )?;
-        match output.status.code() {
-            Some(0) => Ok(true),
-            Some(1) => Ok(false),
-            _ => bail!(
+            &[
+                "--user",
+                "list-unit-files",
+                "--no-legend",
+                "--no-pager",
+                "--state=enabled,enabled-runtime",
+                "klicky.service",
+            ],
+        ) {
+            Ok(output) => output,
+            Err(error)
+                if error.downcast_ref::<io::Error>().map(io::Error::kind)
+                    == Some(io::ErrorKind::NotFound) =>
+            {
+                return Ok(false);
+            }
+            Err(error) => return Err(error),
+        };
+        // Older systemd versions return 1 for an empty list, without a diagnostic.
+        if output.status.code() == Some(1) && output.stdout.is_empty() && output.stderr.is_empty() {
+            return Ok(false);
+        }
+        if !output.status.success() {
+            bail!(
                 "could not query automatic startup: {}",
                 command_output_text(&output)
-            ),
+            );
         }
+        Ok(String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .any(|line| line.split_whitespace().next() == Some("klicky.service")))
     }
 }
 

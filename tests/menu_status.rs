@@ -20,7 +20,7 @@ impl Home {
         ));
         fs::create_dir_all(root.join("bin")).unwrap();
         let systemctl = root.join("bin/systemctl");
-        fs::write(&systemctl, "#!/bin/sh\nexit 1\n").unwrap();
+        fs::write(&systemctl, "#!/bin/sh\ncase \"$2\" in is-enabled) exit 1;; list-unit-files) exit 1;; *) exit 99;; esac\n").unwrap();
         fs::set_permissions(systemctl, fs::Permissions::from_mode(0o700)).unwrap();
         Self(root)
     }
@@ -76,7 +76,10 @@ fn missing_daemon_has_structured_offline_preferences_and_pack_list() {
 
 #[test]
 fn live_status_uses_confirmed_playback_instead_of_saved_config() {
-    let home = Home::new();
+    assert_live_status(&Home::new());
+}
+
+fn assert_live_status(home: &Home) {
     fs::create_dir_all(home.runtime()).unwrap();
     fs::create_dir_all(home.config()).unwrap();
     fs::write(
@@ -106,6 +109,7 @@ fn live_status_uses_confirmed_playback_instead_of_saved_config() {
     });
     let status = home.json_status();
     server.join().unwrap();
+    assert_eq!(status["autostart"], false);
     assert_eq!(status["running"], true);
     assert_eq!(status["paused"], true);
     assert_eq!(status["sound_pack"], "active");
@@ -139,4 +143,58 @@ fn login_startup_changes_do_not_start_or_stop_the_daemon() {
         .success());
     assert_eq!(home.json_status()["autostart"], false);
     assert!(home.config().join("session.plist").exists());
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn live_json_status_does_not_require_systemctl() {
+    let home = Home::new();
+    fs::remove_file(home.0.join("bin/systemctl")).unwrap();
+    assert_live_status(&home);
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn json_status_reports_enabled_startup() {
+    let home = Home::new();
+    fs::write(
+        home.0.join("bin/systemctl"),
+        "#!/bin/sh\nprintf 'klicky.service enabled enabled\\n'\n",
+    )
+    .unwrap();
+    assert_eq!(home.json_status()["autostart"], true);
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn json_status_preserves_service_manager_errors() {
+    let home = Home::new();
+    let program = home.0.join("bin/systemctl");
+    fs::write(
+        &program,
+        "#!/bin/sh\nprintf 'Failed to connect to bus: Permission denied\\n' >&2\nexit 1\n",
+    )
+    .unwrap();
+    let output = home.command(&["status", "--json"]);
+    assert!(!output.status.success());
+    assert!(output.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("Permission denied"));
+
+    // A present but non-executable manager must not be mistaken for a missing one.
+    fs::set_permissions(program, fs::Permissions::from_mode(0o600)).unwrap();
+    let output = home.command(&["status", "--json"]);
+    assert!(!output.status.success());
+    assert!(output.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("failed to start systemctl"));
+}
+
+#[test]
+fn switch_accepts_option_like_pack_names_after_terminator() {
+    let home = Home::new();
+    for pack in ["--help", "-custom"] {
+        fs::create_dir_all(home.0.join("sounds").join(pack)).unwrap();
+        let output = home.command(&["switch", "--", pack]);
+        assert!(output.status.success(), "{output:?}");
+        assert_eq!(home.json_status()["sound_pack"], pack);
+    }
 }
