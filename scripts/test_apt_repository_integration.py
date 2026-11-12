@@ -141,6 +141,7 @@ def main() -> None:
 
         required_files = [
             "index.html",
+            "404.html",
             "guide.html",
             "sitemap.xml",
             "robots.txt",
