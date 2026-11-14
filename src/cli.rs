@@ -151,12 +151,12 @@ fn cmd_volume(level: f32) -> Result<()> {
     }
 
     match ipc::send_command(&ipc::Command::Volume { level }) {
-        Ok(_) => println!("Volume set to {level:.1}"),
+        Ok(_) => println!("{}", volume_confirmation(level, false)),
         Err(error) if ipc::is_daemon_unavailable(&error) => {
             let mut cfg = config::Config::load()?;
             cfg.volume = level;
             cfg.save()?;
-            println!("Volume set to {level:.1} (will apply on next start)");
+            println!("{}", volume_confirmation(level, true));
         }
         Err(error) => {
             return Err(error)
@@ -184,8 +184,35 @@ fn cmd_status() -> Result<()> {
         if status.responsive { "yes" } else { "no" }
     );
     println!("  sound pack: {}", cfg.sound_pack);
-    println!("  volume:     {:.1}", cfg.volume);
+    println!("{}", status_volume_line(cfg.volume));
     Ok(())
+}
+
+/// Text for Linux/macOS volume confirmations and `status`.
+///
+/// `Display` keeps a quiet nonzero value visible. The endpoints stay `0.0` and
+/// `1.0`, which `Display` would otherwise print as `0` and `1`.
+fn format_cli_volume(level: f32) -> String {
+    if level == 0.0 {
+        "0.0".to_string()
+    } else if level == 1.0 {
+        "1.0".to_string()
+    } else {
+        format!("{level}")
+    }
+}
+
+fn volume_confirmation(level: f32, deferred: bool) -> String {
+    let shown = format_cli_volume(level);
+    if deferred {
+        format!("Volume set to {shown} (will apply on next start)")
+    } else {
+        format!("Volume set to {shown}")
+    }
+}
+
+fn status_volume_line(level: f32) -> String {
+    format!("  volume:     {}", format_cli_volume(level))
 }
 
 fn cmd_json_status() -> Result<()> {
@@ -215,4 +242,29 @@ fn cmd_json_status() -> Result<()> {
         }))?
     );
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{format_cli_volume, status_volume_line, volume_confirmation};
+
+    #[test]
+    fn cli_volume_text_keeps_quiet_settings_and_readable_endpoints() {
+        assert_eq!(format_cli_volume(0.0), "0.0");
+        assert_eq!(format_cli_volume(1.0), "1.0");
+        assert_eq!(format_cli_volume(0.04), "0.04");
+        assert_eq!(format_cli_volume(0.125), "0.125");
+        assert_eq!(format_cli_volume(0.8), "0.8");
+        assert_eq!(format_cli_volume(0.5), "0.5");
+        assert_eq!(format_cli_volume(0.0004), "0.0004");
+        assert_eq!(format_cli_volume(0.999), "0.999");
+        assert_eq!(volume_confirmation(0.04, false), "Volume set to 0.04");
+        assert_eq!(
+            volume_confirmation(0.125, true),
+            "Volume set to 0.125 (will apply on next start)"
+        );
+        assert_eq!(status_volume_line(0.04), "  volume:     0.04");
+        assert_eq!(status_volume_line(0.0), "  volume:     0.0");
+        assert_eq!(status_volume_line(1.0), "  volume:     1.0");
+    }
 }

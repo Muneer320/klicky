@@ -47,6 +47,8 @@ klicky status
 
 A successful live pack/volume command confirms the change was prepared, saved and applied. An error or timeout means the change is not confirmed; inspect status and logs before retrying. Use controls rather than editing configuration while the app runs.
 
+On Linux and macOS, the `volume` confirmation and the text `status` volume field print the chosen 0.0 to 1.0 value. A quiet setting such as `0.04` stays `0.04` instead of rounding to `0.0`, and the endpoints stay `0.0` and `1.0`. `status --json` still emits the stored number.
+
 Service commands manage systemd user units on Linux, LaunchAgents on macOS and a per-user desktop app/Startup shortcut on Windows. They do not install an elevated Windows service. Windows can independently disable or defer login startup.
 
 ## Linux/macOS helper controls
