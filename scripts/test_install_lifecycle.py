@@ -233,7 +233,7 @@ class InstallLifecycleTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("PID 1234", result.stderr)
 
-            arch = ROOT / "packaging/arch/klicky.install"
+            arch = ROOT / "packaging/arch/check-stopped.sh"
             result = subprocess.run(
                 ["bash", "-c", '. "$1"; check_packaged_daemon_stopped "$2"',
                     "test", str(arch), str(proc)],

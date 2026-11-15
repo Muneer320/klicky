@@ -1,3 +1,5 @@
+#!/bin/bash
+
 check_packaged_daemon_stopped() {
   proc_root=${1:-/proc}
   if [[ ! -d "$proc_root" ]]; then
@@ -16,10 +18,6 @@ check_packaged_daemon_stopped() {
   done
 }
 
-pre_upgrade() {
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
   check_packaged_daemon_stopped
-}
-
-pre_remove() {
-  check_packaged_daemon_stopped
-}
+fi

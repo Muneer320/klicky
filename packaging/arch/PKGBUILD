@@ -1,17 +1,16 @@
 # Maintainer: Muneer Alam <muneer.alam320@gmail.com>
 pkgname=klicky
 pkgver=0.5.0
-pkgrel=1
+pkgrel=2
 pkgdesc="Low-latency mechanical keyboard sounds for Linux"
 arch=('x86_64')
-install=klicky.install
 url="https://github.com/Muneer320/klicky"
 license=('MIT')
 depends=('alsa-lib' 'gcc-libs' 'glibc' 'systemd')
 makedepends=('cargo' 'git')
 options=('!debug')
-source=("$pkgname::git+$url.git#tag=v$pkgver")
-b2sums=('SKIP')
+source=("$pkgname::git+$url.git#tag=v$pkgver" 'check-stopped.sh' 'klicky-stopped.hook')
+b2sums=('SKIP' '24358edbed2dea61e1f9bf9635d3ab9d131db9380c2d8ba7ec57728352a8f3603b94f9a6db72200a854b8742118df1a5ca76121d6ac4b993a6670b71a4ca71d9' 'ae28c4517f71f541175e6303b9d71b5f6976296b45b0a8163d33bc714025d151aca33482dcc733f4948e34fdf0fcc318aae918478e3d4cec168e96947f176091')
 
 prepare() {
   cd "$pkgname"
@@ -32,6 +31,8 @@ package() {
   cd "$pkgname"
 
   install -Dm755 target/release/klicky "$pkgdir/usr/bin/klicky"
+  install -Dm755 "$srcdir/check-stopped.sh" "$pkgdir/usr/share/libalpm/scripts/klicky-check-stopped"
+  install -Dm644 "$srcdir/klicky-stopped.hook" "$pkgdir/usr/share/libalpm/hooks/klicky-stopped.hook"
   install -Dm644 packaging/systemd/klicky-packaged.service \
     "$pkgdir/usr/lib/systemd/user/klicky.service"
   install -Dm644 packaging/udev/70-klicky.rules \
