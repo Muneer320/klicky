@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.muneer320.klicky-bar",
+  "name": "Klicky Bar",
+  "version": "0.1.0",
+  "author": "Muneer Alam",
+  "license": "MIT",
+  "description": "Keyboard sound controls for Klicky",
+  "kinds": ["bar-widget"],
+  "entryPoints": {"barWidget": "BarWidget.qml"},
+  "barWidget": {
+    "displayName": "Klicky Bar",
+    "description": "Pause, sound packs, volume and startup controls",
+    "category": "System",
+    "allowMultiple": false
+  }
+}
