@@ -9,7 +9,7 @@ Start with three checks: is Klicky running, is its volume above zero, and is the
 <details>
 <summary><strong>No sound or some typing sounds are missing</strong></summary>
 
-Check the tray state, pack and volume. Choose **Retry audio** after changing output devices. If the problem continues, run:
+Check the tray state, pack and volume. Choose **Retry audio** after changing output devices. For Microsoft Store or Scoop, run `klicky status` and `klicky diagnostics` in a new terminal. With the standalone installer, use:
 
 ```powershell
 & "$env:LOCALAPPDATA\Programs\Klicky\klicky.exe" status
@@ -41,6 +41,8 @@ Close Klicky in other signed-in sessions and retry. Do not force-replace a runni
 <details>
 <summary><strong>Windows Security blocks Klicky</strong></summary>
 
+For Store installations, update through Microsoft Store and check Windows Security for any specific detection. The Store-delivered MSIX is signed; standalone EXE/ZIP downloads remain unsigned. Signing does not exempt an app from malware scanning.
+
 Stop setup if Windows Security reports a threat. Keep protection enabled; do not add an exclusion or restore a quarantined file just to finish installation. An unsigned-app reputation warning and an antivirus threat detection require different investigations.
 
 The Windows install command reports whether the installer failed to open, installation failed, or startup failed after installation. A completed wizard does not mean Klicky started successfully. For a blocked launch or missing control executable, check **Windows Security → Protection history** before retrying. The helper includes the Windows launch error or process exit code when available, and the installer log path after setup runs. A missing file alone does not prove a security detection; if Protection history shows none, repair with the official installer. For a startup timeout, check the tray and current status before retrying.
@@ -57,6 +59,8 @@ Note the Klicky build and detection name, and contact the maintainer through the
 
 <details>
 <summary><strong>Removal reports a missing registration or control executable</strong></summary>
+
+If you installed through Microsoft Store, quit Klicky and remove it through **Settings → Apps → Installed apps → Klicky**. The script below handles standalone installer copies. Back up custom packs before Store uninstall or Reset, which clear package-private data.
 
 Use the current [Windows removal helper](https://klicky.muneer320.tech/uninstall.ps1) in PowerShell under the account that installed Klicky. It reads the current user's Windows registration directly. Registry access errors are reported rather than treated as an absent installation. If registration is missing, the helper can use a current installer-owned copy's local uninstaller after checking its identity, matching removal data and paths. The native uninstaller still stops Klicky and removes its owned startup entry; the helper does not delete application files itself. Portable copies and incomplete or ambiguous installer copies need the separate portable removal steps or installer repair.
 

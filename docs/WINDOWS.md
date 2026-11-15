@@ -1,10 +1,14 @@
 # Klicky on Windows
 
-Use Klicky on a **Windows 11 x64 desktop**. Its tray menu changes sounds and volume, pauses playback and controls login startup. The Windows installer and executables are unsigned.
+Use Klicky on a **Windows 11 x64 desktop**. Its tray menu changes sounds and volume, pauses playback and controls login startup. Choose Microsoft Store or the standalone installer/portable ZIP; standalone downloads are unsigned.
 
 ## Install and start
 
-Run in PowerShell:
+**[Get Klicky from Microsoft Store](https://apps.microsoft.com/detail/9NLVFX7T2X6Q)**
+for installation and Store-managed updates. Open Klicky from Start and use its
+tray menu. Login startup is optional. [Store setup and removal](https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#microsoft-store).
+
+For the standalone installer, run in PowerShell:
 
 ```powershell
 irm https://klicky.muneer320.tech/install.ps1 | iex
@@ -23,9 +27,9 @@ Extract the complete portable ZIP into a stable folder and open `klicky-desktop.
 
 ## Everyday controls
 
-The tray offers packs, volume in 10% steps, Pause/Resume, Retry audio, Refresh sound packs and Quit. **Start with Windows** manages this bundle's login shortcut and opens Windows Startup settings. Windows may independently disable or defer startup; [startup help](https://github.com/Muneer320/klicky/blob/master/docs/TROUBLESHOOTING.md).
+The tray offers packs, volume in 10% steps, Pause/Resume, Retry audio, Refresh sound packs and Quit. **Start with Windows** manages the Store startup task or the standalone bundle's login shortcut. Windows may independently disable or defer startup; [startup help](https://github.com/Muneer320/klicky/blob/master/docs/TROUBLESHOOTING.md).
 
-The CLI lives at `%LOCALAPPDATA%\Programs\Klicky\klicky.exe` for an installer setup. Run these from a portable folder, or use that installed path:
+The Store and Scoop expose `klicky` in a new terminal. The CLI lives at `%LOCALAPPDATA%\Programs\Klicky\klicky.exe` for a standalone installer setup. Run these from a portable folder, use that installed path, or replace `.\klicky.exe` with `klicky` for Store/Scoop:
 
 ```powershell
 .\klicky.exe status
@@ -52,13 +56,17 @@ Pack and volume changes apply after loading and saving succeed. If the app is no
 .\klicky.exe service status
 ```
 
-Enable registers the sibling desktop executable and starts it; disable removes its recognized shortcut and stops this bundle. Start/stop changes this session without altering startup. `start --paused` affects a newly launched instance, not an already-running one. Existing Windows approval and edited/foreign startup entries are preserved. Startup work runs separately from playback; Quit waits for in-flight work.
+Enable registers the Store startup task or sibling desktop shortcut and starts the app; disable turns off that startup choice and stops this bundle. Start/stop changes this session without altering startup. `start --paused` affects a newly launched instance, not an already-running one. Existing Windows approval and edited/foreign startup entries are preserved. Startup work runs separately from playback; Quit waits for in-flight work.
 
 </details>
 
 ## Files and custom sounds
 
-Settings live in `%LOCALAPPDATA%\Klicky\config.toml`. Put custom packs in `%LOCALAPPDATA%\Klicky\sounds`; they override bundled packs with the same name. Bundled sounds resolve beside the executable, not from the current working directory. `KLICKY_SYSTEM_SOUNDS_DIR` can supply an absolute alternate root. Discovery accepts up to 512 directories per root and 512 distinct pack names.
+Standalone installer, portable and Scoop copies use `%LOCALAPPDATA%\Klicky\config.toml` and `%LOCALAPPDATA%\Klicky\sounds` for custom packs. Custom packs override bundled packs with the same name.
+
+For a new Store installation, Windows redirects newly created data into `%LOCALAPPDATA%\Packages\MuneerAlam.Klicky_zj8ab2whxa2g0\LocalCache\Local\Klicky`. Put custom packs in its `sounds` subfolder. Existing standalone data can remain at the shared path above; back up both locations when switching methods. Store updates and Repair retain package-private data; Reset and uninstall clear it. Quit Klicky before Repair, and back up custom packs before Reset or removal.
+
+Bundled sounds resolve beside the executable, not from the current working directory. `KLICKY_SYSTEM_SOUNDS_DIR` can supply an absolute alternate root. Discovery accepts up to 512 directories per root and 512 distinct pack names.
 
 Klicky follows the default multimedia output. Choose Retry audio if an output needs reopening. Playback pauses outside the verified active/unlocked desktop and discards obsolete input on session transitions. Input is passive Raw Input: it does not suppress keys or synthesize text. [Troubleshooting](https://github.com/Muneer320/klicky/blob/master/docs/TROUBLESHOOTING.md)
 
@@ -68,7 +76,7 @@ Klicky follows the default multimedia output. Choose Retry audio if an output ne
 & "$env:LOCALAPPDATA\Programs\Klicky\klicky.exe" diagnostics
 ```
 
-This reads aggregate counters without pausing or restarting the app, recording keys or accessing a microphone. Compare reports with the same process ID and creation time:
+For Store/Scoop, use `klicky diagnostics` instead. This reads aggregate counters without pausing or restarting the app, recording keys or accessing a microphone. Compare reports with the same process ID and creation time:
 
 | Counter | Meaning |
 |---|---|
@@ -82,6 +90,10 @@ This reads aggregate counters without pausing or restarting the app, recording k
 Snapshots are approximate concurrent totals, not audible-latency measurements. `input: null` means the input backend is absent. Older previews need an update to support this command. Keep reports local unless you choose to share them.
 
 ## Installation and recovery
+
+**Microsoft Store:** updates are managed by Store. Quit Klicky before using **Settings → Apps → Installed apps → Klicky → Advanced options → Repair**. Back up custom packs before Reset or uninstall, which clear package-private data. Use Windows Settings to remove the Store copy; the PowerShell uninstaller handles standalone installer copies.
+
+**Standalone installer:**
 
 The installer uses `%LOCALAPPDATA%\Programs\Klicky`, preserves configuration and custom sounds on removal, and updates only after verifying shutdown and exclusive bundle ownership. It restarts a previously running app with its pause choice preserved. Another signed-in session or an unconfirmed shutdown blocks replacement.
 
