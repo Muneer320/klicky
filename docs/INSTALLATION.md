@@ -332,7 +332,7 @@ sudo apt update && sudo apt install --only-upgrade klicky  # APT repository
 systemctl --user start klicky.service
 ```
 
-For a downloaded Arch or Debian package, replace the APT command with the corresponding package-install command above. Other signed-in users must stop their packaged Klicky processes too; the package refuses to replace a running binary. If an update fails, resolve the reported error and restart the service when ready.
+For a downloaded Arch or Debian package, replace the APT command with the corresponding package-install command above. Other signed-in users must stop their packaged Klicky processes too. Arch builds with Klicky's transaction hook abort upgrade/removal while a packaged engine is running; this protection takes effect after the hook has been installed, so stop Klicky manually before the first upgrade from an older package. If an update fails, resolve the reported error and restart the service when ready.
 
 To remove:
 
