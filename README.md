@@ -82,7 +82,9 @@ This also builds from source. Grant Accessibility to the executable shown by `br
 <details>
 <summary><strong>Windows 11 · x64</strong></summary>
 
-**[Get Klicky from Microsoft Store](https://apps.microsoft.com/detail/9NLVFX7T2X6Q)** for installation and Store-managed updates. Open Klicky from Start, then use its tray menu for sounds and optional login startup. All ten packs are included.
+<a href="https://apps.microsoft.com/detail/9NLVFX7T2X6Q"><img src="assets/website/microsoft-store.svg" alt="Download Klicky from the Microsoft Store" width="200" /></a>
+
+Install Klicky from the Store for automatic updates. Open it from Start, then use its tray menu for sounds and optional login startup. All ten packs are included.
 
 <details>
 <summary>Other methods: PowerShell installer, portable ZIP or Scoop</summary>

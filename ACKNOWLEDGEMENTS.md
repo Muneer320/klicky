@@ -49,4 +49,6 @@ The Klicky mascot identity and selected cozy keyboard artwork establish the proj
 
 The website and outlined wordmarks use Nunito by The Nunito Project Authors. The typeface and web subset retain the [SIL Open Font License](assets/website/fonts/OFL.txt), separately from Klicky's MIT-licensed application code.
 
+The Microsoft Store badge is Microsoft's unmodified artwork, used to link to Klicky's Store listing. The local copy comes from [Microsoft's official badge image](https://get.microsoft.com/images/en-us%20dark.svg), following the [HTML-only badge guidance](https://github.com/microsoft/app-store-badge#html-only). The Microsoft mark is separate from Klicky's own artwork.
+
 The [sound demo](https://klicky.muneer320.tech/#demo) uses Linux, Apple and Windows icons from Font Awesome Free 6.7.2 by Fonticons, Inc. under CC BY 4.0. See the [demo credits and icon license](assets/website/demo/CREDITS.md) for attribution and reuse.

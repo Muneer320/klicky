@@ -724,7 +724,7 @@
                 <div class="os-content" data-tabs="Windows installation method">
                   <section id="windows-store" data-tab-label="Microsoft Store">
                     <h4 class="tab-heading">One app, ready to click.</h4>
-                    <p><a class="button honey" href="https://apps.microsoft.com/detail/9NLVFX7T2X6Q">Get Klicky from Microsoft Store</a></p>
+                    <p><a class="store-badge" href="https://apps.microsoft.com/detail/9NLVFX7T2X6Q"><img src="assets/microsoft-store.svg" width="161" height="44" alt="Download Klicky from the Microsoft Store" /></a></p>
                     <p>Install the complete app with all ten sound packs. Open Klicky from Start, then choose your sounds and optional login startup from its tray menu. The Store manages updates.</p>
                     <p>No terminal or build tools needed. <a href="guide.html#windows">Store setup, custom sounds &amp; removal</a>.</p>
                   </section>
@@ -1061,47 +1061,39 @@ $env:KLICKY_SYSTEM_SOUNDS_DIR = (Resolve-Path .\sounds).Path
       <div class="wrap">
         <div class="footer-top">
           <div>
-            <a class="brand" href="./"
-              ><img
-                src="assets/branding/klicky.svg"
-                width="46"
-                height="46"
-                alt=""
-              />Klicky</a
-            >
+            <a class="brand" href="./"><img src="assets/branding/klicky.svg" width="32" height="32" alt="" />Klicky</a>
             <p>A little sound for every keystroke.</p>
           </div>
           <nav class="footer-links" aria-label="Footer">
-            <a href="guide.html">Documentation</a
-            ><a href="privacy.html">Privacy</a
-            ><a href="https://github.com/Muneer320/klicky">Source</a
-            ><a href="https://github.com/Muneer320/klicky/releases">Releases</a
-            ><a href="https://github.com/Muneer320/klicky/issues">Get help</a
-            ><a href="https://alternativeto.net/software/klicky/about/">AlternativeTo</a
-            ><a href="https://muneer320.tech/projects/klicky/"
-              >The engineering story</a
-            ><a
-              href="https://dev.to/muneer320/i-wanted-keyboard-sounds-on-linux-then-i-fell-down-the-audio-stack-3b1d"
-              >Audio deep dive on DEV</a
-            >
+            <div class="footer-group">
+              <p class="footer-label">Project</p>
+              <ul role="list">
+                <li><a href="guide.html">Documentation</a></li>
+                <li><a href="privacy.html">Privacy</a></li>
+                <li><a href="https://github.com/Muneer320/klicky">Source</a></li>
+                <li><a href="https://github.com/Muneer320/klicky/releases">Releases</a></li>
+                <li><a href="https://github.com/Muneer320/klicky/issues">Get help</a></li>
+              </ul>
+            </div>
+            <div class="footer-group">
+              <p class="footer-label">Explore</p>
+              <ul role="list">
+                <li><a href="https://github.com/Muneer320/klicky/blob/master/docs/CHARACTER.md">Meet Klicky</a></li>
+                <li><a href="https://muneer320.tech/projects/klicky/">Engineering story</a></li>
+                <li><a href="https://dev.to/muneer320/i-wanted-keyboard-sounds-on-linux-then-i-fell-down-the-audio-stack-3b1d">Audio deep dive (DEV)</a></li>
+                <li><a href="https://alternativeto.net/software/klicky/about/">AlternativeTo</a></li>
+              </ul>
+            </div>
           </nav>
         </div>
-        <p class="footer-bottom">
-          Built on
-          <a href="https://github.com/Sauhard74/klicky"
-            >Sauhard Gupta's original Klicky</a
-          >, with work by <a href="https://muneer320.tech/">Muneer Alam</a> and
-          contributors.
-          <a
-            href="https://github.com/Muneer320/klicky/blob/master/ACKNOWLEDGEMENTS.md"
-            >Credits &amp; licenses</a
-          >
-          ·
-          <a
-            href="https://github.com/Muneer320/klicky/blob/master/docs/CHARACTER.md"
-            >Meet the character</a
-          >. No analytics. No account. Just clicks.
-        </p>
+        <div class="footer-bottom">
+          <p>Maintained by <a href="https://muneer320.tech/">Muneer Alam</a> and contributors.</p>
+          <ul class="footer-meta" role="list" aria-label="Acknowledgements">
+            <li><a href="https://github.com/Sauhard74/klicky">Original macOS project</a></li>
+            <li><a href="https://github.com/Muneer320/klicky/blob/master/ACKNOWLEDGEMENTS.md">Credits</a></li>
+            <li><a href="https://github.com/Muneer320/klicky/blob/master/LICENSE">MIT license</a></li>
+          </ul>
+        </div>
       </div>
     </footer>
   </body>
