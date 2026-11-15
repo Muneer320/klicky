@@ -1,6 +1,6 @@
 # Release checklist
 
-Klicky v0.5.0 brings Linux, macOS and Windows 11 x64 into one release. Linux ships Debian/Arch packages; Windows ships an unsigned per-user installer and portable ZIP; macOS uses the versioned source installer, with its menu helper included by default.
+Klicky v0.5.0 brings Linux, macOS and Windows 11 x64 into one release. Linux ships Debian/Arch packages; Windows offers Microsoft Store distribution plus an unsigned per-user installer and portable ZIP; macOS uses the versioned source installer, with its menu helper included by default.
 
 For each release, keep the preparation PR open until approval to transition the public installation commands and website. A candidate build is not a published release. The older Windows preview remains a historical download; new Windows users should use the stable installer.
 
@@ -51,3 +51,7 @@ Publish the signed APT archive using the [maintenance procedure](MAINTAINING_APT
 - Check website install/removal endpoints, README/download links, source checksums, sound previews and custom domain. Verify APT signatures, candidate version and retained historical packages.
 - Record exact release evidence in the PR or private continuity notes. Preserve unresolved recovery material and remove merged branches when no longer needed.
 - Additional package-manager submissions are separate reviewed publications. Do not advertise a command until that channel is actually available.
+
+## Microsoft Store updates
+
+Keep the [Store identity and package-version mapping](WINDOWS_STORE.md#build) stable across updates. Build and validate the exact MSIX, submit it with accurate listing/capability information and review Microsoft's determination. Certification and public publication are separate steps; use a manual publication hold until the release is approved. Verify the public listing and production package after publishing, then synchronize installation links and documentation. Store signing applies to the delivered MSIX, not the standalone EXE/ZIP assets.

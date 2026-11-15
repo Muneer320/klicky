@@ -24,6 +24,7 @@ The app runs quietly in the background. Pick a pack, set the volume and carry on
 | Your system | Install with | Setup |
 |---|---|---|
 | Ubuntu / compatible Debian | **APT** | [Add Klicky's signed repository](docs/APT_REPOSITORY.md) |
+| Windows 11 · x64 | **Microsoft Store** | [Get Klicky](https://apps.microsoft.com/detail/9NLVFX7T2X6Q) |
 | macOS · Apple Silicon | **Homebrew** | [Install from Klicky's tap](docs/INSTALLATION.md#homebrew) |
 | Windows 11 · x64 | **Scoop** | [Install from Klicky's bucket](docs/INSTALLATION.md#scoop) |
 | Arch / Omarchy · x86_64 | **pacman** | [Download and install the release package](docs/INSTALLATION.md#linux) |
@@ -81,7 +82,12 @@ This also builds from source. Grant Accessibility to the executable shown by `br
 <details>
 <summary><strong>Windows 11 · x64</strong></summary>
 
-Run in PowerShell:
+**[Get Klicky from Microsoft Store](https://apps.microsoft.com/detail/9NLVFX7T2X6Q)** for installation and Store-managed updates. Open Klicky from Start, then use its tray menu for sounds and optional login startup. All ten packs are included.
+
+<details>
+<summary>Other methods: PowerShell installer, portable ZIP or Scoop</summary>
+
+For the standalone installer, run in PowerShell:
 
 ```powershell
 irm https://klicky.muneer320.tech/install.ps1 | iex
@@ -93,12 +99,14 @@ Prefer to click a download? Get the [Windows installer](https://github.com/Munee
 
 Already use Scoop? Follow the [Scoop setup guide](docs/INSTALLATION.md#scoop).
 
+</details>
+
 [Windows controls and troubleshooting](docs/WINDOWS.md) · [All Windows installation methods](docs/INSTALLATION.md#windows)
 
 </details>
 
 > [!NOTE]
-> Windows downloads are unsigned, so SmartScreen may show an unknown-publisher warning. If Windows Security reports a threat, stop setup and follow the [security-block guidance](docs/TROUBLESHOOTING.md#windows).
+> The standalone Windows EXE/ZIP downloads are unsigned; the Microsoft Store package is signed through Store delivery. If Windows Security reports a threat, stop setup and follow the [security-block guidance](docs/TROUBLESHOOTING.md#windows).
 
 Want to read the helpers first? [Linux/macOS script](https://klicky.muneer320.tech/install.sh) · [Windows script](https://klicky.muneer320.tech/install.ps1)
 
@@ -121,7 +129,7 @@ klicky volume 0.5                 # Set volume to 50% (range: 0 to 1)
 klicky status                     # Check current state
 ```
 
-Source installations use `~/.local/bin/klicky` if your shell doesn't find `klicky`. Windows supports the same commands; Scoop adds them to PATH. With the default Windows installer location, use:
+Source installations use `~/.local/bin/klicky` if your shell doesn't find `klicky`. Microsoft Store and Scoop expose `klicky` in a new Windows terminal. For the standalone Windows installer, use:
 
 ```powershell
 & "$env:LOCALAPPDATA\Programs\Klicky\klicky.exe" status
@@ -173,12 +181,14 @@ The [troubleshooting guide](docs/TROUBLESHOOTING.md) covers permissions, startup
 <details>
 <summary><strong>How do I update?</strong></summary>
 
-Use the method you installed with. For helper installations, rerun the install command above. For package managers, follow the [Homebrew](docs/INSTALLATION.md#homebrew) or [Scoop](docs/INSTALLATION.md#scoop) update steps, including stopping Klicky first. Settings and custom sounds are preserved.
+Use the method you installed with. Microsoft Store manages updates for its copy. For helper installations, rerun the install command above. For package managers, follow the [Homebrew](docs/INSTALLATION.md#homebrew) or [Scoop](docs/INSTALLATION.md#scoop) update steps, including stopping Klicky first. Settings and custom sounds are preserved during updates.
 
 </details>
 
 <details>
 <summary><strong>How do I uninstall, including desktop controls?</strong></summary>
+
+**Microsoft Store:** quit Klicky and uninstall it through **Settings → Apps → Installed apps**. Store removal clears package-private settings and custom packs, so back them up first. [Store data and removal](docs/INSTALLATION.md#microsoft-store).
 
 For installations made with the download helpers:
 

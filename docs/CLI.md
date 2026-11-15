@@ -10,14 +10,15 @@ Use `klicky --help` or `klicky help COMMAND` to inspect the build you installed.
 - Linux/macOS source installer: `~/.local/bin/klicky`; add `~/.local/bin` to your shell PATH if desired.
 - Windows installer: `%LOCALAPPDATA%\Programs\Klicky\klicky.exe`. It is not registered globally on PATH.
 - Windows portable: `klicky.exe` inside the extracted bundle, alongside `klicky-desktop.exe` and `sounds`.
+- Microsoft Store or Scoop: `klicky` in a new terminal. For a missing Store alias, check **Settings → Apps → Advanced app settings → App execution aliases**.
 
-PowerShell example:
+Standalone installer PowerShell example:
 
 ```powershell
 & "$env:LOCALAPPDATA\Programs\Klicky\klicky.exe" status
 ```
 
-The examples below use `klicky`. In Windows, substitute the installed invocation above or `.\klicky.exe` from the bundle folder.
+The examples below use `klicky`, which works directly with Microsoft Store or Scoop. For a standalone Windows installation, substitute the installed invocation above or `.\klicky.exe` from the portable folder.
 
 ## Common commands
 
@@ -47,9 +48,9 @@ klicky status
 
 A successful live pack/volume command confirms the change was prepared, saved and applied. An error or timeout means the change is not confirmed; inspect status and logs before retrying. Use controls rather than editing configuration while the app runs.
 
-On Linux and macOS, the `volume` confirmation and the text `status` volume field print the chosen 0.0 to 1.0 value. A quiet setting such as `0.04` stays `0.04` instead of rounding to `0.0`, and the endpoints stay `0.0` and `1.0`. `status --json` still emits the stored number.
+On Linux and macOS, the `volume` confirmation and the text `status` volume field print the chosen 0.0 to 1.0 value. A quiet setting such as `0.04` stays `0.04` instead of rounding to `0.0`, and the endpoints stay `0.0` and `1.0`. `status --json` continues to emit a numeric volume value.
 
-Service commands manage systemd user units on Linux, LaunchAgents on macOS and a per-user desktop app/Startup shortcut on Windows. They do not install an elevated Windows service. Windows can independently disable or defer login startup.
+Service commands manage systemd user units on Linux, LaunchAgents on macOS and a per-user desktop app on Windows. Store installations use a Windows startup task; standalone installations use an owned Startup shortcut. They do not install an elevated Windows service. Windows can independently disable or defer login startup.
 
 ## Linux/macOS helper controls
 

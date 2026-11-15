@@ -1,8 +1,13 @@
-# Microsoft Store packaging
+# Microsoft Store
 
 Klicky's Store package is a Windows 11 x64, full-trust desktop MSIX. It uses the
-same Rust input and audio engine as the EXE/ZIP build. The Store listing is not
-public until Microsoft certifies it and publication is approved.
+same Rust input and audio engine as the EXE/ZIP build.
+
+**[Get Klicky from Microsoft Store](https://apps.microsoft.com/detail/9NLVFX7T2X6Q)**,
+then open it from Start. The Store installs all ten sound packs, signs the
+delivered package and manages updates. Login startup is optional and starts
+disabled. [Installation, updates and removal](INSTALLATION.md#microsoft-store)
+cover everyday use; the sections below describe package maintenance.
 
 ## Build
 

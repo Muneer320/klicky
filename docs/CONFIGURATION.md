@@ -26,7 +26,8 @@ Pause is a session control, not a third configuration field. Startup is managed 
 |---|---|---|
 | Linux | `~/.config/klicky`, or `$XDG_CONFIG_HOME/klicky` | `/usr/share/klicky/sounds` |
 | macOS | `~/Library/Application Support/klicky` | None by default; the installer puts packs in the user root |
-| Windows | `%LOCALAPPDATA%\Klicky` | `sounds` beside the executable |
+| Windows standalone / Scoop | `%LOCALAPPDATA%\Klicky` | `sounds` beside the executable |
+| Windows Microsoft Store | [Package-private app data](WINDOWS.md#files-and-custom-sounds) for new settings | `sounds` inside the package |
 
 Settings live at `ROOT/config.toml`; custom packs go in `ROOT/sounds/PACK_NAME`. Windows bundled packs resolve beside the executable, independently of your working directory.
 

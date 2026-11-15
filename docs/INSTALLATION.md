@@ -4,7 +4,21 @@
 
 ## Windows
 
-**Windows 11 x64.** Run in PowerShell:
+**Windows 11 x64.** [Get Klicky from Microsoft Store](https://apps.microsoft.com/detail/9NLVFX7T2X6Q), then open it from Start. Use the tray menu to choose a pack, adjust volume, pause/resume or enable **Start with Windows**. The Store installs the complete app and manages updates.
+
+### Microsoft Store
+
+The Store package includes the CLI and all ten sound packs. No separate sound download, build tools or administrator terminal is needed. The `klicky` app execution alias is available in a new terminal; if it is missing, check **Settings → Apps → Advanced app settings → App execution aliases**.
+
+Login startup starts disabled and can be enabled from the tray. If Windows has disabled it, use **Settings → Apps → Startup**. Windows may defer startup while signing in.
+
+Store settings and custom sounds can live in the package's per-user data area. See [Windows files and custom sounds](WINDOWS.md#files-and-custom-sounds) for the path and the distinction from existing standalone settings. Back up custom packs before switching installation methods; use one copy for login startup.
+
+Store updates retain app data. To remove it, quit Klicky and choose **Settings → Apps → Installed apps → Klicky → Uninstall**. Uninstall and **Advanced options → Reset** clear package-private data; **Repair** preserves it. Existing standalone files in `%LOCALAPPDATA%\Klicky` can remain. The PowerShell removal helper is for standalone installer copies, not the Store package.
+
+### Standalone installer and portable ZIP
+
+For the standalone installer, run in PowerShell:
 
 ```powershell
 irm https://klicky.muneer320.tech/install.ps1 | iex
@@ -222,9 +236,9 @@ Without systemd/udev, provide keyboard-device access and use your session's star
 
 ## Uninstall
 
-Choose your system. The removal command stops Klicky, disables its login startup and removes the app plus its installed menu/tray/bar controls. **Settings and custom sound packs are kept by default.**
+Choose the method you installed with. The download-helper commands stop Klicky, disable its login startup and remove the app plus its installed menu/tray/bar controls. **These helpers keep settings and custom packs by default.**
 
-Installed through Homebrew or Scoop? Use [package-manager removal](#package-manager-removal) instead of the download helpers.
+Installed through Microsoft Store? Follow [Store removal](#microsoft-store); it clears package-private data. For Homebrew or Scoop, use [package-manager removal](#package-manager-removal).
 
 <details>
 <summary><strong>Linux or macOS</strong></summary>
@@ -298,7 +312,9 @@ Choose the method you used to install. The methods below keep settings and custo
 <details>
 <summary><strong>Windows</strong></summary>
 
-Run a newer installer to update. It stops the installed app, updates the files and restores its previous running/pause choice. Remove it through **Settings → Apps → Installed apps → Klicky**.
+**Microsoft Store:** use Store-managed updates. Quit Klicky if an update is waiting for it to close. [Store removal and data lifecycle](#microsoft-store).
+
+**Standalone installer:** run a newer installer to update. It stops the installed app, updates the files and restores its previous running/pause choice. Remove it through **Settings → Apps → Installed apps → Klicky**.
 
 For a portable copy, remove its login startup from the tray, choose Quit and delete the bundle. Do not replace files while it is running. See [Windows recovery](WINDOWS.md#installation-and-recovery) if an update fails.
 

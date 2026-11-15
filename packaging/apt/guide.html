@@ -350,7 +350,14 @@ klicky service start</code></pre>
         </section>
         <section id="windows">
           <h2>Windows.</h2>
-          <p><strong>Windows 11 x64 desktop.</strong> Run in PowerShell:</p>
+          <p><strong>Windows 11 x64 desktop.</strong> <a href="https://apps.microsoft.com/detail/9NLVFX7T2X6Q">Get Klicky from Microsoft Store</a>, then open it from Start. All ten sound packs are included; the Store manages updates. Choose sounds, volume and optional login startup from the tray.</p>
+          <details>
+            <summary><strong>Microsoft Store: CLI, custom sounds and app data</strong></summary>
+            <p>Use <code>klicky</code> in a new terminal. If the command is missing, check Settings → Apps → Advanced app settings → App execution aliases. Login startup starts disabled and can be enabled in the tray; Windows Startup settings remain in control.</p>
+            <p>New Store settings and custom packs use the package's private data area. Store updates and Repair preserve it; Reset and uninstall clear it. Back up custom packs before switching methods or clearing data. <a href="https://github.com/Muneer320/klicky/blob/master/docs/WINDOWS.md#files-and-custom-sounds">Find the Store data folder</a>.</p>
+          </details>
+          <h3>Standalone installer and portable ZIP</h3>
+          <p>For the standalone installer, run in PowerShell:</p>
           <div class="command">
             <pre><code id="win-setup">irm https://klicky.muneer320.tech/install.ps1 | iex</code></pre>
             <button
@@ -383,7 +390,7 @@ klicky service start</code></pre>
             and notices together.
           </p>
           <p>
-            Windows downloads are unsigned. Windows 10, ARM64 and x86 are not
+            Standalone EXE/ZIP downloads are unsigned; the Store package is signed through Store delivery. Windows 10, ARM64 and x86 are not
             initial targets.
             <a href="#windows-security">Security help</a> ·
             <a
@@ -414,8 +421,8 @@ klicky volume 0.5</code></pre>
           <p>
             If the shell cannot find a source installation, use
             <code>~/.local/bin/klicky</code>. Linux packages install
-            <code>/usr/bin/klicky</code>. Windows has tray controls and this
-            installed CLI:
+            <code>/usr/bin/klicky</code>. On Windows, Store and Scoop users can run
+            <code>klicky status</code> in a new terminal. For the standalone installer, use:
           </p>
           <pre><code>&amp; "$env:LOCALAPPDATA\Programs\Klicky\klicky.exe" status</code></pre>
           <p>
@@ -427,9 +434,10 @@ klicky volume 0.5</code></pre>
         <section id="cli">
           <h2>CLI reference.</h2>
           <p>
-            Common commands below work on Unix and Windows. Windows uses the
-            installed path above, or <code>.\klicky.exe</code> from a portable
-            folder; it is not added to PATH.
+            Common commands below work on Unix and Windows. Microsoft Store and
+            Scoop expose <code>klicky</code> in a new terminal. For the standalone
+            installer, use the path above; portable copies use <code>.\klicky.exe</code>
+            from their folder. Standalone setup does not add the CLI to PATH.
           </p>
           <div
             class="table-scroll"
@@ -547,8 +555,12 @@ volume = 0.8</code></pre>
                   <td><code>~/Library/Application Support/klicky</code></td>
                 </tr>
                 <tr>
-                  <td>Windows</td>
+                  <td>Windows standalone / Scoop</td>
                   <td><code>%LOCALAPPDATA%\Klicky</code></td>
+                </tr>
+                <tr>
+                  <td>Windows Microsoft Store</td>
+                  <td><a href="https://github.com/Muneer320/klicky/blob/master/docs/WINDOWS.md#files-and-custom-sounds">Package-private app data</a> for new settings</td>
                 </tr>
               </tbody>
             </table>
@@ -731,6 +743,7 @@ klicky switch my-pack</code></pre>
                 Random missing ordinary key sounds are worth reporting even if
                 restarting helps.
               </p>
+              <p>For Microsoft Store or Scoop, use <code>klicky status</code> and <code>klicky diagnostics</code>. For the standalone installer:</p>
               <pre><code>&amp; "$env:LOCALAPPDATA\Programs\Klicky\klicky.exe" status
 &amp; "$env:LOCALAPPDATA\Programs\Klicky\klicky.exe" diagnostics</code></pre>
             </details>
@@ -870,7 +883,7 @@ systemctl --user start klicky.service</code></pre>
             helper. Check Accessibility again if replacement stops macOS input.
           </p>
           <p>
-            Windows: run the newer installer. It verifies shutdown and preserves
+            Microsoft Store manages updates for its copy. For standalone Windows setup, run the newer installer. It verifies shutdown and preserves
             the running/pause choice. Disable owned startup and quit before
             replacing/moving a portable copy. Keep recovery material after a
             failed update.
@@ -885,9 +898,10 @@ systemctl --user start klicky.service</code></pre>
           <p>
             Removal stops the app, disables owned login startup and removes
             installed controls.
-            <strong>Settings and custom sounds stay by default.</strong> Purge
-            explicitly deletes them.
+            <strong>Download-helper removal keeps settings and custom sounds by default.</strong> Purge explicitly deletes them. Microsoft Store removal clears package-private data.
           </p>
+          <h3>Microsoft Store</h3>
+          <p>Quit Klicky, then open Settings → Apps → Installed apps → Klicky → Uninstall. Back up custom sounds first: Store uninstall and Advanced options → Reset clear package-private data. Repair preserves it. Existing standalone files can remain outside the package. Use Windows Settings for the Store copy; the PowerShell helper below removes standalone installer copies.</p>
           <h3>Linux / macOS</h3>
           <div class="command">
             <pre><code id="unix-remove">curl -fsSL https://klicky.muneer320.tech/uninstall.sh | bash</code></pre>
