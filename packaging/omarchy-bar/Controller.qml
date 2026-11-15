@@ -65,12 +65,13 @@ Item {
   }
 
   function execute(args) {
-    if (busy || !known) return
+    if (busy || !known) return false
     epoch += 1
     actionError = ""
     known = false
     action.command = bounded(args, "30s")
     action.running = true
+    return true
   }
 
   Component.onCompleted: refresh()
