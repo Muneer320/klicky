@@ -37,7 +37,9 @@ Ui.BarWidget {
     placementDeadline = 40
     // Moving can destroy this widget. Let a bounded detached helper finish
     // the move and save the choice independently of the QML object's lifetime.
-    placementProcess.command = ["timeout", "--kill-after=1s", "15s", "bash", decodeURIComponent(Qt.resolvedUrl("move-placement.sh").toString().replace(/^file:\/\//, "")), choice, section, String(index)]
+    // Quickshell rewrites local QML URLs to qs:/// as well as file:///.
+    const helperPath = decodeURIComponent(Qt.resolvedUrl("move-placement.sh").toString().replace(/^(file|qs):\/\//, ""))
+    placementProcess.command = ["timeout", "--kill-after=1s", "15s", "bash", helperPath, choice, section, String(index)]
     placementTimer.restart()
     placementProcess.startDetached()
   }
