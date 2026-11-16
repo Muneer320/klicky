@@ -1,3 +1,11 @@
+klicky (0.6.1-1) unstable; urgency=medium
+
+  * Remove native Klicky Bar and legacy entries during full uninstallation.
+  * Keep legacy bar placement beside the clock and prevent duplicate controls.
+  * Simplify installation, Omarchy and distribution documentation.
+
+ -- Muneer Alam <muneer.alam320@gmail.com>  Mon, 16 Nov 2026 15:00:00 +0000
+
 klicky (0.6.0-1) unstable; urgency=medium
 
   * Add Linux/macOS pause, resume and structured playback status.

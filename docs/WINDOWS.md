@@ -14,7 +14,7 @@ For the standalone installer, run in PowerShell:
 irm https://klicky.muneer320.tech/install.ps1 | iex
 ```
 
-Or download the [published Windows installer](https://github.com/Muneer320/klicky/releases/download/v0.6.0/klicky-0.6.0-windows-x64-setup.exe). The helper verifies the download, opens the wizard and starts Klicky when it finishes.
+Or download the [published Windows installer](https://github.com/Muneer320/klicky/releases/download/v0.6.1/klicky-0.6.1-windows-x64-setup.exe). The helper verifies the download, opens the wizard and starts Klicky when it finishes.
 
 The wizard installs the app and all ten packs for your user. It needs no elevation, Rust or Visual Studio. Open Klicky from Start, then choose **Resume** from the tray. Login startup is optional. [Other installation methods](https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#windows)
 

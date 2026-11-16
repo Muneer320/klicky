@@ -97,7 +97,7 @@ irm https://klicky.muneer320.tech/install.ps1 | iex
 
 Downloads the installer, verifies its SHA-256 and opens setup for your user. Choose whether to start at login; the helper starts Klicky after setup. No Rust, Visual Studio or administrator terminal needed.
 
-Prefer to click a download? Get the [Windows installer](https://github.com/Muneer320/klicky/releases/download/v0.6.0/klicky-0.6.0-windows-x64-setup.exe) or [portable ZIP](https://github.com/Muneer320/klicky/releases/download/v0.6.0/klicky-0.6.0-windows-x64.zip). For the ZIP, extract the whole folder and open `klicky-desktop.exe`.
+Prefer to click a download? Get the [Windows installer](https://github.com/Muneer320/klicky/releases/download/v0.6.1/klicky-0.6.1-windows-x64-setup.exe) or [portable ZIP](https://github.com/Muneer320/klicky/releases/download/v0.6.1/klicky-0.6.1-windows-x64.zip). For the ZIP, extract the whole folder and open `klicky-desktop.exe`.
 
 Already use Scoop? Follow the [Scoop setup guide](docs/INSTALLATION.md#scoop).
 

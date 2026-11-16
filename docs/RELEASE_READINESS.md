@@ -1,6 +1,6 @@
 # Release checklist
 
-Klicky v0.6.0 adds Linux/macOS playback controls and Klicky Bar for Omarchy, while retaining Linux, macOS and Windows 11 x64 support. Linux ships Debian/Arch packages; Windows offers Microsoft Store distribution plus an unsigned per-user installer and portable ZIP; macOS uses the versioned source installer, with its menu helper included by default.
+Klicky v0.6.1 fixes Linux removal of native and legacy Omarchy controls, prevents duplicate legacy/native bar controls, and consolidates installation and distribution guidance. Supported platforms and audio backends are unchanged: Linux, macOS and Windows 11 x64. Linux ships Debian/Arch packages; Windows offers Microsoft Store distribution plus an unsigned per-user installer and portable ZIP; macOS uses the versioned source installer, with its menu helper included by default.
 
 For each release, keep the preparation PR open until approval to transition the public installation commands and website. A candidate build is not a published release. The older Windows preview remains a historical download; new Windows users should use the stable installer.
 
@@ -11,7 +11,7 @@ The [release workflow](../.github/workflows/release.yml) accepts a manual run on
 ```bash
 gh workflow run release.yml --ref YOUR_REVIEWED_BRANCH
 gh run list --workflow release.yml
-gh run download RUN_ID --name klicky-0.6.0-release-candidate --dir candidate
+gh run download RUN_ID --name klicky-0.6.1-release-candidate --dir candidate
 ```
 
 The workflow reuses Linux/macOS CI, macOS Intel/Apple Silicon installation/removal, Windows core checks, Debian/Arch packaging and signed APT integration checks. It builds the Windows packages using the pinned toolchain and Inno compiler, archives the exact source, then verifies the combined asset set. `RELEASE-MANIFEST.json` records source revision/tree, signing status, sizes and hashes; `SHA256SUMS` also covers the manifest.
@@ -20,11 +20,11 @@ A separate Windows 11 runner removes its inherited scan exclusions, updates Defe
 
 Expected payloads:
 
-- `klicky_0.6.0-1_amd64.deb`
-- `klicky-0.6.0-1-x86_64.pkg.tar.zst`
-- `klicky-0.6.0-windows-x64-setup.exe` and its `.sha256`
-- `klicky-0.6.0-windows-x64.zip` and its `.sha256`
-- `klicky-0.6.0-source.tar.gz`
+- `klicky_0.6.1-1_amd64.deb`
+- `klicky-0.6.1-1-x86_64.pkg.tar.zst`
+- `klicky-0.6.1-windows-x64-setup.exe` and its `.sha256`
+- `klicky-0.6.1-windows-x64.zip` and its `.sha256`
+- `klicky-0.6.1-source.tar.gz`
 
 ## Before approval
 

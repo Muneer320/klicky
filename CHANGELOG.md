@@ -6,6 +6,8 @@ The project follows [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+## 0.6.1 - 2026-11-16
+
 ### Fixed
 
 - Remove Klicky Bar through Omarchy’s native plugin manager during full Linux uninstallation, and clean older toggle entries from every bar section
