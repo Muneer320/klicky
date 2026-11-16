@@ -30,7 +30,9 @@ Ui.BarWidget {
     if (!section) return
     const layout = bar && bar.shell ? bar.shell.barConfig.layout || {} : {}
     const others = (layout[section] || []).filter(function(entry) { return entry.id !== root.moduleName })
-    const index = choice === "right" || choice === "clock-left" ? others.length : 0
+    // Keep the outer widgets in place: append to the left group and prepend
+    // to the right group, so Klicky sits on each group's inward-facing side.
+    const index = choice === "left" || choice === "clock-left" ? others.length : 0
     placementError = ""
     requestedPlacement = choice
     requestedSection = section

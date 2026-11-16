@@ -2,7 +2,7 @@
 
 Klicky's sound controls in the Omarchy bar: pause and resume, sound packs, volume, engine start/stop and start at login. Left-click or right-click the keyboard icon to open the controls. Escape or a click outside closes them. The popup supports keyboard focus with Tab and follows your Omarchy theme.
 
-On first setup, choose **Left edge**, **Right edge**, **Left of clock** or **Right of clock**. Klicky remembers the choice in your normal bar configuration. **Move in bar** opens the choices again later. The positions beside the clock use Omarchy's adjacent sections so the clock stays centered. Changing position preserves the other widgets and Klicky's executable setting; it never starts or stops playback.
+On first setup, choose **Left side**, **Right side**, **Left of clock** or **Right of clock**. Left side places Klicky after the existing left-side widgets, such as workspaces; Right side places it before the existing right-side widgets. On a vertical bar these are **Upper side** and **Lower side**. Klicky remembers the choice in your normal bar configuration. **Move in bar** opens the choices again later. The positions beside the clock use Omarchy's adjacent sections so the clock stays centered. Changing position preserves the other widgets and Klicky's executable setting; it never starts or stops playback.
 
 ## Requirements
 
