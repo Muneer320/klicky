@@ -1,0 +1,71 @@
+name: Microsoft Store package
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published stable Klicky release
+        required: true
+        default: v0.6.1
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Validate release tag
+        id: release
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          if ($env:RELEASE_TAG -cnotmatch '^v[0-9]+\.[0-9]+\.[0-9]+$') { throw 'Expected a stable version tag.' }
+          "tag=$env:RELEASE_TAG" >> $env:GITHUB_OUTPUT
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.release.outputs.tag }}
+      - name: Download and verify the published portable bundle
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          $release = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$env:RELEASE_TAG" | ConvertFrom-Json
+          if ($LASTEXITCODE -or $release.draft -or $release.prerelease) { throw 'A published stable release is required.' }
+          $version = $env:RELEASE_TAG.Substring(1)
+          $archive = "klicky-$version-windows-x64.zip"
+          $download = Join-Path $env:RUNNER_TEMP 'store-release'
+          gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --pattern $archive --pattern SHA256SUMS --pattern RELEASE-MANIFEST.json --dir $download
+          if ($LASTEXITCODE) { throw 'Release download failed.' }
+          foreach ($name in @($archive, 'RELEASE-MANIFEST.json')) {
+            $entries = @(Get-Content (Join-Path $download 'SHA256SUMS') | Where-Object { ($_ -split '\s+', 2)[1] -ceq $name })
+            if ($entries.Count -ne 1) { throw "Expected one checksum for $name." }
+            $expected = ($entries[0] -split '\s+', 2)[0]
+            if ((Get-FileHash (Join-Path $download $name) -Algorithm SHA256).Hash -ine $expected) { throw "Checksum mismatch: $name" }
+          }
+          $manifest = Get-Content (Join-Path $download 'RELEASE-MANIFEST.json') -Raw | ConvertFrom-Json
+          $revision = git rev-parse HEAD
+          if ($LASTEXITCODE) { throw 'Cannot read source revision.' }
+          $tree = git rev-parse 'HEAD^{tree}'
+          if ($LASTEXITCODE) { throw 'Cannot read source tree.' }
+          if ($manifest.version -cne $version -or $manifest.source_revision -cne $revision -or $manifest.source_tree -cne $tree) { throw 'Release source identity differs from the checked-out tag.' }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "archive=$(Join-Path $download $archive)" >> $env:GITHUB_OUTPUT
+      - name: Build and validate the Store package
+        run: |
+          ./scripts/build-windows-msix.ps1 `
+            -PortableArchive '${{ steps.source.outputs.archive }}' `
+            -IdentityName 'MuneerAlam.Klicky' `
+            -Publisher 'CN=79911295-74D5-4E52-9D61-594928B77F88' `
+            -PublisherDisplayName 'Muneer Alam'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: klicky-store-${{ steps.source.outputs.version }}
+          path: target/windows-msix/*.msix*
+          if-no-files-found: error
+          retention-days: 30

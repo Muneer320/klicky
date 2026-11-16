@@ -39,6 +39,23 @@ when Klicky reaches 1.0. The app's displayed/CLI version remains 0.6.1. An expli
 package version must also increase from the previous Store submission. Keep the
 identity stable across upgrades.
 
+### Package a published release
+
+The [Microsoft Store package workflow](../.github/workflows/windows-store.yml)
+accepts a published stable tag and uses Klicky’s existing Store identity. It
+verifies the release ZIP and manifest against `SHA256SUMS`, checks their source
+revision/tree against the tag, then runs MakeAppx validation and a payload
+round-trip without rebuilding the release binaries:
+
+```bash
+gh workflow run windows-store.yml --ref master -f tag=v0.6.1
+```
+
+Download the `klicky-store-VERSION` artifact from the completed run. It contains
+the unsigned Store-upload MSIX and its checksum. The workflow does not install
+or sign the package, submit it for certification, or publish an update. Follow
+the qualification and submission checks below before promotion.
+
 The package includes all ten sound packs, copyright notices, dependency notices
 and source archives required by the portable distribution. It also includes the
 empty bundle lease marker because installed MSIX files are read-only.
