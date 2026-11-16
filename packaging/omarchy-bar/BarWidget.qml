@@ -8,8 +8,11 @@ Ui.BarWidget {
   readonly property bool opened: popup.opened
   readonly property bool popoutSwitchClosing: popup.popoutSwitchClosing
   readonly property bool placementChosen: ["left", "right", "clock-left", "clock-right"].indexOf(setting("placement", "")) !== -1
-  readonly property bool placementBusy: placementProcess.running
+  readonly property bool placementBusy: placementTimer.running
   property string placementError: ""
+  property string requestedPlacement: ""
+  property string requestedSection: ""
+  property int placementDeadline: 0
   property bool setupPrompted: false
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
@@ -29,10 +32,14 @@ Ui.BarWidget {
     const others = (layout[section] || []).filter(function(entry) { return entry.id !== root.moduleName })
     const index = choice === "right" || choice === "clock-left" ? others.length : 0
     placementError = ""
-    // Save the setup choice and placement in one native transaction: moving
-    // may destroy this widget, so success must not need a follow-up write.
-    placementProcess.command = ["timeout", "--kill-after=1s", "10s", "omarchy", "bar", "set", moduleName, "placement", choice, "--section", section, "--index", String(index)]
-    placementProcess.running = true
+    requestedPlacement = choice
+    requestedSection = section
+    placementDeadline = 40
+    // Moving can destroy this widget. Let a bounded detached helper finish
+    // the move and save the choice independently of the QML object's lifetime.
+    placementProcess.command = ["timeout", "--kill-after=1s", "15s", "bash", decodeURIComponent(Qt.resolvedUrl("move-placement.sh").toString().replace(/^file:\/\//, "")), choice, section, String(index)]
+    placementTimer.restart()
+    placementProcess.startDetached()
   }
 
   function offerSetup() {
@@ -53,11 +60,21 @@ Ui.BarWidget {
   }
   Process {
     id: placementProcess
-    stdout: StdioCollector {}
-    stderr: StdioCollector {}
-    onExited: function(code) {
-      if (code !== 0) root.placementError = "Could not move Klicky. Please try again."
-      else popup.placementExpanded = false
+  }
+  Timer {
+    id: placementTimer
+    interval: 400
+    repeat: true
+    onTriggered: {
+      const layout = root.bar && root.bar.shell ? root.bar.shell.barConfig.layout || {} : {}
+      const entries = layout[root.requestedSection] || []
+      if (root.setting("placement", "") === root.requestedPlacement && entries.some(function(entry) { return entry.id === root.moduleName })) {
+        stop()
+        popup.placementExpanded = false
+      } else if (--root.placementDeadline <= 0) {
+        stop()
+        root.placementError = "Could not save bar placement. Please try again."
+      }
     }
   }
 

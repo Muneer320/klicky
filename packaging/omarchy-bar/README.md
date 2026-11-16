@@ -20,7 +20,7 @@ Audio uses Klicky's current system-default output. Device selection is a separat
 
 The widget launches no shell command strings, captures no keyboard events and makes no network requests. Commands run asynchronously with deadlines. Status refreshes every ten seconds, or every two seconds while the popup is open.
 
-Placement uses the native `omarchy bar set` command to save the choice and move the widget in one transaction. The setup prompt returns only if its saved `placement` setting is removed. The included English catalog falls back to English for other Omarchy languages; additional translations can be added under `i18n/`.
+Placement uses the native `omarchy bar move` command, then saves the choice with `omarchy bar set`. A bounded helper completes both steps even when moving recreates the widget. The setup prompt returns only if its saved `placement` setting is removed. The included English catalog falls back to English for other Omarchy languages; additional translations can be added under `i18n/`.
 
 ## Development and publication
 
