@@ -53,8 +53,85 @@ jobs:
   windows-packages:
     uses: ./.github/workflows/windows-portable.yml
 
+  windows-security:
+    needs: windows-packages
+    # This Windows 11 image retains Defender. The x64 payload is scanned as
+    # data; this job does not add ARM application support or execute it.
+    runs-on: windows-11-arm
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: klicky-windows-x64-unsigned
+          path: ${{ runner.temp }}/klicky-scan
+      - name: Scan the exact Windows release files with Defender
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP 'klicky-scan'
+          $reportPath = Join-Path $env:RUNNER_TEMP 'windows-security.json'
+          $report = @{ result = 'not-completed'; files = @() }
+          try {
+            $status = Get-MpComputerStatus
+            if (-not $status.AMServiceEnabled -or -not $status.AntivirusEnabled -or -not $status.RealTimeProtectionEnabled) {
+              throw 'Defender protection is unavailable; no scan qualification can be claimed.'
+            }
+            $preferences = Get-MpPreference
+            # Hosted images exclude their drives. Remove those inherited
+            # exclusions only on this disposable scan runner, never on a PC.
+            foreach ($kind in @('ExclusionPath', 'ExclusionExtension', 'ExclusionProcess')) {
+              $values = @($preferences.$kind | Where-Object { $_ })
+              if ($values.Count -ne 0) {
+                $remove = @{}
+                $remove[$kind] = $values
+                Remove-MpPreference @remove
+              }
+            }
+            $preferences = Get-MpPreference
+            foreach ($kind in @('ExclusionPath', 'ExclusionExtension', 'ExclusionProcess')) {
+              if (@($preferences.$kind | Where-Object { $_ }).Count -ne 0) {
+                throw 'Runner still has Defender exclusions; no scan qualification can be claimed.'
+              }
+            }
+            Update-MpSignature
+            $status = Get-MpComputerStatus
+            if ($status.AntivirusSignatureAge -gt 1) { throw 'Defender signatures are stale.' }
+            $report.engineVersion = $status.AMEngineVersion
+            $report.signatureVersion = $status.AntivirusSignatureVersion
+            $report.signatureUpdated = $status.AntivirusSignatureLastUpdated.ToUniversalTime().ToString('o')
+            $report.files = @(Get-ChildItem -LiteralPath $root -File | ForEach-Object {
+              @{ name = $_.Name; sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
+            })
+            $archives = @(Get-ChildItem -LiteralPath $root -Filter '*.zip')
+            if ($archives.Count -ne 1) { throw 'Expected one portable archive.' }
+            Expand-Archive -LiteralPath $archives[0].FullName -DestinationPath (Join-Path $root 'expanded')
+            Start-MpScan -ScanType CustomScan -ScanPath $root
+            $detections = @(Get-MpThreatDetection | Where-Object {
+              @($_.Resources | Where-Object { $_.IndexOf($root, [StringComparison]::OrdinalIgnoreCase) -ge 0 }).Count -gt 0
+            })
+            if ($detections.Count -ne 0) { throw 'Defender detected a threat in the candidate.' }
+            foreach ($file in $report.files) {
+              $path = Join-Path $root $file.name
+              if (-not (Test-Path -LiteralPath $path) -or (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $file.sha256) {
+                throw 'A candidate file changed or was removed during scanning.'
+              }
+            }
+            $report.result = 'passed'
+          } catch {
+            $report.error = $_.Exception.Message
+            throw
+          } finally {
+            $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $reportPath -Encoding UTF8
+          }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-security-evidence
+          path: ${{ runner.temp }}/windows-security.json
+          if-no-files-found: error
+
   assemble:
-    needs: [source, unix-checks, windows-checks, linux-packages, windows-packages]
+    needs: [source, unix-checks, windows-checks, linux-packages, windows-packages, windows-security]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

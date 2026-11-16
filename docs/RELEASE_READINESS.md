@@ -16,6 +16,8 @@ gh run download RUN_ID --name klicky-0.6.0-release-candidate --dir candidate
 
 The workflow reuses Linux/macOS CI, macOS Intel/Apple Silicon installation/removal, Windows core checks, Debian/Arch packaging and signed APT integration checks. It builds the Windows packages using the pinned toolchain and Inno compiler, archives the exact source, then verifies the combined asset set. `RELEASE-MANIFEST.json` records source revision/tree, signing status, sizes and hashes; `SHA256SUMS` also covers the manifest.
 
+A separate Windows 11 runner removes its inherited scan exclusions, updates Defender signatures and scans the original Windows packages plus the expanded portable payload. Release assembly requires that scan to pass. `windows-security-evidence` records the engine/signature versions and scanned file hashes; unavailable protection, remaining exclusions, stale signatures or detections fail the check. These changes strengthen protection only on the disposable runner and never change a user's PC. This is an antivirus scan of those files, not code signing or a guarantee against future detections. The ARM runner only scans the x64 files as data and does not qualify ARM application support.
+
 Expected payloads:
 
 - `klicky_0.6.0-1_amd64.deb`
