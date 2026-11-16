@@ -76,7 +76,7 @@ The included udev rule adds `uaccess` only to devices tagged with `ID_INPUT_KEYB
 
 ### macOS
 
-Standard keys use `rdev`, which is backed by a macOS event tap. A second session-level event tap handles function-row media behavior on Mac keyboards. Both paths emit the same internal key names used by Linux.
+Standard keys use `rdev`, which is backed by a macOS event tap. A second session-level event tap handles function-row media behavior on Mac keyboards. Both paths emit the same internal key names used by Linux. The supplementary listener in `src/media_keys.rs` filters system-defined media-key presses, maps them to the shared function-key names and re-enables its event tap after a timeout. The engine applies the function-key gain adjustment within the configured volume limits; mute remains silent. macOS input permissions still apply.
 
 ### Windows
 

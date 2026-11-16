@@ -6,6 +6,15 @@ The project follows [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+### Fixed
+
+- Remove Klicky Bar through Omarchy’s native plugin manager during full Linux uninstallation, and clean older toggle entries from every bar section
+- Keep the legacy Omarchy toggle beside the clock and prevent duplicate native/legacy controls
+
+### Changed
+
+- Consolidate Omarchy setup/removal guidance and move current macOS media-key details into the architecture reference
+
 ## 0.6.0 - 2026-11-16
 
 ### Added

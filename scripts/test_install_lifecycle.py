@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import json
 import shutil
 import subprocess
 import tempfile
@@ -193,6 +194,48 @@ class InstallLifecycleTests(unittest.TestCase):
             purge = self.run_script(script, env, "--purge")
             self.assertEqual(purge.returncode, 0, purge.stderr)
             self.assertFalse(config_file.parent.exists())
+
+    def test_full_uninstall_removes_both_bar_integrations_and_preserves_other_widgets(self):
+        for fail in (False, True):
+            with self.subTest(plugin_failure=fail), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                env = self.make_shell_environment(root)
+                _, binary, _ = self.prepare_uninstall(root, env)
+                fake_bin = root / "fake-bin"
+                self.make_executable(fake_bin / "id", "#!/bin/sh\nif [ \"$1\" = -u ]; then echo 1000; else /usr/bin/id \"$@\"; fi\n")
+                self.make_executable(fake_bin / "uname", "#!/bin/sh\necho Linux\n")
+                self.make_executable(fake_bin / "pacman", "#!/bin/sh\nexit 1\n")
+                self.make_executable(fake_bin / "dpkg-query", "#!/bin/sh\nexit 1\n")
+                self.make_executable(fake_bin / "omarchy-shell", "#!/bin/sh\nexit 0\n")
+                self.make_executable(fake_bin / "omarchy-restart-shell", "#!/bin/sh\nexit 0\n")
+                self.make_executable(fake_bin / "omarchy", "#!/bin/sh\nprintf '%s\\n' \"$*\" >> \"$EVENT_LOG\"\nexit " + ("9" if fail else "0") + "\n")
+                omarchy = Path(env["HOME"]) / ".config/omarchy"
+                plugin = omarchy / "plugins/io.github.muneer320.klicky-bar"
+                plugin.mkdir(parents=True)
+                legacy = omarchy / "bar/modules/klicky.qml"
+                legacy.parent.mkdir(parents=True)
+                legacy.write_text("legacy toggle")
+                config = omarchy / "shell.json"
+                layout = {"left": [{"id": "omarchy.workspaces"}, {"id": "klicky"}],
+                          "centerBegin": [{"id": "io.github.muneer320.klicky-bar"}],
+                          "right": [{"id": "omarchy.audio"}]}
+                config.write_text(json.dumps({"bar": {"layout": layout}, "unrelated": True}))
+                original = config.read_bytes()
+                result = self.run_script(ROOT / "scripts/uninstall.sh", env)
+                if fail:
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertTrue(binary.exists())
+                    self.assertEqual(config.read_bytes(), original)
+                else:
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(json.loads(config.read_text()), {"bar": {"layout": {
+                        "left": [{"id": "omarchy.workspaces"}], "centerBegin": [],
+                        "right": [{"id": "omarchy.audio"}]}}, "unrelated": True})
+                    self.assertFalse(binary.exists())
+                    self.assertFalse(legacy.exists())
+                    self.assertTrue((Path(env["XDG_CONFIG_HOME"]) / "klicky/config.toml").exists())
+                self.assertIn("plugin remove io.github.muneer320.klicky-bar --yes",
+                              Path(env["EVENT_LOG"]).read_text())
 
     def test_debian_and_arch_guards_block_active_packaged_binary(self):
         with tempfile.TemporaryDirectory(prefix="klicky-package-guard-") as directory:
