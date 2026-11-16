@@ -10,6 +10,7 @@ The project follows [Semantic Versioning](https://semver.org/).
 
 - macOS menu playback controls for pause/resume, volume, sound packs, service start/stop and independent login startup
 - Linux/macOS pause/resume, structured playback status and login-startup commands that preserve the current session
+- Klicky Bar for Omarchy 4.5: themed playback controls, sound packs, volume, engine/login controls and remembered bar placement
 
 ### Fixed
 

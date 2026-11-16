@@ -12,6 +12,30 @@ On first setup, choose **Left side**, **Right side**, **Left of clock** or **Rig
 
 The published Klicky v0.5.0 does **not** provide these Unix control APIs. This plugin is a development candidate until a compatible engine release and desktop validation are complete. Installing the plugin does not install the engine, change input permissions or enable playback automatically.
 
+## Installation
+
+After the compatible engine and plugin repository are published, install Klicky first using its [Linux installation guide](https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#linux). Check that `klicky status --json` works, then add the bar controls:
+
+```sh
+omarchy plugin add https://github.com/Muneer320/klicky-omarchy-bar --enable
+```
+
+Choose a position when prompted. Open the keyboard icon to start the engine, pick a sound pack, change volume or pause playback. **Start at login** is optional and independent of whether the engine is running now.
+
+Update the plugin with:
+
+```sh
+omarchy plugin update io.github.muneer320.klicky-bar
+```
+
+Remove just the bar controls with:
+
+```sh
+omarchy plugin remove io.github.muneer320.klicky-bar
+```
+
+Removal keeps Klicky itself, its service and your sound settings. See [Klicky's uninstall guide](https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#uninstall) to remove the engine too.
+
 ## Controls
 
 Pause preserves the running engine; Stop engine shuts it down. Start at login changes only the user service's login setting and does not start or stop playback. Volume and pack changes apply through Klicky's CLI. Settings refresh from the engine after each command; unavailable or incompatible engines disable controls instead of displaying saved preferences as live state.
