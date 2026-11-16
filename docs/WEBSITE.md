@@ -60,3 +60,11 @@ The reviewed Pages/APT workflow rebuilds the complete signed archive, verifies r
 The custom-domain CNAME points to `muneer320.github.io`; GitHub Pages must retain the same domain and HTTPS setting. Installation endpoints are `/install.sh` and `/install.ps1`; removal uses `/uninstall.sh` and `/uninstall.ps1`.
 
 Publishing website changes does not publish application releases or update installed icons. Keep version/download wording aligned with real release assets. The APT release-event path skips prereleases, and candidate builds do not publish a release.
+
+## Search and AI-search follow-up
+
+The site serves its product facts and installation text in HTML, with canonical URLs, a sitemap, crawlable links and SoftwareApplication/Person identity. Keep visible descriptions, desktop-control instructions and structured data consistent. Do not add ratings, performance figures or package-manager availability that the project cannot substantiate.
+
+After meaningful page changes, check the verified domain in Google Search Console and Bing Webmaster Tools: sitemap processing, URL inspection, crawl/indexing problems and query/page performance. Bing’s AI Performance report can show citations and grounding queries when data is available. A public `site:` search is only a spot check, not an indexing or ranking report.
+
+Google’s [AI search guidance](https://developers.google.com/search/docs/appearance/ai-features) uses the same crawlability and helpful-content foundations as ordinary search; there is no special AI schema required. Prioritize accurate answers and working links over extra crawler-specific files. Webmaster dashboards require the maintainer’s signed-in account; never treat an inaccessible report as a passed check.

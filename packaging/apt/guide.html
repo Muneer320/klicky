@@ -107,7 +107,7 @@
       <nav class="toc" aria-label="Guide contents">
         <strong>In this guide</strong><a href="#overview">Meet the app</a
         ><a href="#installation">Installation</a><a href="#linux">Linux</a
-        ><a href="#macos">macOS</a><a href="#windows">Windows</a
+        ><a href="#omarchy">Omarchy</a><a href="#macos">macOS</a><a href="#windows">Windows</a
         ><a href="#verify">First steps</a><a href="#cli">CLI reference</a
         ><a href="#configuration">Configuration</a
         ><a href="#sound-packs">Custom sounds</a
@@ -278,6 +278,34 @@ cd klicky
               href="https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#linux-from-source"
               >advanced installation</a
             >.
+          </p>
+        </section>
+        <section id="omarchy">
+          <h2>Klicky Bar on Omarchy.</h2>
+          <p>
+            On Omarchy 4.5 or later, Klicky Bar gives you pause/resume, sound
+            packs, volume, engine controls and optional login startup beside
+            your other bar widgets. Install Klicky 0.6.0 or later first, then:
+          </p>
+          <pre><code>omarchy plugin add https://github.com/Muneer320/klicky-omarchy-bar --enable</code></pre>
+          <p>
+            Open the keyboard icon and choose a position. You can change it
+            later with <strong>Move in bar</strong>. The plugin follows your
+            theme; Tab moves between controls and Escape closes the popup.
+          </p>
+          <p>
+            If using the one-line engine installer, add
+            <code>--no-omarchy-toggle</code> to skip the older start/stop toggle.
+            Already have that toggle? Follow the
+            <a href="https://github.com/Muneer320/klicky/blob/master/docs/OMARCHY.md">migration guide</a>
+            so you keep one control and preserve your existing layout.
+          </p>
+          <pre><code>omarchy plugin update io.github.muneer320.klicky-bar
+omarchy plugin remove io.github.muneer320.klicky-bar</code></pre>
+          <p>
+            Removing the plugin keeps the engine and your sound settings.
+            Audio currently follows the system output; selecting a separate
+            device for Klicky is planned.
           </p>
         </section>
         <section id="macos">
