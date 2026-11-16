@@ -108,8 +108,8 @@ jobs:
       - name: Check shell scripts
         if: runner.os == 'Linux'
         run: |
-          for script in scripts/*.sh; do bash -n "$script"; done
-          shellcheck scripts/*.sh
+          for script in scripts/*.sh packaging/omarchy-bar/*.sh; do bash -n "$script"; done
+          shellcheck scripts/*.sh packaging/omarchy-bar/*.sh
       - name: Check macOS menu bar helper
         if: runner.os == 'macOS'
         run: |

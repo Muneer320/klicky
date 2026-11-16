@@ -193,7 +193,7 @@ Ui.Panel {
             Layout.fillWidth: true
             PanelText { text: strings.t("volume.title"); color: root.muted }
             Item { Layout.fillWidth: true }
-            PanelText { text: root.engine.known || root.volumeEditing ? Commons.I18n.formatNumber(Math.round(volume.value * 100)) + "%" : "—"; font.bold: true; font.pixelSize: Commons.Style.font.subtitle }
+            PanelText { text: root.engine.known || root.volumeEditing ? Commons.I18n.formatNumber(Math.round(volume.value * 100)) + "%" : "…"; font.bold: true; font.pixelSize: Commons.Style.font.subtitle }
           }
           Slider {
             id: volume
