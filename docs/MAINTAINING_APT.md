@@ -52,7 +52,7 @@ After the approved stable GitHub release is published with its `.deb` and `SHA25
 
 ```bash
 gh workflow run apt-repository.yml --repo Muneer320/klicky \
-  --ref master -f tag=v0.5.0
+  --ref master -f tag=v0.6.0
 ```
 
 Replace the tag with the intended published release and select a source ref with that version. The workflow accepts `vMAJOR.MINOR.PATCH`, requires exactly one matching amd64 `.deb`, verifies its checksum, and requires its Debian version to be `MAJOR.MINOR.PATCH-1`.

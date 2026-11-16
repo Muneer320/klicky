@@ -1,7 +1,7 @@
 pkgbase = klicky
 	pkgdesc = Low-latency mechanical keyboard sounds for Linux
-	pkgver = 0.5.0
-	pkgrel = 2
+	pkgver = 0.6.0
+	pkgrel = 1
 	url = https://github.com/Muneer320/klicky
 	arch = x86_64
 	license = MIT
@@ -12,7 +12,7 @@ pkgbase = klicky
 	depends = glibc
 	depends = systemd
 	options = !debug
-	source = klicky::git+https://github.com/Muneer320/klicky.git#tag=v0.5.0
+	source = klicky::git+https://github.com/Muneer320/klicky.git#tag=v0.6.0
 	source = check-stopped.sh
 	source = klicky-stopped.hook
 	b2sums = SKIP

@@ -24,7 +24,7 @@ For the standalone installer, run in PowerShell:
 irm https://klicky.muneer320.tech/install.ps1 | iex
 ```
 
-The helper downloads and verifies the published installer, opens setup and starts the installed app. For a file download instead, use the [Windows installer](https://github.com/Muneer320/klicky/releases/download/v0.5.0/klicky-0.5.0-windows-x64-setup.exe).
+The helper downloads and verifies the published installer, opens setup and starts the installed app. For a file download instead, use the [Windows installer](https://github.com/Muneer320/klicky/releases/download/v0.6.0/klicky-0.6.0-windows-x64-setup.exe).
 
 Follow the wizard, choose your login-startup preference, then open Klicky from Start. Choose **Resume** from the tray menu to hear sounds. Rust, Visual Studio and separate sound downloads are not needed. The Windows installer and executables are unsigned.
 
@@ -148,12 +148,12 @@ Copy the command for your distribution. These download the package directly, wit
 ```bash
 # Ubuntu / Debian
 curl -fL --retry 2 -o klicky.deb \
-  https://klicky.muneer320.tech/pool/main/k/klicky/klicky_0.5.0-1_amd64.deb
+  https://klicky.muneer320.tech/pool/main/k/klicky/klicky_0.6.0-1_amd64.deb
 sudo apt install ./klicky.deb
 
 # Arch / Omarchy
 curl -fL --retry 2 -o klicky.pkg.tar.zst \
-  https://github.com/Muneer320/klicky/releases/download/v0.5.0/klicky-0.5.0-1-x86_64.pkg.tar.zst
+  https://github.com/Muneer320/klicky/releases/download/v0.6.0/klicky-0.6.0-1-x86_64.pkg.tar.zst
 sudo pacman -U ./klicky.pkg.tar.zst
 ```
 

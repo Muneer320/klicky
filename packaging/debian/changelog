@@ -1,3 +1,12 @@
+klicky (0.6.0-1) unstable; urgency=medium
+
+  * Add Linux/macOS pause, resume and structured playback status.
+  * Add independent login-startup controls and expanded macOS menu controls.
+  * Add Klicky Bar for Omarchy with themed controls and remembered placement.
+  * Guard Arch package upgrades/removal while the packaged daemon is running.
+
+ -- Muneer Alam <muneer.alam320@gmail.com>  Mon, 16 Nov 2026 10:30:00 +0000
+
 klicky (0.5.0-1) unstable; urgency=medium
 
   * Add native Windows desktop support alongside Linux and macOS.

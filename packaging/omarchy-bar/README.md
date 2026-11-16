@@ -7,10 +7,10 @@ On first setup, choose **Left side**, **Right side**, **Left of clock** or **Rig
 ## Requirements
 
 - Omarchy 4.5/Quattro with its Quickshell bar and native plugin support.
-- The Klicky engine with `klicky status --json` schema 1, `pause`, `resume` and `service autostart` commands, plus its user systemd service.
+- Klicky 0.6.0 or later with `klicky status --json` schema 1, `pause`, `resume` and `service autostart` commands, plus its user systemd service.
 - Bash, GNU coreutils (`timeout`) and util-linux (`flock`), included in Omarchy.
 
-The published Klicky v0.5.0 does **not** provide these Unix control APIs. This plugin is a development candidate until a compatible engine release and desktop validation are complete. Installing the plugin does not install the engine, change input permissions or enable playback automatically.
+Klicky v0.5.0 does **not** provide these Unix control APIs. The plugin is published separately from the engine. Installing the plugin does not install the engine, change input permissions or enable playback automatically.
 
 ## Installation
 

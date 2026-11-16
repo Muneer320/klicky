@@ -1,8 +1,10 @@
 # Omarchy integration
 
-## Klicky Bar development
+## Klicky Bar
 
-The next native plugin, **Klicky Bar**, adds pause/resume, sound packs, volume and login startup controls. Its [source and requirements](../packaging/omarchy-bar/README.md) live in this repository; the separate publication repository will contain generated releases. It requires the newer Unix JSON status/control APIs, which are not present in published v0.5.0. The existing toggle below remains the supported installation until the plugin and its matching engine are released.
+**Klicky Bar** adds pause/resume, sound packs, volume, engine and login startup controls to Omarchy 4.5. It offers remembered placement and follows your theme. It requires Klicky 0.6.0 or later; the older v0.5.0 engine is incompatible. See its [installation and migration guide](../packaging/omarchy-bar/README.md#installation). The plugin is published separately through its generated repository, with this repository remaining the source of truth.
+
+The simpler toggle below remains available. Use one bar control at a time; the native plugin guide explains how to skip or replace the older toggle while keeping your engine and settings.
 
 ## Current bar toggle
 

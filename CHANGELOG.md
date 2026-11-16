@@ -6,6 +6,8 @@ The project follows [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+## 0.6.0 - 2026-11-16
+
 ### Added
 
 - macOS menu playback controls for pause/resume, volume, sound packs, service start/stop and independent login startup
@@ -15,6 +17,8 @@ The project follows [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - Keep macOS menu requests asynchronous, bound subprocess time and output, and display command failures
+- Honor Klicky Bar’s configured engine path when an older system package shadows a local installation
+- Keep Arch package upgrade/removal guards active before transaction changes
 
 ## 0.5.0 - 2026-11-07
 
