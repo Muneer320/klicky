@@ -40,9 +40,9 @@ jobs:
           $version = $env:RELEASE_TAG.Substring(1)
           $archive = "klicky-$version-windows-x64.zip"
           $download = Join-Path $env:RUNNER_TEMP 'store-release'
-          gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --pattern $archive --pattern SHA256SUMS --pattern RELEASE-MANIFEST.json --dir $download
+          gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --pattern $archive --pattern "$archive.sha256" --pattern SHA256SUMS --pattern RELEASE-MANIFEST.json --dir $download
           if ($LASTEXITCODE) { throw 'Release download failed.' }
-          foreach ($name in @($archive, 'RELEASE-MANIFEST.json')) {
+          foreach ($name in @($archive, "$archive.sha256", 'RELEASE-MANIFEST.json')) {
             $entries = @(Get-Content (Join-Path $download 'SHA256SUMS') | Where-Object { ($_ -split '\s+', 2)[1] -ceq $name })
             if ($entries.Count -ne 1) { throw "Expected one checksum for $name." }
             $expected = ($entries[0] -split '\s+', 2)[0]
