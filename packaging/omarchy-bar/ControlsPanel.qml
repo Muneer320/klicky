@@ -140,8 +140,8 @@ Ui.Panel {
                   required property string modelData
                   objectName: "klickyPlace-" + modelData
                   Layout.fillWidth: true
-                  text: strings.t("placement." + modelData)
-                  iconText: modelData === "left" || modelData === "clock-left" ? "󰁍" : "󰁔"
+                  text: strings.t("placement." + (root.bar && root.bar.vertical ? "vertical." : "") + modelData)
+                  iconText: root.bar && root.bar.vertical ? (modelData === "left" || modelData === "clock-left" ? "↑" : "↓") : (modelData === "left" || modelData === "clock-left" ? "←" : "→")
                   focusable: true; bordered: true
                   selected: root.currentPlacement === modelData
                   enabled: root.canMove
