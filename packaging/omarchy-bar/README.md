@@ -1,10 +1,12 @@
 # Klicky Bar
 
-Klicky's sound controls in the Omarchy bar: pause and resume, sound packs, volume, engine start/stop and start at login. Left-click or right-click the keyboard icon to open the controls. Escape or a click outside closes them. The popup supports keyboard focus with Tab.
+Klicky's sound controls in the Omarchy bar: pause and resume, sound packs, volume, engine start/stop and start at login. Left-click or right-click the keyboard icon to open the controls. Escape or a click outside closes them. The popup supports keyboard focus with Tab and follows your Omarchy theme.
+
+On first setup, choose **Left edge**, **Right edge**, **Left of clock** or **Right of clock**. Klicky remembers the choice in your normal bar configuration. **Move in bar** opens the choices again later. The positions beside the clock use Omarchy's adjacent sections so the clock stays centered. Changing position preserves the other widgets and Klicky's executable setting; it never starts or stops playback.
 
 ## Requirements
 
-- Omarchy 4/Quattro with its Quickshell bar and native plugin support.
+- Omarchy 4.5/Quattro with its Quickshell bar and native plugin support.
 - The Klicky engine with `klicky status --json` schema 1, `pause`, `resume` and `service autostart` commands, plus its user systemd service.
 - GNU coreutils (`timeout`), included in Omarchy.
 
@@ -17,6 +19,8 @@ Pause preserves the running engine; Stop engine shuts it down. Start at login ch
 Audio uses Klicky's current system-default output. Device selection is a separate planned feature; this widget never changes the system-wide audio device.
 
 The widget launches no shell command strings, captures no keyboard events and makes no network requests. Commands run asynchronously with deadlines. Status refreshes every ten seconds, or every two seconds while the popup is open.
+
+Placement uses the native `omarchy bar set` command to save the choice and move the widget in one transaction. The setup prompt returns only if its saved `placement` setting is removed. The included English catalog falls back to English for other Omarchy languages; additional translations can be added under `i18n/`.
 
 ## Development and publication
 

@@ -9,7 +9,7 @@ import re
 import subprocess
 
 
-FILES = ("manifest.json", "BarWidget.qml", "ControlsPanel.qml", "Controller.qml", "README.md")
+FILES = ("manifest.json", "BarWidget.qml", "ControlsPanel.qml", "Controller.qml", "PanelText.qml", "i18n/en.json", "README.md")
 
 
 def main():
@@ -47,7 +47,9 @@ def main():
     }
     args.output.mkdir(parents=True, exist_ok=False)
     for name, data in contents.items():
-        (args.output / name).write_bytes(data)
+        destination = args.output / name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(data)
     (args.output / "SOURCE.json").write_bytes((json.dumps(provenance, indent=2) + "\n").encode("utf-8"))
     print(f"Exported Klicky Bar {manifest['version']} to {args.output}")
 
