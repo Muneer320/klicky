@@ -19,6 +19,12 @@ Item {
   property int epoch: 0
   property int statusEpoch: 0
 
+  onExecutableChanged: {
+    epoch += 1
+    known = false
+    Qt.callLater(root.refresh)
+  }
+
   function refresh() {
     if (status.running || action.running) return
     statusEpoch = epoch

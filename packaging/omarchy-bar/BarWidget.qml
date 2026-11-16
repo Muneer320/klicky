@@ -14,7 +14,11 @@ Ui.BarWidget {
   function toggle() { popup.toggle() }
   function closeForPopoutSwitch() { popup.closeForPopoutSwitch() }
 
-  Controller { id: engineController; panelOpen: popup.opened }
+  Controller {
+    id: engineController
+    executable: root.setting("executable", "klicky")
+    panelOpen: popup.opened
+  }
   Ui.WidgetButton {
     id: button
     anchors.fill: parent

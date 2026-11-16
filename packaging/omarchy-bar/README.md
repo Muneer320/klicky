@@ -42,8 +42,19 @@ For a local development test, copy that exported folder to the new, unused path 
 
 ```sh
 omarchy-shell shell rescanPlugins
-omarchy plugin enable io.github.muneer320.klicky-bar --section center
+omarchy plugin enable io.github.muneer320.klicky-bar --section centerBegin
 ```
+
+The widget runs `klicky` from the shell's own PATH by default. If a source installation is shadowed by an older packaged binary, set `executable` to the matching CLI's absolute path in the widget's `bar.layout` entry in `~/.config/omarchy/shell.json`:
+
+```json
+{
+  "id": "io.github.muneer320.klicky-bar",
+  "executable": "/home/you/.local/bin/klicky"
+}
+```
+
+Use your actual home path; `~` and environment variables are not expanded. This setting changes only the CLI used by Klicky Bar. The user service must separately start the same engine version.
 
 Disable the legacy toggle first if it is already installed; keep the backed-up layout for restoration. Check mouse and keyboard operation, both pause states, pack changes, 0%/10%/100% volume, login setting, stopped-engine recovery, outside-click/Escape dismissal, and your usual theme and display scaling. Confirm normal typing remains immediate and consistent through laptop speakers. Check service autostart again after a real login. Container tests cannot establish these desktop/audio results.
 
