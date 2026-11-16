@@ -81,7 +81,7 @@ Allow **`~/.local/bin/klicky`** in **System Settings → Privacy & Security → 
 ~/.local/bin/klicky status
 ```
 
-Check pack, volume and the files under `~/Library/Application Support/klicky/sounds`. [Media and function keys](function-keys-sound.md) use a separate input path.
+Check pack, volume and the files under `~/Library/Application Support/klicky/sounds`. [Media and function keys](ARCHITECTURE.md#macos) use a separate input path.
 
 </details>
 

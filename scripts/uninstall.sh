@@ -21,7 +21,12 @@ local_binary="$HOME/.local/bin/klicky"
 remove_omarchy() {
   shell_config="$HOME/.config/omarchy/shell.json"
   module="$HOME/.config/omarchy/bar/modules/klicky.qml"
-  if [[ -f $shell_config ]] && { [[ -e $module ]] || grep -q '"id"[[:space:]]*:[[:space:]]*"klicky"' "$shell_config"; }; then
+  plugin="$HOME/.config/omarchy/plugins/io.github.muneer320.klicky-bar"
+  if [[ -e $plugin || -L $plugin ]]; then
+    command -v omarchy >/dev/null 2>&1 || die 'Omarchy is needed to remove Klicky Bar. Remove that plugin before retrying.'
+    omarchy plugin remove io.github.muneer320.klicky-bar --yes
+  fi
+  if [[ -f $shell_config ]] && { [[ -e $module ]] || grep -Eq '"id"[[:space:]]*:[[:space:]]*"(klicky|io.github.muneer320.klicky-bar)"' "$shell_config"; }; then
     command -v python3 >/dev/null 2>&1 || die 'Python 3 is needed to remove the Omarchy entry safely.'
     [[ ! -L $shell_config ]] || die 'Omarchy shell.json is a symlink; remove its Klicky entry manually before retrying.'
     cp "$shell_config" "$work_dir/shell-before.json"
@@ -32,10 +37,14 @@ from pathlib import Path
 
 source, target = map(Path, sys.argv[1:])
 data = json.loads(source.read_text(encoding="utf-8"))
-center = data["bar"]["layout"]["center"]
-if not isinstance(center, list) or not all(isinstance(item, dict) for item in center):
-    raise SystemExit("Invalid Omarchy center layout; configuration was not changed.")
-data["bar"]["layout"]["center"] = [item for item in center if item.get("id") != "klicky"]
+layout = data["bar"]["layout"]
+if not isinstance(layout, dict) or any(
+    not isinstance(items, list) or not all(isinstance(item, dict) for item in items)
+    for items in layout.values()
+):
+    raise SystemExit("Invalid Omarchy layout; configuration was not changed.")
+for section, items in layout.items():
+    layout[section] = [item for item in items if item.get("id") not in ("klicky", "io.github.muneer320.klicky-bar")]
 target.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 PY
     cp "$work_dir/shell-after.json" "$shell_config"

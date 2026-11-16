@@ -34,20 +34,27 @@ try:
     data = json.loads(source.read_text())
     bar = data["bar"]
     layout = bar["layout"]
-    center = layout["center"]
+    center = layout.setdefault("centerBegin", [])
 except (json.JSONDecodeError, KeyError, TypeError) as error:
     raise SystemExit(f"Invalid Omarchy shell configuration: {error}")
 
-if not isinstance(center, list) or not all(isinstance(entry, dict) for entry in center):
-    raise SystemExit("Invalid Omarchy shell configuration: bar.layout.center must be a list of objects")
+if not isinstance(layout, dict) or any(
+    not isinstance(items, list) or not all(isinstance(entry, dict) for entry in items)
+    for items in layout.values()
+):
+    raise SystemExit("Invalid Omarchy shell configuration: layout sections must be lists of objects")
 
-center = [entry for entry in center if entry.get("id") != "klicky"]
+if any(entry.get("id") == "io.github.muneer320.klicky-bar" for items in layout.values() for entry in items):
+    raise SystemExit("Klicky Bar is already configured. Keep it, or remove it before installing the older toggle.")
+for section, items in layout.items():
+    layout[section] = [entry for entry in items if entry.get("id") != "klicky"]
+center = layout["centerBegin"]
 index = next(
     (position + 1 for position, entry in enumerate(center) if entry.get("id") == "omarchy.indicators"),
     0,
 )
 center.insert(index, {"id": "klicky", "type": "qml"})
-layout["center"] = center
+layout["centerBegin"] = center
 target.write_text(json.dumps(data, indent=2) + "\n")
 PY
 
