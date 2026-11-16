@@ -14,7 +14,11 @@ The published Klicky v0.5.0 does **not** provide these Unix control APIs. This p
 
 ## Installation
 
-After the compatible engine and plugin repository are published, install Klicky first using its [Linux installation guide](https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#linux). Check that `klicky status --json` works, then add the bar controls:
+After the compatible engine and plugin repository are published, install Klicky first using its [Linux installation guide](https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#linux). If using the one-line installer, pass `--no-omarchy-toggle` to skip the older bar toggle.
+
+If the older toggle is already installed, back up `~/.config/omarchy/shell.json`, then remove only entries with `"id": "klicky"` from its `bar.layout` sections. Keep the other widgets and engine settings. Do not run the full Klicky uninstaller to replace a bar control.
+
+Check that `klicky status --json` works, then add the new bar controls:
 
 ```sh
 omarchy plugin add https://github.com/Muneer320/klicky-omarchy-bar --enable
