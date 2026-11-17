@@ -6,6 +6,8 @@ New to the product? Start with the [field guide](https://klicky.muneer320.tech/g
 
 For usage questions, try [Discussions Q&A](https://github.com/Muneer320/klicky/discussions/categories/q-a). Use [Ideas](https://github.com/Muneer320/klicky/discussions/categories/ideas) to discuss a proposal before turning it into an implementation issue. The [wiki](https://github.com/Muneer320/klicky/wiki) links to the maintained platform guides.
 
+Please follow our [Code of Conduct](CODE_OF_CONDUCT.md) in issues, pull requests, Discussions and other project spaces. It includes a private contact for reporting concerns.
+
 ## Before starting
 
 Open an issue before changing any of these areas:

@@ -23,6 +23,7 @@ body:
         - Linux Wayland
         - Linux X11
         - macOS
+        - Windows 11 x64
         - Other
     validations:
       required: true
@@ -30,10 +31,39 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: Distribution or macOS version, desktop or compositor, audio server, and Klicky commit or version
-      placeholder: Arch Linux, Hyprland, PipeWire 1.6.8, commit 7c8bd9a
+      description: OS version, Klicky version (or commit), and desktop/compositor if relevant
+      placeholder: Windows 11, Klicky 0.6.1; or Arch Linux, Hyprland, PipeWire
     validations:
       required: true
+  - type: dropdown
+    id: installation
+    attributes:
+      label: Installation method
+      options:
+        - Microsoft Store
+        - Windows installer or portable ZIP
+        - Scoop
+        - Homebrew
+        - APT
+        - Arch release package
+        - Source or one-line source installer
+        - Other or unsure
+  - type: input
+    id: audio_output
+    attributes:
+      label: Audio output (for sound issues)
+      description: Laptop speakers, wired headphones, Bluetooth or USB audio; no serial numbers needed.
+  - type: dropdown
+    id: controls
+    attributes:
+      label: Controls involved (if relevant)
+      options:
+        - Windows tray
+        - macOS menu bar
+        - Klicky Bar on Omarchy
+        - Older Omarchy toggle
+        - Terminal commands
+        - None or unsure
   - type: textarea
     id: reproduce
     attributes:
@@ -48,7 +78,11 @@ body:
     id: logs
     attributes:
       label: Relevant logs
-      description: Use `journalctl --user -u klicky.service`. Do not paste benchmark key logs from sensitive sessions.
+      description: |
+        Optional: include an error message or relevant diagnostic output, after reviewing it for private data.
+        On Linux, `journalctl --user -u klicky.service` may help. For Windows/macOS, use the platform steps in
+        https://github.com/Muneer320/klicky/blob/master/docs/TROUBLESHOOTING.md.
+        Do not record typing, attach full private logs, or run benchmarks during sensitive work.
       render: text
   - type: checkboxes
     id: checks
@@ -59,5 +93,4 @@ body:
           required: true
         - label: I removed sensitive key data and credentials.
           required: true
-        - label: I can reproduce this on the latest default branch or release.
-          required: true
+        - label: I checked whether the problem still occurs on the latest release (if practical).

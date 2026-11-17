@@ -22,9 +22,7 @@ body:
     id: alternatives
     attributes:
       label: Alternatives considered
-      description: What simpler approaches or existing tools did you consider?
-    validations:
-      required: true
+      description: "Optional: what simpler approaches or existing tools did you consider?"
   - type: dropdown
     id: area
     attributes:
@@ -32,6 +30,8 @@ body:
       options:
         - Linux input
         - macOS input
+        - Windows input
+        - Desktop controls (Windows tray, macOS menu bar, Omarchy bar)
         - Audio and latency
         - Sound packs
         - CLI and IPC
@@ -45,7 +45,7 @@ body:
     attributes:
       label: Scope check
       options:
-        - label: This does not require keyboard remapping, macros, telemetry, networking, or a GUI.
+        - label: This fits Klicky's keyboard-sound purpose, including its existing desktop helpers, without adding keyboard remapping, macros or collection of typed text.
           required: true
         - label: I searched existing issues and documentation.
           required: true
