@@ -21,7 +21,7 @@ jobs:
       revision: ${{ steps.identity.outputs.revision }}
       tree: ${{ steps.identity.outputs.tree }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Verify version and archive exact source
         id: identity
         env:
@@ -134,7 +134,7 @@ jobs:
     needs: [source, unix-checks, windows-checks, linux-packages, windows-packages, windows-security]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v5
         with:
           name: klicky-source

@@ -37,7 +37,7 @@ jobs:
       tag: ${{ steps.release.outputs.tag }}
       ready: ${{ steps.release.outputs.ready }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Resolve release tag
         id: release
         env:
@@ -81,7 +81,7 @@ jobs:
       PUBLIC_URL: https://muneer320.github.io/klicky
       EXPECTED_APT_GPG_FINGERPRINT: DBB67AE478D2FFCEC6637B559899E554D3580D8F
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
       - name: Install repository tools

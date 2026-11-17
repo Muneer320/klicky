@@ -26,7 +26,7 @@ jobs:
         run: |
           if ($env:RELEASE_TAG -cnotmatch '^v[0-9]+\.[0-9]+\.[0-9]+$') { throw 'Expected a stable version tag.' }
           "tag=$env:RELEASE_TAG" >> $env:GITHUB_OUTPUT
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ steps.release.outputs.tag }}
       - name: Download and verify the published portable bundle

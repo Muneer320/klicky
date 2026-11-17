@@ -43,7 +43,7 @@ jobs:
             os: macos-15
             build-mode: manual
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Initialize CodeQL

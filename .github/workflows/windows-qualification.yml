@@ -31,7 +31,7 @@ jobs:
       KLICKY_QUALIFICATION_REVISION: ${{ github.sha }}
       KLICKY_QUALIFICATION_TREE_STATE: clean
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Install Linux audio headers
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libasound2-dev

@@ -12,7 +12,7 @@ jobs:
   debian-package:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -47,7 +47,7 @@ jobs:
     needs: debian-package
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v5
         with:
           name: klicky-debian-amd64
@@ -72,7 +72,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: pacman -Syu --noconfirm base-devel git rust alsa-lib systemd namcap python
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Prepare unprivileged builder
         run: |
           useradd -m builder
