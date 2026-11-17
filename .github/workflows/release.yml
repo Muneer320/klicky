@@ -60,7 +60,7 @@ jobs:
     runs-on: windows-11-arm
     timeout-minutes: 15
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: klicky-windows-x64-unsigned
           path: ${{ runner.temp }}/klicky-scan
@@ -135,19 +135,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: klicky-source
           path: dist
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: klicky-debian-amd64
           path: dist
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: klicky-arch-x86_64
           path: dist
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: klicky-windows-x64-unsigned
           path: dist
