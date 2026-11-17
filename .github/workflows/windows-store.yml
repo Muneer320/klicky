@@ -63,7 +63,7 @@ jobs:
             -IdentityName 'MuneerAlam.Klicky' `
             -Publisher 'CN=79911295-74D5-4E52-9D61-594928B77F88' `
             -PublisherDisplayName 'Muneer Alam'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: klicky-store-${{ steps.source.outputs.version }}
           path: target/windows-msix/*.msix*

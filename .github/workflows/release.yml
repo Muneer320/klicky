@@ -35,7 +35,7 @@ jobs:
           printf 'version=%s\nrevision=%s\ntree=%s\n' "$version" "$revision" "$tree" >> "$GITHUB_OUTPUT"
           mkdir dist
           git archive --format=tar.gz --prefix="klicky-$version/" --output="dist/klicky-$version-source.tar.gz" HEAD
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: klicky-source
           path: dist/*.tar.gz
@@ -123,7 +123,7 @@ jobs:
           } finally {
             $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $reportPath -Encoding UTF8
           }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: windows-security-evidence
@@ -157,7 +157,7 @@ jobs:
           REVISION: ${{ needs.source.outputs.revision }}
           TREE: ${{ needs.source.outputs.tree }}
         run: python3 scripts/assemble-release.py dist --version "$VERSION" --revision "$REVISION" --tree "$TREE"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: klicky-${{ needs.source.outputs.version }}-release-candidate
           path: dist/*
