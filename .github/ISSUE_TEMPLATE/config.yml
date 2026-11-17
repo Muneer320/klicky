@@ -1,5 +1,11 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Questions and setup help
+    url: https://github.com/Muneer320/klicky/discussions/categories/q-a
+    about: Ask how to install, configure or use Klicky
+  - name: Ideas and suggestions
+    url: https://github.com/Muneer320/klicky/discussions/categories/ideas
+    about: Discuss an improvement before planning an implementation
   - name: Security report
     url: https://github.com/Muneer320/klicky/security/advisories/new
     about: Report keystroke exposure, permission, path, or command-execution vulnerabilities privately

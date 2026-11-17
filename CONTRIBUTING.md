@@ -4,6 +4,8 @@ Thank you for helping improve Klicky. Small, focused changes are easier to test 
 
 New to the product? Start with the [field guide](https://klicky.muneer320.tech/guide.html). For presentation work, use the [character story](docs/CHARACTER.md) and [brand asset guide](docs/BRANDING.md); keep instructions technically clear and the mascot recognizable.
 
+For usage questions, try [Discussions Q&A](https://github.com/Muneer320/klicky/discussions/categories/q-a). Use [Ideas](https://github.com/Muneer320/klicky/discussions/categories/ideas) to discuss a proposal before turning it into an implementation issue. The [wiki](https://github.com/Muneer320/klicky/wiki) links to the maintained platform guides.
+
 ## Before starting
 
 Open an issue before changing any of these areas:

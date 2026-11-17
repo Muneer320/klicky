@@ -12,6 +12,8 @@ There's someone under your keys. **Klicky**, our curious little mascot, loves a 
 
 The app runs quietly in the background. Pick a pack, set the volume and carry on typing.
 
+[Ask a question or share your setup](https://github.com/Muneer320/klicky/discussions) · [Browse the wiki](https://github.com/Muneer320/klicky/wiki)
+
 - **Find your sound.** Ten included packs: Cherry MX Black, Blue, Brown and Red in PBT/ABS variants, plus EG Oreo and EG Crystal Purple. You can add your own recordings too.
 - **Control it from your desktop.** Windows tray, macOS menu bar, or Linux terminal with Klicky Bar on supported Omarchy desktops.
 - **Keep it local.** No account or subscription. Normal playback stores no typed text and makes no network requests.
