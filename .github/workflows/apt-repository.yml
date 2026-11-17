@@ -187,7 +187,7 @@ jobs:
             --fingerprint "$EXPECTED_APT_GPG_FINGERPRINT" \
             "$package"
           test "$(cat site/CNAME)" = klicky.muneer320.tech
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v4
         with:
           path: site
