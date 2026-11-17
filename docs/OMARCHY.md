@@ -2,7 +2,9 @@
 
 ## Klicky Bar (Omarchy 4.5+)
 
-[Klicky Bar](https://github.com/Muneer320/klicky-omarchy-bar) provides pause/resume, sound packs, volume, engine start/stop and independent login startup. It follows your theme and remembers its position. Install Klicky 0.6.0 or later first, then:
+[Klicky Bar](https://github.com/Muneer320/klicky-omarchy-bar) provides pause/resume, sound packs, volume, engine start/stop and independent login startup. It follows your theme and remembers its position. Find it in the [official Omarchy plugin marketplace](https://plugins.omarchy.org/plugin.html?id=io.github.muneer320.klicky-bar).
+
+The listing uses **manual setup** because the plugin needs the Klicky engine installed separately. Install Klicky 0.6.0 or later first, then:
 
 ```bash
 omarchy plugin add https://github.com/Muneer320/klicky-omarchy-bar --enable

@@ -50,7 +50,7 @@ Compatible Omarchy setups include the bar toggle. To skip it, use `bash -s -- --
 curl -fsSL https://klicky.muneer320.tech/install.sh | bash -s -- --source
 ```
 
-[All Linux methods and prerequisites](docs/INSTALLATION.md#linux) · [Signed APT setup](docs/APT_REPOSITORY.md) · [Omarchy integration](docs/OMARCHY.md)
+[All Linux methods and prerequisites](docs/INSTALLATION.md#linux) · [Signed APT setup](docs/APT_REPOSITORY.md) · [Omarchy integration](docs/OMARCHY.md) · [Klicky Bar marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.muneer320.klicky-bar)
 
 </details>
 
