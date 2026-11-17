@@ -1,0 +1,96 @@
+name: CodeQL advanced
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  schedule:
+    - cron: '17 3 * * 2'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-advanced-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze ${{ matrix.language }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: actions
+            os: ubuntu-latest
+            build-mode: none
+          - language: javascript-typescript
+            os: ubuntu-latest
+            build-mode: none
+          - language: python
+            os: ubuntu-latest
+            build-mode: none
+          - language: rust
+            os: ubuntu-latest
+            build-mode: none
+          - language: swift
+            os: macos-15
+            build-mode: manual
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          db-location: ${{ runner.temp }}/codeql-databases
+      - name: Build the Swift menu helper for extraction
+        if: matrix.language == 'swift'
+        run: swiftc packaging/macos/KlickyMenu.swift -o "$RUNNER_TEMP/klicky-menu-codeql"
+      - name: Analyze
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}
+          output: ${{ runner.temp }}/codeql-results
+          # Default setup stays active until the reviewed migration is ready.
+          upload: ${{ vars.CODEQL_ADVANCED_ENABLED == 'true' && 'always' || 'never' }}
+          upload-database: false
+      - name: Verify the Swift helper was extracted
+        if: matrix.language == 'swift'
+        env:
+          SOURCE_ARCHIVE: ${{ runner.temp }}/codeql-databases/swift/src.zip
+          EVIDENCE: ${{ runner.temp }}/codeql-results/swift-extraction.json
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import zipfile
+          from pathlib import Path
+
+          with zipfile.ZipFile(os.environ['SOURCE_ARCHIVE']) as archive:
+              sources = [name for name in archive.namelist()
+                         if name.endswith('/packaging/macos/KlickyMenu.swift')
+                         or name == 'packaging/macos/KlickyMenu.swift']
+          if not sources:
+              raise SystemExit('The CodeQL source archive is missing KlickyMenu.swift')
+          evidence = {'language': 'swift', 'extracted_menu_helper': sources}
+          Path(os.environ['EVIDENCE']).write_text(json.dumps(evidence, indent=2) + '\n')
+          print(json.dumps(evidence))
+          PY
+      - name: Save analysis results
+        uses: actions/upload-artifact@v7
+        with:
+          name: codeql-${{ matrix.language }}-results
+          path: |
+            ${{ runner.temp }}/codeql-results/*.sarif
+            ${{ runner.temp }}/codeql-results/*-extraction.json
+          if-no-files-found: error
+          retention-days: 7

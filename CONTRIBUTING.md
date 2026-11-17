@@ -109,6 +109,33 @@ For manual validation, record the macOS version, CPU architecture, audio hardwar
 
 Compilation and automated fixtures do not establish physical keyboard, audio, or VoiceOver behavior. Record those results separately in the PR, along with any checks that remain pending.
 
+## CodeQL maintenance
+
+The [advanced scanning workflow](.github/workflows/codeql.yml) covers Actions,
+JavaScript/TypeScript, Python, Rust and the macOS Swift helper. Swift uses the
+same direct `swiftc` build as the menu installer, without installing or running
+the app. The workflow verifies that `KlickyMenu.swift` is in the extracted source
+archive and retains SARIF results as short-lived CI artifacts.
+
+Until the repository variable `CODEQL_ADVANCED_ENABLED` is `true`, analysis runs
+without uploading results; the existing default setup continues to publish its
+scans. Do not enable uploads while default setup is active.
+
+For maintainers switching to advanced setup:
+
+1. Review the workflow and verify successful extraction/analysis for all five
+   languages on the intended commit. Keep default setup active during validation.
+2. After merging, switch CodeQL from default to advanced setup, set
+   `CODEQL_ADVANCED_ENABLED=true`, and run **CodeQL advanced** on `master`.
+3. Verify all five uploaded language results and a PR comparison, including a
+   Dependabot update. Check that existing alert dispositions are preserved. Only
+   then retire obsolete default configurations or change required-check names.
+4. To roll back, set the variable to `false` before restoring default setup with
+   its previous language selection. Keep normal CI and scanning requirements in
+   place throughout the transition.
+
+GitHub [rejects advanced CodeQL uploads while default setup is enabled](https://docs.github.com/en/code-security/reference/code-scanning/sarif-files/troubleshoot-sarif-uploads/default-setup-enabled).
+
 ## Commits
 
 - Use a feature branch.
