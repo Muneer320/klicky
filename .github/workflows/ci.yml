@@ -104,7 +104,8 @@ jobs:
     needs: scope
     if: ${{ !cancelled() }}
     name: ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    # Keep required names without queueing a macOS VM for prose/website edits.
+    runs-on: ${{ needs.scope.outputs.native == 'false' && 'ubuntu-latest' || matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -116,38 +117,39 @@ jobs:
           SCOPE_RESULT: ${{ needs.scope.result }}
         run: test "$SCOPE_RESULT" = success
       - uses: actions/checkout@v5
+        if: matrix.os == 'ubuntu-latest' || needs.scope.outputs.native == 'true'
       - name: Install shell linter
-        if: runner.os == 'Linux'
+        if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Install Linux dependencies
-        if: runner.os == 'Linux' && needs.scope.outputs.native == 'true'
+        if: matrix.os == 'ubuntu-latest' && needs.scope.outputs.native == 'true'
         run: sudo apt-get install -y libasound2-dev
       - name: Install Rust components
-        if: runner.os == 'Linux' || needs.scope.outputs.native == 'true'
+        if: matrix.os == 'ubuntu-latest' || needs.scope.outputs.native == 'true'
         run: rustup component add clippy rustfmt
       - name: Check formatting
-        if: runner.os == 'Linux'
+        if: matrix.os == 'ubuntu-latest'
         run: cargo fmt --check
       - name: Check documentation
-        if: runner.os == 'Linux'
+        if: matrix.os == 'ubuntu-latest'
         run: |
           python3 scripts/check-docs.py
           python3 -B -m unittest scripts/test_check_docs.py scripts/test_ci_scope.py
       - name: Check Linux installer lifecycle
-        if: runner.os == 'Linux'
+        if: matrix.os == 'ubuntu-latest'
         run: python3 -B -m unittest scripts/test_install_lifecycle.py
       - name: Check shell scripts
-        if: runner.os == 'Linux'
+        if: matrix.os == 'ubuntu-latest'
         run: |
           for script in scripts/*.sh packaging/omarchy-bar/*.sh; do bash -n "$script"; done
           shellcheck scripts/*.sh packaging/omarchy-bar/*.sh
       - name: Check macOS menu bar helper
-        if: runner.os == 'macOS' && needs.scope.outputs.native == 'true'
+        if: matrix.os == 'macos-latest' && needs.scope.outputs.native == 'true'
         run: |
           swiftc packaging/macos/KlickyMenu.swift -o /tmp/klicky-menu-check
           python3 -B scripts/test-macos-menu.py
       - name: Check GitHub Actions workflows
-        if: runner.os == 'Linux'
+        if: matrix.os == 'ubuntu-latest'
         run: |
           curl -fsSLo /tmp/actionlint.tar.gz \
             https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz
@@ -163,7 +165,7 @@ jobs:
         if: needs.scope.outputs.native == 'true'
         run: cargo clippy --locked --all-targets --all-features -- -D warnings
       - name: Check systemd unit
-        if: runner.os == 'Linux' && needs.scope.outputs.native == 'true'
+        if: matrix.os == 'ubuntu-latest' && needs.scope.outputs.native == 'true'
         run: |
           install -Dm755 target/debug/klicky "$HOME/.local/bin/klicky"
           systemd-analyze --user verify packaging/systemd/klicky.service

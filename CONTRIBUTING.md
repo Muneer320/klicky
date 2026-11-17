@@ -99,7 +99,8 @@ PRs keep the fast documentation, formatting and script checks, without rebuildin
 native apps and packages. Website changes retain package/APT validation. Unknown
 files and workflow changes use full checks; `master` and release candidates always
 run the full native and package suite. Required check names remain available even
-when their expensive work is unnecessary. A failed scope check fails the required
+when their expensive work is unnecessary; the macOS check reports from a small
+Linux job for prose/website edits. A failed scope check fails the required
 checks rather than silently accepting the change.
 
 For APT changes, run `python3 -B -m unittest scripts/test_apt_repository.py` and, on Linux with GnuPG and reprepro, `python3 -B scripts/test_apt_repository_integration.py PACKAGE.deb`. See [APT validation coverage](docs/MAINTAINING_APT.md#validation-coverage) for what these checks establish. For website changes, follow the [website checks](docs/WEBSITE.md#preview-and-validate). In PowerShell, set `$env:PYTHONUTF8 = '1'` before running Python.
