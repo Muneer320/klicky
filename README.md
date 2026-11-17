@@ -6,14 +6,14 @@
 
 <p align="center"><strong>A little sound for every keystroke.</strong><br><a href="https://klicky.muneer320.tech/#demo">Watch the 45-second demo</a> · <a href="https://klicky.muneer320.tech/#sounds">Listen to the packs</a> · <a href="#install">Install</a> · <a href="#everyday-use">Everyday use</a> · <a href="#help-and-faq">Help</a> · <a href="https://klicky.muneer320.tech/guide.html">Full guide</a></p>
 
-<p align="center"><a href="https://github.com/Muneer320/klicky/actions/workflows/ci.yml"><img src="https://github.com/Muneer320/klicky/actions/workflows/ci.yml/badge.svg" alt="CI status"></a> <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-7435b4" alt="MIT license"></a> <a href="docs/SOUND_PACKS.md"><img src="https://img.shields.io/badge/sound_packs-10-c084fc" alt="10 included sound packs"></a></p>
+<p align="center"><a href="https://github.com/Muneer320/klicky/actions/workflows/ci.yml"><img src="https://github.com/Muneer320/klicky/actions/workflows/ci.yml/badge.svg" alt="CI status"></a> <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-7435b4" alt="MIT license"></a> <a href="docs/SOUND_PACKS.md"><img src="https://img.shields.io/badge/sound_packs-10-c084fc" alt="10 included sound packs"></a> <a href="https://www.bestpractices.dev/projects/16774"><img src="https://www.bestpractices.dev/projects/16774/badge" alt="OpenSSF Best Practices status"></a></p>
 
 There's someone under your keys. **Klicky**, our curious little mascot, loves a good typing rhythm and settles down when you do. [Meet Klicky.](docs/CHARACTER.md)
 
 The app runs quietly in the background. Pick a pack, set the volume and carry on typing.
 
 - **Find your sound.** Ten included packs: Cherry MX Black, Blue, Brown and Red in PBT/ABS variants, plus EG Oreo and EG Crystal Purple. You can add your own recordings too.
-- **Control it from your desktop.** Windows tray, macOS menu bar, or Linux terminal with an optional Omarchy bar toggle.
+- **Control it from your desktop.** Windows tray, macOS menu bar, or Linux terminal with Klicky Bar on supported Omarchy desktops.
 - **Keep it local.** No account or subscription. Normal playback stores no typed text and makes no network requests.
 - **Built in Rust for responsive playback.** Sounds are decoded when a pack loads and reused while you type.
 

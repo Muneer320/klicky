@@ -79,3 +79,7 @@ The following are not considered vulnerabilities by themselves:
 - A local process running as the same user observing Klicky's public process state
 - Sound packs with unpleasant or unexpectedly loud recordings
 - Denial of service caused by a deliberately malformed local configuration owned by the same user, unless it crosses a privilege boundary
+
+## Development practices
+
+Klicky tracks its development practices in the [OpenSSF Best Practices entry](https://www.bestpractices.dev/projects/16774).
