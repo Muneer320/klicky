@@ -47,7 +47,7 @@ jobs:
         run: cargo +1.87.0 build --locked --release --manifest-path tools/windows-qualification/Cargo.toml
       - name: Check analysis CLI
         run: python tools/windows-qualification/analyze.py --help
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: runner.os == 'Windows'
         with:
           name: klicky-windows-qualification-x64

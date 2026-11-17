@@ -36,7 +36,7 @@ jobs:
           XDG_CONFIG_HOME="$root/config" \
             KLICKY_SYSTEM_SOUNDS_DIR="$root/usr/share/klicky/sounds" \
             "$root/usr/bin/klicky" list
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: klicky-debian-amd64
           path: target/debian/klicky_*_amd64.deb
@@ -112,7 +112,7 @@ jobs:
           test "$(find /usr/share/klicky/sounds -name sound.ogg | wc -l)" -eq 10
           systemd-analyze verify /usr/lib/systemd/user/klicky.service
           klicky list
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: klicky-arch-x86_64
           path: packaging/arch/klicky-*.pkg.tar.zst
