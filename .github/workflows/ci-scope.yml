@@ -1,0 +1,36 @@
+name: CI scope
+
+on:
+  workflow_call:
+    outputs:
+      native:
+        value: ${{ jobs.scope.outputs.native }}
+      packages:
+        value: ${{ jobs.scope.outputs.packages }}
+
+permissions:
+  contents: read
+
+jobs:
+  scope:
+    runs-on: ubuntu-latest
+    outputs:
+      native: ${{ steps.scope.outputs.native }}
+      packages: ${{ steps.scope.outputs.packages }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Choose checks for this change
+        id: scope
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [[ "$EVENT_NAME" == pull_request ]]; then
+            git diff --name-only -z "$BASE_SHA" HEAD | python3 scripts/ci-scope.py >> "$GITHUB_OUTPUT"
+          else
+            printf 'native=true\npackages=true\n' >> "$GITHUB_OUTPUT"
+          fi

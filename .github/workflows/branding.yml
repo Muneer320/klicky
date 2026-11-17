@@ -2,6 +2,7 @@ name: Brand asset consistency
 
 on:
   push:
+    branches: [master]
     paths:
       - assets/branding/**
       - tools/branding/**
@@ -16,6 +17,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: branding-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   exports:

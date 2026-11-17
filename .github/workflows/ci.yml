@@ -3,13 +3,23 @@ name: CI
 on:
   workflow_call:
   push:
+    branches: [master]
   pull_request:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  scope:
+    uses: ./.github/workflows/ci-scope.yml
+
   omarchy-plugin:
+    needs: scope
+    if: needs.scope.outputs.native != 'false'
     name: Omarchy plugin export
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -30,6 +40,8 @@ jobs:
           if-no-files-found: error
 
   macos-installation:
+    needs: scope
+    if: needs.scope.outputs.native != 'false'
     name: macOS lifecycle (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
@@ -71,6 +83,8 @@ jobs:
           fi
 
   powershell:
+    needs: scope
+    if: needs.scope.outputs.native != 'false'
     name: PowerShell syntax
     runs-on: windows-latest
     steps:
@@ -87,39 +101,55 @@ jobs:
           }
 
   check:
+    needs: scope
+    if: ${{ !cancelled() }}
     name: ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    # Keep required names without queueing a macOS VM for prose/website edits.
+    runs-on: ${{ needs.scope.outputs.native == 'false' && 'ubuntu-latest' || matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
 
     steps:
+      - name: Require successful scope detection
+        env:
+          SCOPE_RESULT: ${{ needs.scope.result }}
+        run: test "$SCOPE_RESULT" = success
       - uses: actions/checkout@v7
+        if: matrix.os == 'ubuntu-latest' || needs.scope.outputs.native == 'true'
+      - name: Install shell linter
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Install Linux dependencies
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libasound2-dev shellcheck
+        if: matrix.os == 'ubuntu-latest' && needs.scope.outputs.native == 'true'
+        run: sudo apt-get install -y libasound2-dev
       - name: Install Rust components
+        if: matrix.os == 'ubuntu-latest' || needs.scope.outputs.native == 'true'
         run: rustup component add clippy rustfmt
       - name: Check formatting
+        if: matrix.os == 'ubuntu-latest'
         run: cargo fmt --check
       - name: Check documentation
-        run: python3 scripts/check-docs.py
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          python3 scripts/check-docs.py
+          python3 -B -m unittest scripts/test_check_docs.py scripts/test_ci_scope.py
       - name: Check Linux installer lifecycle
-        if: runner.os == 'Linux'
+        if: matrix.os == 'ubuntu-latest'
         run: python3 -B -m unittest scripts/test_install_lifecycle.py
       - name: Check shell scripts
-        if: runner.os == 'Linux'
+        if: matrix.os == 'ubuntu-latest'
         run: |
           for script in scripts/*.sh packaging/omarchy-bar/*.sh; do bash -n "$script"; done
           shellcheck scripts/*.sh packaging/omarchy-bar/*.sh
       - name: Check macOS menu bar helper
-        if: runner.os == 'macOS'
+        if: matrix.os == 'macos-latest' && needs.scope.outputs.native == 'true'
         run: |
           swiftc packaging/macos/KlickyMenu.swift -o /tmp/klicky-menu-check
           python3 -B scripts/test-macos-menu.py
       - name: Check GitHub Actions workflows
-        if: runner.os == 'Linux'
+        if: matrix.os == 'ubuntu-latest'
         run: |
           curl -fsSLo /tmp/actionlint.tar.gz \
             https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz
@@ -128,16 +158,14 @@ jobs:
             '/tmp/actionlint.tar.gz' | sha256sum --check
           tar -xzf /tmp/actionlint.tar.gz -C /tmp actionlint
           /tmp/actionlint -ignore 'SC2016:'
-      - name: Check
-        run: cargo check --all-targets
       - name: Test
-        run: cargo test
+        if: needs.scope.outputs.native == 'true'
+        run: cargo test --locked
       - name: Lint
-        run: cargo clippy --all-targets --all-features -- -D warnings
-      - name: Build release
-        run: cargo build --release
+        if: needs.scope.outputs.native == 'true'
+        run: cargo clippy --locked --all-targets --all-features -- -D warnings
       - name: Check systemd unit
-        if: runner.os == 'Linux'
+        if: matrix.os == 'ubuntu-latest' && needs.scope.outputs.native == 'true'
         run: |
-          install -Dm755 target/release/klicky "$HOME/.local/bin/klicky"
+          install -Dm755 target/debug/klicky "$HOME/.local/bin/klicky"
           systemd-analyze --user verify packaging/systemd/klicky.service

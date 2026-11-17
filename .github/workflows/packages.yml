@@ -3,15 +3,29 @@ name: Packages
 on:
   workflow_call:
   push:
+    branches: [master]
   pull_request:
 
 permissions:
   contents: read
 
+concurrency:
+  group: packages-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  scope:
+    uses: ./.github/workflows/ci-scope.yml
+
   debian-package:
+    needs: scope
+    if: ${{ !cancelled() && needs.scope.outputs.packages != 'false' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Require successful scope detection
+        env:
+          SCOPE_RESULT: ${{ needs.scope.result }}
+        run: test "$SCOPE_RESULT" = success
       - uses: actions/checkout@v7
       - name: Install dependencies
         run: |
@@ -44,9 +58,14 @@ jobs:
           retention-days: 14
 
   apt-repository:
-    needs: debian-package
+    needs: [scope, debian-package]
+    if: ${{ !cancelled() && needs.scope.outputs.packages != 'false' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Require successful package build
+        env:
+          PACKAGE_RESULT: ${{ needs.debian-package.result }}
+        run: test "$PACKAGE_RESULT" = success
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@v5
         with:
@@ -65,11 +84,17 @@ jobs:
             --exercise-history-retention "$package"
 
   arch-package:
+    needs: scope
+    if: ${{ !cancelled() && needs.scope.outputs.packages != 'false' }}
     runs-on: ubuntu-latest
     container: archlinux:latest
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
+      - name: Require successful scope detection
+        env:
+          SCOPE_RESULT: ${{ needs.scope.result }}
+        run: test "$SCOPE_RESULT" = success
       - name: Install dependencies
         run: pacman -Syu --noconfirm base-devel git rust alsa-lib systemd namcap python
       - uses: actions/checkout@v7

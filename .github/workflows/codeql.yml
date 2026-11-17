@@ -2,8 +2,10 @@ name: CodeQL advanced
 
 on:
   pull_request:
+    paths-ignore: ['**.md']
   push:
     branches: [master]
+    paths-ignore: ['**.md']
   schedule:
     - cron: '17 3 * * 2'
   workflow_dispatch:
@@ -60,7 +62,7 @@ jobs:
         with:
           category: /language:${{ matrix.language }}
           output: ${{ runner.temp }}/codeql-results
-          # Default setup stays active until the reviewed migration is ready.
+          # Disable uploads before restoring default setup during a rollback.
           upload: ${{ vars.CODEQL_ADVANCED_ENABLED == 'true' && 'always' || 'never' }}
           upload-database: false
       - name: Verify the Swift helper was extracted
