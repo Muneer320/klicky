@@ -3,6 +3,7 @@ name: Windows portable core
 on:
   workflow_call:
   push:
+    branches: [master]
     paths:
       - src/**
       - tests/**
@@ -24,6 +25,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: windows-core-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   check:
     name: windows-core
@@ -31,14 +36,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Install declared minimum Rust
-        run: rustup toolchain install 1.87.0 --profile minimal --component rustfmt --component clippy
-      - name: Check formatting
-        run: cargo +1.87.0 fmt --check
-      - name: Check compilation
-        run: cargo +1.87.0 check --locked --all-targets
+        run: rustup toolchain install 1.87.0 --profile minimal --component clippy
       - name: Test portable code
         run: cargo +1.87.0 test --locked
       - name: Lint
         run: cargo +1.87.0 clippy --locked --all-targets --all-features -- -D warnings
-      - name: Build development targets
-        run: cargo +1.87.0 build --locked --release

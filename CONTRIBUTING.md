@@ -81,16 +81,26 @@ Write tests for behavior that can regress:
 
 Do not add tests for trivial delegation or compiler-enforced properties. Hardware behavior needs a real device test and a written environment description.
 
-Run before every pull request:
+For Rust changes, run:
 
 ```bash
 cargo fmt --check
-cargo check --all-targets
-cargo test
-cargo clippy --all-targets --all-features -- -D warnings
+cargo test --locked
+cargo clippy --locked --all-targets --all-features -- -D warnings
 PYTHONUTF8=1 python3 -B scripts/check-docs.py
-cargo build --release
 ```
+
+Clippy includes compilation checks. Run `cargo build --release` when changing
+build behavior or preparing a package; package CI also builds release binaries.
+For prose-only edits, the documentation check is sufficient locally.
+
+PR validation runs once per commit, with superseded runs cancelled. Markdown-only
+PRs keep the fast documentation, formatting and script checks, without rebuilding
+native apps and packages. Website changes retain package/APT validation. Unknown
+files and workflow changes use full checks; `master` and release candidates always
+run the full native and package suite. Required check names remain available even
+when their expensive work is unnecessary. A failed scope check fails the required
+checks rather than silently accepting the change.
 
 For APT changes, run `python3 -B -m unittest scripts/test_apt_repository.py` and, on Linux with GnuPG and reprepro, `python3 -B scripts/test_apt_repository_integration.py PACKAGE.deb`. See [APT validation coverage](docs/MAINTAINING_APT.md#validation-coverage) for what these checks establish. For website changes, follow the [website checks](docs/WEBSITE.md#preview-and-validate). In PowerShell, set `$env:PYTHONUTF8 = '1'` before running Python.
 

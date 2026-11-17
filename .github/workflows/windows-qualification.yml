@@ -2,6 +2,7 @@ name: Windows qualification tooling
 
 on:
   push:
+    branches: [master]
     paths:
       - tools/windows-qualification/**
       - src/player.rs
@@ -18,6 +19,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: windows-qualification-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:
@@ -39,8 +44,6 @@ jobs:
         run: rustup toolchain install 1.87.0 --profile minimal --component rustfmt --component clippy
       - name: Check formatting
         run: cargo +1.87.0 fmt --manifest-path tools/windows-qualification/Cargo.toml --check
-      - name: Check compilation
-        run: cargo +1.87.0 check --locked --all-targets --manifest-path tools/windows-qualification/Cargo.toml
       - name: Lint
         run: cargo +1.87.0 clippy --locked --all-targets --manifest-path tools/windows-qualification/Cargo.toml -- -D warnings
       - name: Build qualification executable
