@@ -93,7 +93,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          foreach ($file in Get-ChildItem scripts -Filter '*.ps1') {
+          foreach ($file in Get-ChildItem -Path scripts,src/update -Filter '*.ps1') {
             $tokens = $null
             $errors = $null
             $null = [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$errors)
@@ -141,8 +141,8 @@ jobs:
       - name: Check shell scripts
         if: matrix.os == 'ubuntu-latest'
         run: |
-          for script in scripts/*.sh packaging/omarchy-bar/*.sh; do bash -n "$script"; done
-          shellcheck scripts/*.sh packaging/omarchy-bar/*.sh
+          for script in scripts/*.sh packaging/omarchy-bar/*.sh src/update/*.sh; do bash -n "$script"; done
+          shellcheck scripts/*.sh packaging/omarchy-bar/*.sh src/update/*.sh
       - name: Check macOS menu bar helper
         if: matrix.os == 'macos-latest' && needs.scope.outputs.native == 'true'
         run: |

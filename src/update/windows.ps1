@@ -12,18 +12,16 @@ try {
         }
     }
     if ($Channel -eq 'Standalone') {
-        Invoke-RestMethod 'https://klicky.muneer320.tech/install.ps1' | Invoke-Expression
+        $installer = Invoke-RestMethod 'https://klicky.muneer320.tech/install.ps1' -TimeoutSec 30
+        & ([scriptblock]::Create($installer)) -Update
     }
     else {
-        $status = (& $Cli status)
-        if ($LASTEXITCODE -ne 0) { throw 'Cannot read playback state' }
-        $running = ($status -join "`n") -notmatch 'Klicky is not running'
-        if ($running) {
-            $state = (& $Cli diagnostics | ConvertFrom-Json)
-            if ($LASTEXITCODE -ne 0) { throw 'Cannot preserve playback state; update with Scoop manually.' }
-            & $Cli service stop
-            if ($LASTEXITCODE -ne 0) { throw 'Klicky did not stop' }
+        $receipt = @(& $Cli service prepare-update)
+        if ($LASTEXITCODE -ne 0 -or $receipt.Count -ne 1 -or $receipt[0] -notmatch '^KLICKY_UPDATE_V1 ([01]) ([01])$') {
+            throw 'Klicky did not confirm update preparation; update with Scoop manually.'
         }
+        $running = $Matches[1] -eq '1'
+        $paused = $Matches[2] -eq '1'
         try {
             scoop update
             if ($LASTEXITCODE -ne 0) { throw 'Scoop refresh failed' }
@@ -32,7 +30,7 @@ try {
         }
         finally {
             if ($running) {
-                if ($state.snapshot.state -eq 'paused') { & $Cli service start --paused }
+                if ($paused) { & $Cli service start --paused }
                 else { & $Cli service start }
                 if ($LASTEXITCODE -ne 0) { Write-Warning 'Klicky did not restart; use its Start shortcut.' }
             }

@@ -115,6 +115,7 @@ pub fn check() -> Result<Check> {
     }
     let output = request
         .args([
+            "--disable",
             "--fail",
             "--silent",
             "--show-error",
@@ -128,6 +129,8 @@ pub fn check() -> Result<Check> {
             "1048576",
             "--header",
             "Accept: application/vnd.github+json",
+            "--header",
+            "X-GitHub-Api-Version: 2022-11-28",
             "--user-agent",
             "Klicky-update-check",
             RELEASE_API,
@@ -232,11 +235,23 @@ fn windows_route(exe: &Path, local: Option<&Path>, packaged: bool) -> Result<Rou
 #[cfg(not(target_os = "windows"))]
 fn detect(exe: &Path) -> Result<Route> {
     #[cfg(target_os = "macos")]
-    if option_env!("KLICKY_MACOS_INSTALL_BINARY")
-        .and_then(|p| Path::new(p).canonicalize().ok())
-        .is_some_and(|p| p == exe)
-    {
-        return Ok(Route::Homebrew);
+    if let Some(launcher) = option_env!("KLICKY_MACOS_INSTALL_BINARY") {
+        // The tap's stable opt/bin launcher is a shell wrapper. The actual Rust
+        // executable is installed under the keg's libexec directory.
+        if let Some(keg) = Path::new(launcher)
+            .parent()
+            .and_then(Path::parent)
+            .and_then(|p| p.canonicalize().ok())
+        {
+            if keg.join("INSTALL_RECEIPT.json").is_file()
+                && keg
+                    .join("libexec/bin/klicky")
+                    .canonicalize()
+                    .is_ok_and(|p| p == exe)
+            {
+                return Ok(Route::Homebrew);
+            }
+        }
     }
     #[cfg(target_os = "linux")]
     if exe == Path::new("/usr/bin/klicky") {
@@ -310,8 +325,12 @@ pub fn handoff(route: Route, wait_for_cli: bool) -> Result<()> {
 #[cfg(target_os = "windows")]
 fn open_store() -> Result<()> {
     use windows::core::{w, PCWSTR};
+    use windows::Win32::System::Com::{CoInitializeEx, CoUninitialize, COINIT_APARTMENTTHREADED};
     use windows::Win32::UI::Shell::ShellExecuteW;
     use windows::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
+    unsafe {
+        CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok()?;
+    }
     let result = unsafe {
         ShellExecuteW(
             None,
@@ -322,6 +341,9 @@ fn open_store() -> Result<()> {
             SW_SHOWNORMAL,
         )
     };
+    unsafe {
+        CoUninitialize();
+    }
     if result.0 as isize <= 32 {
         bail!("Microsoft Store could not open; use Store > Library > Get updates");
     }
@@ -331,16 +353,11 @@ fn open_store() -> Result<()> {
 
 #[cfg(not(target_os = "windows"))]
 pub fn handoff(route: Route, _wait_for_cli: bool) -> Result<()> {
-    let commands: &[(&str, &[&str])] = match route {
-        Route::Homebrew => &[
-            ("brew", &["update"]),
-            ("brew", &["upgrade", "muneer320/tap/klicky"]),
-        ],
-        Route::Apt => &[
-            ("sudo", &["apt-get", "update"]),
-            ("sudo", &["apt-get", "install", "--only-upgrade", "klicky"]),
-        ],
-        Route::Pacman => &[("sudo", &["pacman", "-Syu"])],
+    use std::os::unix::process::CommandExt;
+    let manager = match route {
+        Route::Homebrew => "homebrew",
+        Route::Apt => "apt",
+        Route::Pacman => "pacman",
         _ => bail!("Update manually using {GUIDE}; no files were changed"),
     };
     let playback = match crate::ipc::playback_status() {
@@ -351,31 +368,22 @@ pub fn handoff(route: Route, _wait_for_cli: bool) -> Result<()> {
     let launcher = option_env!("KLICKY_MACOS_INSTALL_BINARY")
         .map(std::path::PathBuf::from)
         .unwrap_or(std::env::current_exe()?);
-    crate::service::run(crate::cli::ServiceAction::Stop)?;
-    let update = (|| {
-        for (program, args) in commands {
-            let status = Command::new(program)
-                .args(*args)
-                .status()
-                .with_context(|| format!("run {program}"))?;
-            if !status.success() {
-                bail!("{program} did not complete the update; check its output above");
-            }
-        }
-        Ok(())
-    })();
-    // Use the installed CLI after replacement, rather than this old executable's
-    // service code. Do not enable login startup or start a previously stopped app.
-    if let Some(state) = playback {
-        let status = Command::new(&launcher)
-            .args(["service", "start"])
-            .status()?;
-        if !status.success() {
-            bail!("Klicky could not restart; update result: {update:?}");
-        }
-        if state.paused && !Command::new(&launcher).arg("pause").status()?.success() {
-            bail!("Klicky restarted but could not restore Pause; update result: {update:?}");
-        }
-    }
-    update
+    // exec preserves the foreground terminal while releasing the old executable.
+    // Debian/Arch guards must not mistake the updater CLI for a running engine.
+    let error = Command::new("/bin/sh")
+        .args([
+            "-c",
+            include_str!("update/unix.sh"),
+            "klicky-update",
+            manager,
+        ])
+        .arg(launcher)
+        .arg(if playback.is_some() { "1" } else { "0" })
+        .arg(if playback.is_some_and(|state| state.paused) {
+            "1"
+        } else {
+            "0"
+        })
+        .exec();
+    Err(error).context("hand off to the installation owner; no update started")
 }

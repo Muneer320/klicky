@@ -1,4 +1,6 @@
 # Downloads a published Windows installer; never uses expiring CI artifacts.
+param([switch]$Update)
+
 & {
     Set-StrictMode -Version Latest
     $ErrorActionPreference = 'Stop'
@@ -74,6 +76,10 @@
         $cli = Join-Path $env:LOCALAPPDATA 'Programs/Klicky/klicky.exe'
         if (-not (Test-Path -LiteralPath $cli -PathType Leaf)) {
             throw "Setup finished, but Klicky could not start because its control executable is missing: $cli. Details: $log`n$securityHelp`nIf there is no security detection, repair the installation with the official installer."
+        }
+        if ($Update) {
+            Write-Output 'Klicky update finished. The installer restored its previous running and pause state.'
+            return
         }
         $launch = Start-KlickyProcess -Stage 'Klicky startup after installation' -Options @{
             FilePath = $cli; ArgumentList = @('service', 'start'); WindowStyle = 'Hidden'
