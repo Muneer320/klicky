@@ -230,6 +230,6 @@ Klicky uses native keyboard input on each OS and prepares audio before you type.
 | Explore the character or use artwork | [Klicky's story](docs/CHARACTER.md) · [Artwork](assets/branding) |
 | Check releases and project history | [Releases](https://github.com/Muneer320/klicky/releases) · [Changelog](CHANGELOG.md) |
 
-Klicky grew from [Sauhard Gupta's original macOS project](https://github.com/Sauhard74/klicky). After seeing it on a Mac, [Muneer Alam](https://muneer320.tech/) wanted it on his Omarchy machine, adapted it for Linux, and kept going until Windows joined in. [Read the development story.](https://muneer320.tech/projects/klicky/)
+I first saw [Sauhard Gupta's original macOS project](https://github.com/Sauhard74/klicky) running on a Mac and wanted it on my Omarchy machine. So I adapted it for Linux, then kept going until Windows joined in. [Read the development story.](https://muneer320.tech/projects/klicky/) · [About me](https://muneer320.tech/)
 
 [MIT license](LICENSE) · [Acknowledgements and third-party credits](ACKNOWLEDGEMENTS.md). Third-party notices are included with packaged downloads.
