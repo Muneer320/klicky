@@ -156,16 +156,16 @@
                 <tr>
                   <td>Linux</td>
                   <td>Debian/Arch packages; source installer</td>
-                  <td>CLI, systemd; optional Omarchy toggle</td>
+                  <td>CLI, systemd; optional Klicky Bar or older Omarchy toggle</td>
                 </tr>
                 <tr>
                   <td>macOS</td>
-                  <td>Source installer</td>
-                  <td>Menu toggle, CLI, launchd</td>
+                  <td>Source installer; Homebrew tap on Apple Silicon</td>
+                  <td>Menu bar, CLI, launchd</td>
                 </tr>
                 <tr>
                   <td>Windows 11 x64</td>
-                  <td>Unsigned installer and portable ZIP</td>
+                  <td>Microsoft Store, Scoop, standalone installer/ZIP</td>
                   <td>Native tray and CLI</td>
                 </tr>
               </tbody>
@@ -344,8 +344,8 @@ omarchy plugin remove io.github.muneer320.klicky-bar</code></pre>
           <pre><code>./scripts/install-macos.sh
 ./scripts/install-macos-menu-bar.sh</code></pre>
           <p>
-            The menu toggles the daemon; change packs/volume through the CLI.
-            Quitting the helper closes the menu, not the daemon.
+            The menu offers Pause/Resume, volume, sound packs, engine start/stop
+            and login startup. Quitting the helper closes the menu, not the daemon.
           </p>
         </section>
         <section id="homebrew">
@@ -459,8 +459,8 @@ klicky volume 0.5</code></pre>
           <pre><code>&amp; "$env:LOCALAPPDATA\Programs\Klicky\klicky.exe" status</code></pre>
           <p>
             Select the intended speakers/headphones and type briefly. On
-            Windows, Resume if paused. The macOS menu toggles sounds; Linux uses
-            its service controls.
+            Windows, macOS or Klicky Bar, choose Resume if paused. The CLI command
+            <code>klicky resume</code> also resumes playback without restarting the engine.
           </p>
         </section>
         <section id="cli">
@@ -1079,6 +1079,7 @@ systemctl --user start klicky.service</code></pre>
                 <li><a href="https://dev.to/muneer320/i-wanted-keyboard-sounds-on-linux-then-i-fell-down-the-audio-stack-3b1d">Audio deep dive (DEV)</a></li>
                 <li><a href="https://alternativeto.net/software/klicky/about/">AlternativeTo</a></li>
                 <li><a href="https://www.pitchhut.com/project/klicky">PitchHut</a></li>
+                <li><a href="https://www.saashub.com/klicky">SaaSHub</a></li>
               </ul>
             </div>
           </nav>

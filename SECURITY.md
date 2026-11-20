@@ -58,7 +58,7 @@ The daemon receives raw global key-down events, including events generated while
 - Normal playback and aggregate benchmark diagnostics do not log key names or reconstruct typed text. Neither executable accesses the microphone.
 - Local-only control pipes restrict access to the current logon and validate the server process identity. Shutdown waits retain the actual native process handle.
 - Bundle leases protect against cooperating installer/process races; they do not protect a user from other software already running as that same user.
-- Windows packages are unsigned. Verify release checksums and keep antivirus protection enabled. Report detections through the guidance above; a version number is not an antivirus determination.
+- Standalone Windows EXE/ZIP downloads are unsigned; the Microsoft Store package is signed through Store delivery. Verify release checksums for standalone downloads and keep antivirus protection enabled. Report detections through the guidance above; signing or a version number is not an antivirus determination.
 
 ### Network behavior
 

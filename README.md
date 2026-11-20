@@ -121,8 +121,8 @@ Once setup finishes, type in any ordinary app to hear Klicky. Here's where to fi
 | System | Where to look |
 |---|---|
 | **Windows** | Tray menu: choose a pack, change volume, Pause/Resume, retry audio or choose login startup. |
-| **macOS** | Menu bar: toggle sounds. Terminal: choose a pack and set volume. |
-| **Linux** | Terminal controls below; supported Omarchy setups also have a bar toggle. |
+| **macOS** | Menu bar: choose a pack, change volume, Pause/Resume or choose login startup. Terminal controls are available too. |
+| **Linux** | Terminal controls below. [Klicky Bar](docs/OMARCHY.md) adds pack, volume, Pause/Resume and startup controls on Omarchy 4.5+. |
 
 On Linux and macOS, try:
 
