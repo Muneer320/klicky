@@ -28,11 +28,12 @@ restore_playback() {
   exit "$result"
 }
 
-"$launcher" service stop || exit 1
 trap restore_playback EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 trap 'exit 129' HUP
+"$launcher" service stop || exit 1
+"$launcher" stop || exit 1
 
 case "$manager" in
   homebrew)

@@ -214,6 +214,7 @@ struct State {
     refreshing: bool,
     checking_updates: bool,
     update_check: Option<crate::update::Check>,
+    update_error: Option<String>,
     menu_open: bool,
     taskbar_created: u32,
     icon_added: bool,
@@ -299,6 +300,7 @@ fn run_ui(paths: Paths, controller: Controller) -> Result<()> {
         refreshing: true,
         checking_updates: false,
         update_check: None,
+        update_error: None,
         menu_open: false,
         taskbar_created: unsafe { RegisterWindowMessageW(w!("TaskbarCreated")) },
         icon_added: false,
@@ -573,14 +575,19 @@ fn take_metadata(hwnd: HWND) -> Result<()> {
     }
     if let Some(result) = update.handoff {
         state.checking_updates = false;
-        if let Err(error) = result {
-            state.operation_error = Some(error);
+        match result {
+            Ok(()) => {
+                state.update_error = None;
+                state.update_check = None;
+            }
+            Err(error) => state.update_error = Some(error),
         }
     }
     if let Some(result) = update.release {
         state.checking_updates = false;
         let text = match result {
             Ok(check) => {
+                state.update_error = None;
                 let text = if check.newer {
                     format!("Klicky {} is available (installed {}). Reopen the tray menu for the update route.", check.latest, env!("CARGO_PKG_VERSION"))
                 } else {
@@ -595,14 +602,14 @@ fn take_metadata(hwnd: HWND) -> Result<()> {
             }
             Err(error) => {
                 state.update_check = None;
-                state.operation_error = Some(error.clone());
+                state.update_error = Some(error.clone());
                 error
             }
         };
         if !state.view.finished {
             let mut data = icon_data(hwnd);
             data.uFlags = NIF_INFO;
-            data.dwInfoFlags = NIIF_INFO;
+            data.dwInfoFlags = NIIF_INFO | NIIF_NOSOUND;
             copy_utf16("Klicky updates", &mut data.szInfoTitle);
             copy_utf16(&text, &mut data.szInfo);
             unsafe {
@@ -934,6 +941,9 @@ fn show_menu(hwnd: HWND) -> Result<()> {
     )?;
     {
         let state = state_ref(hwnd).borrow();
+        if let Some(error) = &state.update_error {
+            menu.item(0, &menu_text(error), MF_GRAYED)?;
+        }
         if let Some(check) = &state.update_check {
             menu.item(
                 0,
