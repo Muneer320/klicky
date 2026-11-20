@@ -1,6 +1,6 @@
 # Acknowledgements
 
-Klicky began as a Linux-focused evolution of [Sauhard74/klicky](https://github.com/Sauhard74/klicky), created by Sauhard Gupta.
+I started Klicky after seeing [Sauhard Gupta's original macOS project](https://github.com/Sauhard74/klicky) running on a Mac and wanting it on my Omarchy machine.
 
 The original project established the core ideas that remain central here:
 
@@ -16,7 +16,7 @@ This repository preserves the original Git history and MIT license. The original
 
 ## Linux and cross-platform work
 
-The current repository adds and maintains:
+I expanded it to Linux and Windows, with help from contributors. The main additions include:
 
 - Direct Linux `evdev` input
 - Wayland and X11 independence
@@ -26,8 +26,9 @@ The current repository adds and maintains:
 - Configurable low-latency buffer fallbacks
 - Capped per-key loudness normalization
 - Linux udev and systemd integration
-- Omarchy Quickshell integration
-- Linux and macOS CI
+- Native Windows input, audio and tray controls
+- macOS menu controls and Omarchy Klicky Bar
+- Cross-platform installers, packages and CI
 - Hardware-backed Linux benchmarks and documentation
 
 ## Related projects
@@ -45,7 +46,7 @@ Contributors adding or replacing sounds must provide a clear source and redistri
 
 ## Visual identity and typography
 
-The Klicky mascot identity and selected cozy keyboard artwork establish the project's visual direction. The public asset library contains selected final illustrations and simplified application marks; private reference boards are not distributed.
+The Klicky mascot identity and selected cozy keyboard artwork establish the project's visual direction. The [asset library](assets/branding) contains the final illustrations and application marks.
 
 The website and outlined wordmarks use Nunito by The Nunito Project Authors. The typeface and web subset retain the [SIL Open Font License](assets/website/fonts/OFL.txt), separately from Klicky's MIT-licensed application code.
 

@@ -8,9 +8,9 @@ klicky start --benchmark
 
 On Linux/macOS, each mapped keypress prints the elapsed time between the platform input callback and the call that adds the cached audio source to the persistent mixer. Windows prints aggregate diagnostics at exit without key names. Neither mode measures physical key actuation, device scheduling, DAC or speaker onset.
 
-Windows has no calibrated physical-to-audible result established by these figures. Preserve matched keyboard/output/measurement conditions when comparing platforms; requested buffer sizes, dispatch timings and subjective listening are separate evidence. Qualification tooling is documented in [the bounded harness guide](../tools/windows-qualification/USAGE.md).
+To measure physical-to-audible latency, record the key impact and generated sound on the same timeline, with matched hardware and output routes. The [bounded qualification harness](../tools/windows-qualification/USAGE.md) supports this work; its internal dispatch counters are a separate measurement.
 
-## Current Linux result
+## Recorded Linux run
 
 Test environment:
 
@@ -80,18 +80,6 @@ The original `eg-oreo` key slices were much quieter than several Cherry MX packs
 | `Return` | -37.0 dB | -18.1 dB |
 
 For comparison, `cherrymx-blue-pbt` KeyA measured -30.7 dB mean and -6.7 dB peak. Klicky now normalizes each quiet key slice once at startup, targeting an 85 percent peak with a maximum 6x gain. A real-hardware listening test confirmed improved volume without audible clipping.
-
-## What these numbers do not prove
-
-Input-to-dispatch timing excludes:
-
-- Kernel and hardware time before the callback
-- Audio buffer duration
-- PipeWire or CoreAudio scheduling
-- DAC conversion
-- Speaker propagation
-
-A rigorous physical-to-audible test requires an external microphone or loopback setup that records the physical key impact and generated sound on one timeline. Until that test exists, Klicky reports dispatch and negotiated buffer measurements separately.
 
 ## Reproducing the dispatch test
 

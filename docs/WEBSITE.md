@@ -20,7 +20,20 @@ There is no frontend framework, remote font service, account, analytics or globa
 
 Keep the archive template markers `PUBLIC_URL`, `LATEST_VERSION`, `VERSIONS` and `FINGERPRINT`. The builder escapes dynamic metadata. Preserve relative links to `klicky.sources`, both signing-key formats and `dists/stable/InRelease`; the site must work at `/` and `/klicky/`.
 
-`copy_site_assets` publishes the curated website/branding folders, field guide, privacy policy and four install/remove scripts. The preferred social image is `/assets/social-preview.jpg`; `/assets/social-preview.png` remains compatible with older links. Both are 1280 × 640 and under 1 MB. Never copy reference boards, internal character briefs, planning files, local test output or unrelated directories into public assets.
+`copy_site_assets` publishes the curated website/branding folders, field guide, privacy policy and four install/remove scripts. The preferred social image is `/assets/social-preview.jpg`; `/assets/social-preview.png` remains compatible with older links. Both are 1280 × 640 and under 1 MB. The builder publishes only the curated asset directories.
+
+## Artwork
+
+The [asset library](../assets/branding) contains the shared SVG/PNG marks, mascot illustrations, wordmarks and social poster. [Meet Klicky](CHARACTER.md) describes the character. Optimized site images live in `assets/website/mascot`; native application icons are committed under `assets/branding` and `packaging/windows`.
+
+To regenerate PNG/ICO and macOS template icons after changing their SVG sources:
+
+```sh
+npm ci --prefix tools/branding --ignore-scripts
+npm run --prefix tools/branding build
+```
+
+The pinned resvg exporter uses the colour mark for PNG/ICO and the monochrome mark for macOS templates. The branding workflow checks generated files against Git. Normal Cargo builds use the committed icons and do not require Node. Keep font and demo attributions with their assets; see [acknowledgements](../ACKNOWLEDGEMENTS.md).
 
 ## Preview and validate
 
@@ -55,16 +68,14 @@ Use `--ffmpeg /path/to/ffmpeg` if needed. Examples are offline sample sequences 
 
 ## Publication
 
-The reviewed Pages/APT workflow rebuilds the complete signed archive, verifies retained package history and keeps CNAME. Do not deploy the landing HTML alone or replace this with a generic static-site workflow. See [APT maintenance](MAINTAINING_APT.md).
+The Pages/APT workflow rebuilds the complete signed archive, verifies retained package history and keeps CNAME. Do not deploy the landing HTML alone or replace this with a generic static-site workflow. See [APT maintenance](MAINTAINING_APT.md).
 
 The custom-domain CNAME points to `muneer320.github.io`; GitHub Pages must retain the same domain and HTTPS setting. Installation endpoints are `/install.sh` and `/install.ps1`; removal uses `/uninstall.sh` and `/uninstall.ps1`.
 
 Publishing website changes does not publish application releases or update installed icons. Keep version/download wording aligned with real release assets. The APT release-event path skips prereleases, and candidate builds do not publish a release.
 
-## Search and AI-search follow-up
+## Search metadata
 
-The site serves its product facts and installation text in HTML, with canonical URLs, a sitemap, crawlable links and SoftwareApplication/Person identity. Keep visible descriptions, desktop-control instructions and structured data consistent. Do not add ratings, performance figures or package-manager availability that the project cannot substantiate.
+The pages contain canonical URLs, a sitemap, crawlable links and SoftwareApplication/Person structured data. Keep these consistent with visible product and installation information. Use the shared social poster and relative asset paths so links work on both the custom domain and GitHub Pages.
 
-After meaningful page changes, check the verified domain in Google Search Console and Bing Webmaster Tools: sitemap processing, URL inspection, crawl/indexing problems and query/page performance. Bing’s AI Performance report can show citations and grounding queries when data is available. A public `site:` search is only a spot check, not an indexing or ranking report.
-
-Google’s [AI search guidance](https://developers.google.com/search/docs/appearance/ai-features) uses the same crawlability and helpful-content foundations as ordinary search; there is no special AI schema required. Prioritize accurate answers and working links over extra crawler-specific files. Webmaster dashboards require the maintainer’s signed-in account; never treat an inaccessible report as a passed check.
+Google's [search and AI-feature guidance](https://developers.google.com/search/docs/appearance/ai-features) covers crawlability and helpful content; no special AI schema is required. Keep ratings, performance figures and package-manager availability grounded in the released product.

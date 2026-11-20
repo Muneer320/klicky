@@ -1,6 +1,6 @@
 # Windows qualification tools
 
-This development tool exercises Space-key feedback on Windows 11 x64. It is not a Windows Klicky release and does not install a background service. Production Linux/macOS code remains unchanged.
+This contributor tool exercises Space-key feedback on Windows 11 x64 for controlled input/audio comparisons. For normal installation and desktop controls, use the [Windows guide](../../docs/WINDOWS.md).
 
 ## Build
 
@@ -13,7 +13,7 @@ $env:KLICKY_QUALIFICATION_TREE_STATE = if (git status --porcelain=v1) { 'dirty' 
 cargo build --locked --release --manifest-path tools/windows-qualification/Cargo.toml
 ```
 
-The standalone crate reuses the production sound loader and player directly. `baseline` uses the current production buffer policy. `device-default` explicitly requests CPAL's default buffer policy for comparison; neither request is a measured endpoint buffer.
+The standalone crate reuses the shared sound loader and Player. `baseline` uses that Player's buffer policy; the native Windows app has its own renderer. `device-default` explicitly requests CPAL's default buffer policy for comparison; neither request is a measured endpoint buffer.
 
 ## Controlled Windows recording
 

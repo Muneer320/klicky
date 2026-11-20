@@ -47,7 +47,7 @@ We agree to restrict the following behaviors in our community. Instances, threat
 
 Tensions can occur between community members even when they are trying their best to collaborate. Not every conflict represents a code of conduct violation, and this Code of Conduct reinforces encouraged behaviors and norms that can help avoid conflicts and minimize harm.
 
-When an incident does occur, it is important to report it promptly. To report a possible violation, **email Muneer Alam at [muneer.alam320@gmail.com](mailto:muneer.alam320@gmail.com). Please include relevant links, what happened and how you can be contacted. Keep reports out of public issues and discussions.**
+When an incident does occur, it is important to report it promptly. To report a possible violation, **email me at [muneer.alam320@gmail.com](mailto:muneer.alam320@gmail.com). Please include relevant links, what happened and how you can be contacted. Keep reports out of public issues and discussions.**
 
 Project Maintainers take reports of violations seriously and will make every effort to respond in a timely manner. They will investigate all reports of code of conduct violations, reviewing messages, logs, and recordings, or interviewing witnesses and other participants. Project Maintainers will keep investigation and enforcement actions as transparent as possible while prioritizing safety and confidentiality. In order to honor these values, enforcement actions are carried out in private with the involved parties, but communicating to the whole community may be part of a mutually agreed upon resolution.
 
@@ -77,7 +77,7 @@ If an investigation by the Project Maintainers finds that this Code of Conduct h
 This enforcement ladder is intended as a guideline. It does not limit the ability of Project Maintainers to use their discretion and judgment, in keeping with the best interests of our community.
 
 
-For Klicky, Muneer Alam handles reports and moderation. Reports are handled privately, with information shared only as needed to investigate and respond. Please use [private security reporting](https://github.com/Muneer320/klicky/security/advisories/new) for software vulnerabilities.
+I handle reports and moderation for Klicky. Reports are handled privately, with information shared only as needed to investigate and respond. Please use [private security reporting](https://github.com/Muneer320/klicky/security/advisories/new) for software vulnerabilities.
 
 ## Scope
 

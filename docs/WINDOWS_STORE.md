@@ -95,7 +95,7 @@ for login startup when both EXE and Store installations are present.
 6. Repeat existing Windows core/package checks and Linux/macOS CI checks.
 
 Keep credentials, certificates, test recordings and account-specific submission
-notes outside the repository. Store publication remains a separate approval step.
+notes outside the repository. Certification and public Store publication are separate steps.
 
 ## Store submission
 

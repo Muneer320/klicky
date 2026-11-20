@@ -185,9 +185,7 @@ Windows EXE/ZIP installations store configuration/custom packs under `%LOCALAPPD
 - Linux input devices are discovered at daemon startup. A newly added keyboard requires a daemon restart, while a lost reader causes a systemd-managed process to restart and rediscover devices.
 - Linux/macOS physical audio-device replacement and suspend/resume need additional runtime testing after the Rodio 0.22 migration. Windows implements recovery, with its hardware matrix still under qualification.
 - Benchmark mode measures input callback to mixer dispatch, not microphone-observed audible latency.
-- Windows support targets Windows 11 x64 interactive desktops. Windows 10, ARM64, remote sessions and secure desktops are outside the initial support scope. See the [measurement guide](BENCHMARKS.md) for the distinction between internal timing and audible latency.
-
-These constraints are intentionally explicit. They should become focused issues rather than hidden claims of universal support.
+- Windows support targets Windows 11 x64 interactive desktops. Windows 10, ARM64, remote sessions and secure desktops are outside the supported desktop scope. See the [measurement guide](BENCHMARKS.md) for the distinction between internal timing and audible latency.
 
 ## Further reading
 

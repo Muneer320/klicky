@@ -223,10 +223,11 @@ Klicky uses native keyboard input on each OS and prepares audio before you type.
 | I want to… | Start here |
 |---|---|
 | Install, configure or troubleshoot | [The website field guide](https://klicky.muneer320.tech/guide.html) |
+| Browse all guides | [Documentation index](docs/README.md) |
 | Look up commands or configuration | [CLI](docs/CLI.md) · [Configuration](docs/CONFIGURATION.md) |
 | Add recordings or desktop integration | [Sound packs](docs/SOUND_PACKS.md) · [Omarchy](docs/OMARCHY.md) |
 | Understand or contribute code | [Build, test and contribute](CONTRIBUTING.md) · [Open issues](https://github.com/Muneer320/klicky/issues) |
-| Explore the character or use artwork | [Klicky's story](docs/CHARACTER.md) · [Brand assets](docs/BRANDING.md) |
+| Explore the character or use artwork | [Klicky's story](docs/CHARACTER.md) · [Artwork](assets/branding) |
 | Check releases and project history | [Releases](https://github.com/Muneer320/klicky/releases) · [Changelog](CHANGELOG.md) |
 
 Klicky grew from [Sauhard Gupta's original macOS project](https://github.com/Sauhard74/klicky). After seeing it on a Mac, [Muneer Alam](https://muneer320.tech/) wanted it on his Omarchy machine, adapted it for Linux, and kept going until Windows joined in. [Read the development story.](https://muneer320.tech/projects/klicky/)

@@ -109,9 +109,37 @@ The workflow:
 2. Runs Linux/macOS and Windows checks, including native macOS lifecycle validation.
 3. Builds and inspects Debian/Arch packages and the Windows installer/portable ZIP.
 4. Verifies build identity, asset inventory and sidecars, then generates the release manifest and `SHA256SUMS`.
-5. Uploads a combined candidate artifact for review. Publication requires explicit approval and a separate action; no release is automatically published.
+5. Uploads a combined candidate artifact for review. Release publication is a separate action; this workflow never publishes automatically.
 
 The regular package workflow also builds both formats on pushes and pull requests.
+
+## Release checklist
+
+The [release workflow](../.github/workflows/release.yml) builds a candidate from a branch or version tag. It archives the exact source, builds native packages and records revision/tree, file sizes, hashes and signing status in `RELEASE-MANIFEST.json`. `SHA256SUMS` covers the payloads and manifest. A candidate run does not publish a GitHub release or deploy the site.
+
+```bash
+gh workflow run release.yml --ref REVIEWED_BRANCH
+gh run list --workflow release.yml
+gh run download RUN_ID --name klicky-VERSION-release-candidate --dir target/release-candidate
+```
+
+Replace the branch, run ID and version with the candidate being reviewed. The payload set includes Debian and Arch packages, the Windows installer and ZIP, source archive and checksum sidecars.
+
+Before publication:
+
+1. Keep Cargo/lockfile, Debian/Arch/resource versions, changelog and public download links aligned. Verify the source archive preserves executable script modes.
+2. Pass cross-platform CI and package validation. Check bundled sounds, licenses, source obligations, checksums and the recorded source revision/tree.
+3. Exercise first install, upgrade, removal and recovery with disposable settings/custom packs. Cover playing, paused and stopped sessions, login startup, data persistence and purge. Windows validation includes missing-CLI recovery, foreign-file refusal and active-bundle interlocks.
+4. Check user-facing input/audio behavior on the available desktop hardware. Record listening feedback separately from dispatch or physical latency measurements; state any remaining hardware gaps.
+5. Scan the exact Windows release files with current antivirus protection. The release workflow uses a disposable runner to remove inherited scan exclusions, update Defender and scan both original archives and expanded payloads. Missing protection, stale signatures or detections fail assembly. Its `windows-security-evidence` artifact records engine/signature versions and file hashes. This does not sign the standalone files or qualify Windows ARM support.
+
+To publish, tag the reviewed commit with the version in `Cargo.toml`, build that tag, and verify the final downloaded assets. Publish the GitHub release with its notes, payloads, manifest and checksums. Keep published assets immutable; ship a new version rather than replacing bytes under an existing tag.
+
+Then follow [APT publication](MAINTAINING_APT.md#publication), retaining all authenticated historical packages. The Pages environment deploys from `master`, not version tags; a workflow-token-created release also needs a manual APT dispatch. Confirm the archive and site deployed before changing installation guidance. A source-version bump ahead of its matching published release leaves the existing site intact.
+
+After publication, verify public downloads, checksums, install/remove endpoints, signed APT metadata, sound previews and the custom domain. Keep package-manager manifests aligned with the release; advertise a channel only after it is available.
+
+Microsoft Store updates have a separate build, certification and publication lifecycle. Keep the [package identity/version mapping](WINDOWS_STORE.md#build) stable, validate the exact MSIX, submit accurate capability/listing information and verify the public production package. Store signing does not sign the standalone EXE/ZIP files.
 
 ## APT repository
 
@@ -119,7 +147,7 @@ Klicky has a public, signed APT repository at [muneer320.github.io/klicky](https
 
 Follow the [APT repository guide](APT_REPOSITORY.md) to install through the signed source. Stop the user service before replacing an installed package; the [update guide](INSTALLATION.md#updates-and-removal) includes the commands. Packages contain published release code rather than the current source tree. The archive retains older published packages when adding a release. Use `apt-cache policy klicky` to inspect the available versions and current candidate. The redesigned homepage and installation/removal helpers are live. Use `systemctl --user` for service controls across both retained versions.
 
-[APT publication](MAINTAINING_APT.md#publication) consumes a published release `.deb` and `SHA256SUMS`, retains packages from the live signed index, signs regenerated repository metadata, and deploys the website and archive together to GitHub Pages. First approve and publish the candidate as a stable GitHub release. APT can then run through its release event or manual dispatch. Matching-version pushes to the listed `master` paths also deploy; a version bump ahead of publication leaves the current site intact. If a release is published using `GITHUB_TOKEN`, dispatch APT manually because that token's release event does not start another workflow.
+[APT publication](MAINTAINING_APT.md#publication) consumes a published release `.deb` and `SHA256SUMS`, retains packages from the live signed index, signs regenerated repository metadata, and deploys the website and archive together to GitHub Pages. Publish the validated candidate as a stable GitHub release first. APT can then run through its release event or manual dispatch. Matching-version pushes to the listed `master` paths also deploy; a version bump ahead of publication leaves the current site intact. If a release is published using `GITHUB_TOKEN`, dispatch APT manually because that token's release event does not start another workflow.
 
 Publication requires the configured signing secrets and GitHub Pages deployment permissions. The workflow stops if it cannot authenticate and recover every package version from the currently published APT index. See the guide for prerequisites, publication steps, test coverage, and key rotation.
 
@@ -134,7 +162,7 @@ Use the [installation guide](INSTALLATION.md) for setup, updates and removal. A 
 | **Microsoft Store** | Published Windows package, with updates delivered through the Store. Follow the [MSIX guide](WINDOWS_STORE.md) when preparing submissions. |
 | **Homebrew** | [Project tap](https://github.com/Muneer320/homebrew-tap) for Apple Silicon, including sound packs and the menu helper. Keep formula source hashes and lifecycle checks aligned with releases. Intel Macs use the source installer. |
 | **Scoop** | [Project bucket](https://github.com/Muneer320/scoop-bucket) for Windows. Maintain manifest hashes, version-directory migration and owned startup cleanup. |
-| **Omarchy** | Engine [package submission](https://github.com/omacom/omarchy-pkgs/pull/2829) and native [marketplace submission](https://github.com/omacom/omarchy-plugin-marketplace/issues/15124) are under review. Klicky Bar can already be installed directly; see the [Omarchy guide](OMARCHY.md). |
+| **Omarchy** | Klicky Bar is available in the [official plugin marketplace](https://plugins.omarchy.org/plugin.html?id=io.github.muneer320.klicky-bar). The engine [package submission](https://github.com/omacom/omarchy-pkgs/pull/2829) is tracked separately; see the [Omarchy guide](OMARCHY.md). |
 
 The [distribution tracking issue](https://github.com/Muneer320/klicky/issues/149) records outstanding rollout work. AUR publication remains deferred in [PR #9](https://github.com/Muneer320/klicky/pull/9); the Arch recipe and downloadable package are available independently.
 

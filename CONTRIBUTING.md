@@ -2,7 +2,7 @@
 
 Thank you for helping improve Klicky. Small, focused changes are easier to test across input stacks and operating systems than broad rewrites.
 
-New to the product? Start with the [field guide](https://klicky.muneer320.tech/guide.html). For presentation work, use the [character story](docs/CHARACTER.md) and [brand asset guide](docs/BRANDING.md); keep instructions technically clear and the mascot recognizable.
+New to the product? Start with the [field guide](https://klicky.muneer320.tech/guide.html). For presentation work, use the [character story](docs/CHARACTER.md) and [artwork and export instructions](docs/WEBSITE.md#artwork); keep instructions technically clear and the mascot recognizable.
 
 For usage questions, try [Discussions Q&A](https://github.com/Muneer320/klicky/discussions/categories/q-a). Use [Ideas](https://github.com/Muneer320/klicky/discussions/categories/ideas) to discuss a proposal before turning it into an implementation issue. The [wiki](https://github.com/Muneer320/klicky/wiki) links to the maintained platform guides.
 
@@ -128,24 +128,7 @@ same direct `swiftc` build as the menu installer, without installing or running
 the app. The workflow verifies that `KlickyMenu.swift` is in the extracted source
 archive and retains SARIF results as short-lived CI artifacts.
 
-Until the repository variable `CODEQL_ADVANCED_ENABLED` is `true`, analysis runs
-without uploading results; the existing default setup continues to publish its
-scans. Do not enable uploads while default setup is active.
-
-For maintainers switching to advanced setup:
-
-1. Review the workflow and verify successful extraction/analysis for all five
-   languages on the intended commit. Keep default setup active during validation.
-2. After merging, switch CodeQL from default to advanced setup, set
-   `CODEQL_ADVANCED_ENABLED=true`, and run **CodeQL advanced** on `master`.
-3. Verify all five uploaded language results and a PR comparison, including a
-   Dependabot update. Check that existing alert dispositions are preserved. Only
-   then retire obsolete default configurations or change required-check names.
-4. To roll back, set the variable to `false` before restoring default setup with
-   its previous language selection. Keep normal CI and scanning requirements in
-   place throughout the transition.
-
-GitHub [rejects advanced CodeQL uploads while default setup is enabled](https://docs.github.com/en/code-security/reference/code-scanning/sarif-files/troubleshoot-sarif-uploads/default-setup-enabled).
+CodeQL uses the advanced workflow. `CODEQL_ADVANCED_ENABLED` controls SARIF uploads; keep a single active upload configuration. GitHub [rejects advanced uploads while default setup is enabled](https://docs.github.com/en/code-security/reference/code-scanning/sarif-files/troubleshoot-sarif-uploads/default-setup-enabled).
 
 ## Commits
 
