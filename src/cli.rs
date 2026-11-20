@@ -16,6 +16,15 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Check for a stable release or open the supported update route
+    Update {
+        /// Only check; do not open an installer or package manager
+        #[arg(long)]
+        check: bool,
+        /// Accept the displayed update handoff without prompting
+        #[arg(long)]
+        yes: bool,
+    },
     /// Start the klicky daemon
     Start {
         /// Print latency measurements for each keypress
@@ -76,6 +85,7 @@ pub fn run() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
+        Commands::Update { check, yes } => crate::update::run(check, yes)?,
         Commands::Start { benchmark } => engine::run(benchmark)?,
         Commands::Stop => service::stop()?,
         Commands::List => cmd_list()?,

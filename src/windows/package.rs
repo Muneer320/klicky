@@ -11,7 +11,7 @@ use windows_future::{AsyncStatus, IAsyncOperation};
 
 use super::startup::Status;
 
-pub(super) fn current() -> Result<bool> {
+pub(crate) fn current() -> Result<bool> {
     let mut length = 0;
     match unsafe { GetCurrentPackageFullName(&mut length, None) } {
         APPMODEL_ERROR_NO_PACKAGE => Ok(false),

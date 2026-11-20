@@ -62,7 +62,7 @@
         <p class="eyebrow">A little sound. A little clarity.</p>
         <h1>Your typing stays on your device.</h1>
         <p class="intro">Klicky plays keyboard sounds locally. There is no Klicky account, cloud service, advertising or analytics in the app.</p>
-        <p>Last updated: November 11, 2026. Maintained by <a href="https://muneer320.tech/">Muneer Alam</a> and the Klicky contributors.</p>
+        <p>Last updated: November 21, 2026. Maintained by <a href="https://muneer320.tech/">Muneer Alam</a> and the Klicky contributors.</p>
       </div>
     </div>
     <main class="wrap docs-layout" id="main">
@@ -74,7 +74,7 @@
           <h2>What happens when you press a key?</h2>
           <p>Klicky receives keyboard events so it can choose and play a sound while you use other apps. Normal playback does not record your typed text, save a history of keypresses or transmit those events. The Windows app does not access your microphone.</p>
           <p>Global input access is sensitive: keyboard events can occur while you enter a password or other private information. Klicky does not need that text, but you should grant input access only to software you trust. On Windows, playback is paused while the desktop is locked or inactive.</p>
-          <p>The desktop app contains no network client and makes no network requests. It does not send your typing, sound choices or usage statistics to me or to another service.</p>
+          <p>Keyboard playback makes no network requests. If you request an update check, Klicky contacts GitHub over HTTPS to read its latest stable release. GitHub receives your IP address and a Klicky update-check user agent, but no typing, settings or usage statistics. There is no background polling. After confirmation, your existing installer or package manager handles downloads and installation.</p>
         </section>
         <section id="settings">
           <h2>Settings and custom sounds stay local.</h2>

@@ -10,6 +10,14 @@ Klicky is a small daemon that plays mechanical keyboard sounds for global keypre
 On Linux it reads keyboard events through evdev and works independently of Wayland or X11.
 .SH COMMANDS
 .TP
+.B update [--check] [--yes]
+Explicitly check the latest stable release and identify the installation method.
+With --check, do not change files or open an update tool. Otherwise ask before
+handing the update to its existing installer or package manager; --yes accepts
+that handoff. Source, portable and unknown builds require manual updates.
+The check contacts GitHub over HTTPS, without sending input or configuration.
+There is no background polling.
+.TP
 .B start
 Start the daemon in the foreground.
 Startup is exclusive: another instance cannot take ownership while the daemon

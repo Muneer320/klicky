@@ -20,6 +20,15 @@ struct Cli {
 }
 #[derive(Subcommand)]
 enum Commands {
+    /// Check for a stable release or open the supported update route
+    Update {
+        /// Only check; do not open an installer or package manager
+        #[arg(long)]
+        check: bool,
+        /// Accept the displayed update handoff without prompting
+        #[arg(long)]
+        yes: bool,
+    },
     /// Run the Windows tray app in this process; Ctrl+C stops it
     Start {
         /// Collect aggregate internal dispatch diagnostics (not audible latency)
@@ -86,6 +95,7 @@ enum ServiceAction {
 
 pub fn run() -> Result<()> {
     match Cli::parse().command {
+        Commands::Update { check, yes } => crate::update::run(check, yes),
         Commands::Start {
             benchmark,
             paused,

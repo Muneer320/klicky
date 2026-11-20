@@ -17,6 +17,8 @@ mod player;
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 mod service;
 mod soundpack;
+#[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+pub mod update;
 #[cfg(target_os = "windows")]
 pub mod windows;
 

@@ -62,7 +62,9 @@ The daemon receives raw global key-down events, including events generated while
 
 ### Network behavior
 
-Klicky contains no network client and makes no network requests.
+Keyboard playback makes no network requests. Update checks run only when requested with `klicky update` or the Windows tray's **Check for updates** action. The check uses HTTPS to read the latest stable release from GitHub; GitHub receives the request's IP address and a Klicky update-check user agent. No keyboard events, settings or usage statistics are included. There is no background update polling.
+
+After confirmation, the existing installer or package manager handles downloads and installation. Store installations stay under Microsoft Store's control. Unknown, portable and source builds are not automatically overwritten. Windows standalone updates use the official HTTPS installation helper and its release checksum verification; this is not a code-signing or antivirus guarantee.
 
 ## Operational guidance
 

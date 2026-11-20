@@ -2,6 +2,10 @@
 
 Klicky uses one resident process per user session. Linux/macOS retain their Unix daemon and service lifecycle; Windows has a native tray coordinator with separate input, audio and control adapters. Sound-pack preparation and mixer-facing types are shared. The library entrypoint selects the platform at compile time.
 
+## Explicit updates
+
+`src/update.rs` supplies both CLIs and the Windows tray with stable-release checks and installation-channel detection. Checks use a bounded HTTPS curl request only after an explicit action. Windows tray network work runs on the metadata worker, away from input, audio and GUI callbacks. Confirmed updates are handed to the installation owner; source and unknown copies receive manual guidance. The update command never becomes a second package manager.
+
 ## Data flow
 
 ```mermaid

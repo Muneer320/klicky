@@ -169,7 +169,7 @@ Any ordinary keyboard works; the sound is added in software. Linux reads evdev b
 <details>
 <summary><strong>Does it record what I type?</strong></summary>
 
-Normal operation stores no typed text, logs no key names and sends no network requests. Global keyboard permission is sensitive, so grant it only to trusted software. Unix benchmark mode prints mapped key names and is for controlled tests. [Privacy and security](SECURITY.md)
+Normal playback stores no typed text, logs no key names and sends no network requests. Explicit update checks contact GitHub without sending keyboard events or settings. Global keyboard permission is sensitive, so grant it only to trusted software. Unix benchmark mode prints mapped key names and is for controlled tests. [Privacy and security](SECURITY.md)
 
 </details>
 
@@ -186,6 +186,8 @@ The [troubleshooting guide](docs/TROUBLESHOOTING.md) covers permissions, startup
 <summary><strong>How do I update?</strong></summary>
 
 Use the method you installed with. Microsoft Store manages updates for its copy. For helper installations, rerun the install command above. For package managers, follow the [Homebrew](docs/INSTALLATION.md#homebrew) or [Scoop](docs/INSTALLATION.md#scoop) update steps, including stopping Klicky first. Settings and custom sounds are preserved during updates.
+
+Current source also includes a [centralized update command](docs/INSTALLATION.md#centralized-update-command); it will reach packaged installations with the next app release.
 
 </details>
 

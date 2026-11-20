@@ -42,6 +42,8 @@ const LOGIN_ENABLE: u32 = 6;
 const LOGIN_DISABLE: u32 = 7;
 const LOGIN_CHECK: u32 = 8;
 const LOGIN_SETTINGS: u32 = 9;
+const CHECK_UPDATES: u32 = 10;
+const OPEN_UPDATE: u32 = 11;
 
 /// Run in the interactive user's process. Capture starts only after WTS verification.
 pub fn run(options: Options) -> Result<()> {
@@ -114,9 +116,16 @@ struct Metadata {
 #[derive(Default)]
 struct Update {
     packs: Option<std::result::Result<Vec<String>, String>>,
+    release: Option<std::result::Result<crate::update::Check, String>>,
+    handoff: Option<std::result::Result<(), String>>,
+}
+enum Work {
+    Packs,
+    CheckRelease,
+    Handoff(crate::update::Route),
 }
 struct Worker {
-    work: Sender<()>,
+    work: Sender<Work>,
     results: Arc<Metadata>,
 }
 impl Worker {
@@ -131,13 +140,26 @@ impl Worker {
         std::thread::Builder::new()
             .name("klicky-ui-work".into())
             .spawn(move || {
-                while queue.recv().is_ok() {
-                    let update = Update {
-                        packs: Some(
-                            paths
-                                .available_sound_packs()
-                                .map_err(|error| format!("{error:#}")),
-                        ),
+                while let Ok(work) = queue.recv() {
+                    let update = match work {
+                        Work::Packs => Update {
+                            packs: Some(
+                                paths
+                                    .available_sound_packs()
+                                    .map_err(|error| format!("{error:#}")),
+                            ),
+                            ..Default::default()
+                        },
+                        Work::CheckRelease => Update {
+                            release: Some(crate::update::check().map_err(|e| format!("{e:#}"))),
+                            ..Default::default()
+                        },
+                        Work::Handoff(route) => Update {
+                            handoff: Some(
+                                crate::update::handoff(route, false).map_err(|e| format!("{e:#}")),
+                            ),
+                            ..Default::default()
+                        },
                     };
                     let mut latest = mailbox
                         .latest
@@ -146,12 +168,18 @@ impl Worker {
                     if update.packs.is_some() {
                         latest.packs = update.packs;
                     }
+                    if update.release.is_some() {
+                        latest.release = update.release;
+                    }
+                    if update.handoff.is_some() {
+                        latest.handoff = update.handoff;
+                    }
                     unsafe {
                         let _ = SetEvent(HANDLE(mailbox.event.as_raw_handle()));
                     }
                 }
             })?;
-        work.try_send(())?;
+        work.try_send(Work::Packs)?;
         Ok(Self { work, results })
     }
     fn take(&self) -> Result<Update> {
@@ -184,6 +212,8 @@ struct State {
     operation_error: Option<String>,
     pending: Vec<Pending>,
     refreshing: bool,
+    checking_updates: bool,
+    update_check: Option<crate::update::Check>,
     menu_open: bool,
     taskbar_created: u32,
     icon_added: bool,
@@ -267,6 +297,8 @@ fn run_ui(paths: Paths, controller: Controller) -> Result<()> {
         operation_error: None,
         pending: Vec::new(),
         refreshing: true,
+        checking_updates: false,
+        update_check: None,
         menu_open: false,
         taskbar_created: unsafe { RegisterWindowMessageW(w!("TaskbarCreated")) },
         icon_added: false,
@@ -537,6 +569,45 @@ fn take_metadata(hwnd: HWND) -> Result<()> {
                 state.packs_error = None;
             }
             Err(error) => state.packs_error = Some(error),
+        }
+    }
+    if let Some(result) = update.handoff {
+        state.checking_updates = false;
+        if let Err(error) = result {
+            state.operation_error = Some(error);
+        }
+    }
+    if let Some(result) = update.release {
+        state.checking_updates = false;
+        let text = match result {
+            Ok(check) => {
+                let text = if check.newer {
+                    format!("Klicky {} is available (installed {}). Reopen the tray menu for the update route.", check.latest, env!("CARGO_PKG_VERSION"))
+                } else {
+                    format!(
+                        "Klicky {} is at or ahead of the latest stable release ({}).",
+                        env!("CARGO_PKG_VERSION"),
+                        check.latest
+                    )
+                };
+                state.update_check = Some(check);
+                text
+            }
+            Err(error) => {
+                state.update_check = None;
+                state.operation_error = Some(error.clone());
+                error
+            }
+        };
+        if !state.view.finished {
+            let mut data = icon_data(hwnd);
+            data.uFlags = NIF_INFO;
+            data.dwInfoFlags = NIIF_INFO;
+            copy_utf16("Klicky updates", &mut data.szInfoTitle);
+            copy_utf16(&text, &mut data.szInfo);
+            unsafe {
+                let _ = Shell_NotifyIconW(NIM_MODIFY, &data);
+            }
         }
     }
     Ok(())
@@ -847,6 +918,49 @@ fn show_menu(hwnd: HWND) -> Result<()> {
         },
     )?;
     menu.submenu("Start with Windows", login, MF_ENABLED)?;
+    let checking = state_ref(hwnd).borrow().checking_updates;
+    menu.item(
+        CHECK_UPDATES,
+        if checking {
+            "Checking for updates..."
+        } else {
+            "Check for updates"
+        },
+        if checking || view.finished {
+            MF_GRAYED
+        } else {
+            MF_ENABLED
+        },
+    )?;
+    {
+        let state = state_ref(hwnd).borrow();
+        if let Some(check) = &state.update_check {
+            menu.item(
+                0,
+                &format!(
+                    "Installed {}; latest {}",
+                    env!("CARGO_PKG_VERSION"),
+                    check.latest
+                ),
+                MF_GRAYED,
+            )?;
+            if check.newer {
+                if check.route == crate::update::Route::Manual {
+                    menu.item(0, "Manual update: see the installation guide", MF_GRAYED)?;
+                } else {
+                    menu.item(
+                        OPEN_UPDATE,
+                        &format!("Update using {}...", check.route.description()),
+                        if checking || view.finished {
+                            MF_GRAYED
+                        } else {
+                            MF_ENABLED
+                        },
+                    )?;
+                }
+            }
+        }
+    }
     menu.item(QUIT, "Quit Klicky", MF_ENABLED)?;
     let mut point = POINT::default();
     unsafe {
@@ -875,6 +989,21 @@ fn show_menu(hwnd: HWND) -> Result<()> {
         let _ = PostMessageW(Some(hwnd), WM_NULL, WPARAM(0), LPARAM(0));
     }
     state_ref(hwnd).borrow_mut().menu_open = false;
+    if selected == CHECK_UPDATES {
+        let mut state = state_ref(hwnd).borrow_mut();
+        state.worker.work.try_send(Work::CheckRelease)?;
+        state.checking_updates = true;
+        return Ok(());
+    }
+    if selected == OPEN_UPDATE {
+        let mut state = state_ref(hwnd).borrow_mut();
+        if let Some(check) = &state.update_check {
+            let route = check.route;
+            state.worker.work.try_send(Work::Handoff(route))?;
+            state.checking_updates = true;
+        }
+        return Ok(());
+    }
     let login_request = match selected {
         LOGIN_ENABLE => Some(StartupRequest::Set(true)),
         LOGIN_DISABLE => Some(StartupRequest::Set(false)),
@@ -894,7 +1023,7 @@ fn show_menu(hwnd: HWND) -> Result<()> {
             state
                 .worker
                 .work
-                .try_send(())
+                .try_send(Work::Packs)
                 .map_err(|_| anyhow::anyhow!("Tray metadata worker is unavailable"))?;
             state.refreshing = true;
         }
