@@ -185,7 +185,7 @@ The [troubleshooting guide](docs/TROUBLESHOOTING.md) covers permissions, startup
 <details>
 <summary><strong>How do I update?</strong></summary>
 
-Run `klicky update --check` to see the latest stable release, or `klicky update` to choose the supported update route. It asks before opening the installer or package manager. Microsoft Store manages its own copy; source and portable installs keep their manual update steps. Settings and custom sounds are preserved.
+Run `klicky update --check` to see the latest stable release, or `klicky update` to choose the supported update route. It asks before opening the installer or package manager. Microsoft Store manages its own copy; source and portable installs keep their manual update steps. For a downloaded Arch package, download the newer release package and install it with `sudo pacman -U`; repository-backed installs can use the updater. Settings and custom sounds are preserved.
 
 On v0.6.1 or earlier, use your original installer or package manager once to get the updater. Standalone Windows installs still need the [full CLI path](docs/CLI.md#find-the-executable). [Update details](docs/INSTALLATION.md#centralized-update-command).
 

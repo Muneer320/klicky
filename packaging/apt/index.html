@@ -1028,7 +1028,9 @@ $env:KLICKY_SYSTEM_SOUNDS_DIR = (Resolve-Path .\sounds).Path
                 From v0.7.0, run <code>klicky update --check</code> to check the
                 stable release, or <code>klicky update</code> for a confirmed
                 installer/package-manager handoff. Older copies need one update
-                through their original installer or manager first. The
+                through their original installer or manager first. For a downloaded Arch
+                package, download the newer release package and install it with
+                <code>sudo pacman -U</code>. The
                 <a href="guide.html#remove">one-command uninstallers</a> stop
                 the app and remove installed desktop controls. Settings and
                 custom sounds stay unless you explicitly choose purge. Portable
