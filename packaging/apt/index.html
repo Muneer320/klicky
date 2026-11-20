@@ -589,10 +589,10 @@
 
                     <div class="download-links">
                       <a
-                        href="https://github.com/Muneer320/klicky/releases/download/v0.6.1/klicky_0.6.1-1_amd64.deb"
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.7.0/klicky_0.7.0-1_amd64.deb"
                         >Download .deb</a
                       ><a
-                        href="https://github.com/Muneer320/klicky/releases/download/v0.6.1/klicky-0.6.1-1-x86_64.pkg.tar.zst"
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.7.0/klicky-0.7.0-1-x86_64.pkg.tar.zst"
                         >Download Arch package</a
                       >
                     </div>
@@ -606,7 +606,7 @@
                     </p>
                     <p>
                       <a
-                        href="https://github.com/Muneer320/klicky/releases/download/v0.6.1/SHA256SUMS"
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.7.0/SHA256SUMS"
                         >SHA-256 checksums</a
                       >. The one-line installer handles verification and service
                       setup for you.
@@ -633,7 +633,7 @@
                     </p>
                     <div class="method-links">
                       <a
-                        href="https://github.com/Muneer320/klicky/releases/download/v0.6.1/klicky-0.6.1-source.tar.gz"
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.7.0/klicky-0.7.0-source.tar.gz"
                         >Download source archive</a
                       ><a href="guide.html#linux-source"
                         >Manual build &amp; dependencies</a
@@ -694,7 +694,7 @@
 
                     <div class="download-links">
                       <a
-                        href="https://github.com/Muneer320/klicky/releases/download/v0.6.1/klicky-0.6.1-source.tar.gz"
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.7.0/klicky-0.7.0-source.tar.gz"
                         >Download source archive</a
                       >
                     </div>
@@ -708,7 +708,7 @@
                       Grant Accessibility access to
                       <code>~/.local/bin/klicky</code>.
                       <a
-                        href="https://github.com/Muneer320/klicky/releases/download/v0.6.1/SHA256SUMS"
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.7.0/SHA256SUMS"
                         >SHA-256 checksums</a
                       >. There is no prebuilt macOS app download yet; the
                       one-line installer above prepares the tools and builds it
@@ -767,10 +767,10 @@
 
                     <div class="download-links">
                       <a
-                        href="https://github.com/Muneer320/klicky/releases/download/v0.6.1/klicky-0.6.1-windows-x64-setup.exe"
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.7.0/klicky-0.7.0-windows-x64-setup.exe"
                         >Download setup .exe</a
                       ><a
-                        href="https://github.com/Muneer320/klicky/releases/download/v0.6.1/klicky-0.6.1-windows-x64.zip"
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.7.0/klicky-0.7.0-windows-x64.zip"
                         >Download portable .zip</a
                       >
                     </div>
@@ -786,7 +786,7 @@
                     </p>
                     <p>
                       <a
-                        href="https://github.com/Muneer320/klicky/releases/download/v0.6.1/SHA256SUMS"
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.7.0/SHA256SUMS"
                         >SHA-256 checksums</a
                       >. These standalone downloads are unsigned;
                       <a href="guide.html#windows-security"
@@ -810,7 +810,7 @@ klicky service start</code></pre>
 
                     <div class="download-links">
                       <a
-                        href="https://github.com/Muneer320/klicky/releases/download/v0.6.1/klicky-0.6.1-source.tar.gz"
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.7.0/klicky-0.7.0-source.tar.gz"
                         >Download source archive</a
                       >
                     </div>
@@ -833,7 +833,7 @@ $env:KLICKY_SYSTEM_SOUNDS_DIR = (Resolve-Path .\sounds).Path
                     </p>
                     <p>
                       <a
-                        href="https://github.com/Muneer320/klicky/releases/download/v0.6.1/SHA256SUMS"
+                        href="https://github.com/Muneer320/klicky/releases/download/v0.7.0/SHA256SUMS"
                         >SHA-256 checksums</a
                       >. Use the installer or portable ZIP if you just want to
                       run Klicky.
@@ -1025,8 +1025,10 @@ $env:KLICKY_SYSTEM_SOUNDS_DIR = (Resolve-Path .\sounds).Path
             <details>
               <summary>How do I update or remove everything?</summary>
               <p>
-                Use your package manager or rerun the appropriate installer to
-                update. The
+                From v0.7.0, run <code>klicky update --check</code> to check the
+                stable release, or <code>klicky update</code> for a confirmed
+                installer/package-manager handoff. Older copies need one update
+                through their original installer or manager first. The
                 <a href="guide.html#remove">one-command uninstallers</a> stop
                 the app and remove installed desktop controls. Settings and
                 custom sounds stay unless you explicitly choose purge. Portable

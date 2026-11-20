@@ -99,7 +99,7 @@ irm https://klicky.muneer320.tech/install.ps1 | iex
 
 Downloads the installer, verifies its SHA-256 and opens setup for your user. Choose whether to start at login; the helper starts Klicky after setup. No Rust, Visual Studio or administrator terminal needed.
 
-Prefer to click a download? Get the [Windows installer](https://github.com/Muneer320/klicky/releases/download/v0.6.1/klicky-0.6.1-windows-x64-setup.exe) or [portable ZIP](https://github.com/Muneer320/klicky/releases/download/v0.6.1/klicky-0.6.1-windows-x64.zip). For the ZIP, extract the whole folder and open `klicky-desktop.exe`.
+Prefer to click a download? Get the [Windows installer](https://github.com/Muneer320/klicky/releases/download/v0.7.0/klicky-0.7.0-windows-x64-setup.exe) or [portable ZIP](https://github.com/Muneer320/klicky/releases/download/v0.7.0/klicky-0.7.0-windows-x64.zip). For the ZIP, extract the whole folder and open `klicky-desktop.exe`.
 
 Already use Scoop? Follow the [Scoop setup guide](docs/INSTALLATION.md#scoop).
 
@@ -185,9 +185,9 @@ The [troubleshooting guide](docs/TROUBLESHOOTING.md) covers permissions, startup
 <details>
 <summary><strong>How do I update?</strong></summary>
 
-Use the method you installed with. Microsoft Store manages updates for its copy. For helper installations, rerun the install command above. For package managers, follow the [Homebrew](docs/INSTALLATION.md#homebrew) or [Scoop](docs/INSTALLATION.md#scoop) update steps, including stopping Klicky first. Settings and custom sounds are preserved during updates.
+Run `klicky update --check` to see the latest stable release, or `klicky update` to choose the supported update route. It asks before opening the installer or package manager. Microsoft Store manages its own copy; source and portable installs keep their manual update steps. Settings and custom sounds are preserved.
 
-Current source also includes a [centralized update command](docs/INSTALLATION.md#centralized-update-command); it will reach packaged installations with the next app release.
+On v0.6.1 or earlier, use your original installer or package manager once to get the updater. Standalone Windows installs still need the [full CLI path](docs/CLI.md#find-the-executable). [Update details](docs/INSTALLATION.md#centralized-update-command).
 
 </details>
 

@@ -20,10 +20,20 @@ Standalone installer PowerShell example:
 
 The examples below use `klicky`, which works directly with Microsoft Store or Scoop. For a standalone Windows installation, substitute the installed invocation above or `.\klicky.exe` from the portable folder.
 
+## Updates
+
+The update commands are available from v0.7.0. Checks contact GitHub only when requested; no keyboard events or preferences are sent. Store and package-manager availability can lag behind GitHub. Source, portable and unrecognized installations receive manual guidance. See [update behavior and supported routes](INSTALLATION.md#centralized-update-command).
+
+```powershell
+& "$env:LOCALAPPDATA\Programs\Klicky\klicky.exe" update --check
+```
+
 ## Common commands
 
 | Command | What it does |
 |---|---|
+| `update --check` | Explicitly check the latest stable release and display the installation channel. |
+| `update` | Explain and confirm the installation-specific update handoff. `--yes` accepts the handoff, not installer terms or completion. |
 | `list` | List available user and system/bundled sound packs. |
 | `switch NAME` | Request a live pack change, or save it for the next start if stopped. |
 | `volume LEVEL` | Set a finite value from `0.0` to `1.0`; zero mutes playback. |

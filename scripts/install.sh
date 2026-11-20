@@ -3,7 +3,7 @@
 set -euo pipefail
 
 source_install=0
-version=0.6.1
+version=0.7.0
 menu=1
 omarchy=1
 for argument in "$@"; do

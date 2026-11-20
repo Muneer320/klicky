@@ -14,7 +14,7 @@ For the standalone installer, run in PowerShell:
 irm https://klicky.muneer320.tech/install.ps1 | iex
 ```
 
-Or download the [published Windows installer](https://github.com/Muneer320/klicky/releases/download/v0.6.1/klicky-0.6.1-windows-x64-setup.exe). The helper verifies the download, opens the wizard and starts Klicky when it finishes.
+Or download the [published Windows installer](https://github.com/Muneer320/klicky/releases/download/v0.7.0/klicky-0.7.0-windows-x64-setup.exe). The helper verifies the download, opens the wizard and starts Klicky when it finishes.
 
 The wizard installs the app and all ten packs for your user. It needs no elevation, Rust or Visual Studio. Open Klicky from Start, then choose **Resume** from the tray. Login startup is optional. [Other installation methods](https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#windows)
 
@@ -27,7 +27,7 @@ Extract the complete portable ZIP into a stable folder and open `klicky-desktop.
 
 ## Everyday controls
 
-The tray offers packs, volume in 10% steps, Pause/Resume, Retry audio, Refresh sound packs and Quit. **Start with Windows** manages the Store startup task or the standalone bundle's login shortcut. Windows may independently disable or defer startup; [startup help](https://github.com/Muneer320/klicky/blob/master/docs/TROUBLESHOOTING.md).
+The tray offers packs, volume in 10% steps, Pause/Resume, Retry audio, Refresh sound packs, Check for updates and Quit. Update checks run only when selected and show the installed/latest version; a separate action opens the supported update route. **Start with Windows** manages the Store startup task or the standalone bundle's login shortcut. Windows may independently disable or defer startup; [startup help](https://github.com/Muneer320/klicky/blob/master/docs/TROUBLESHOOTING.md).
 
 The Store and Scoop expose `klicky` in a new terminal. The CLI lives at `%LOCALAPPDATA%\Programs\Klicky\klicky.exe` for a standalone installer setup. Run these from a portable folder, use that installed path, or replace `.\klicky.exe` with `klicky` for Store/Scoop:
 

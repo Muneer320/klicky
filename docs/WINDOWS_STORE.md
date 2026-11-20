@@ -18,7 +18,7 @@ the portable archive and MSIX must identify the same source revision and tree.
 ```powershell
 ./scripts/build-windows-portable.ps1
 ./scripts/build-windows-msix.ps1 `
-  -PortableArchive ./target/windows-dist/klicky-0.6.1-windows-x64.zip `
+  -PortableArchive ./target/windows-dist/klicky-0.7.0-windows-x64.zip `
   -Development
 ```
 
@@ -33,9 +33,9 @@ For a Store candidate, replace `-Development` with the exact `-IdentityName`,
 View product identity**. Do not use development identities for submission.
 `-PackageVersion` accepts four numeric components; the last must be zero because
 the Store reserves it, and the first must be nonzero. By default the package
-version is `(application major + 1).minor.patch.0`: Klicky 0.6.1 becomes package
-1.6.1.0. This supports pre-1.0 application releases and keeps upgrades monotonic
-when Klicky reaches 1.0. The app's displayed/CLI version remains 0.6.1. An explicit
+version is `(application major + 1).minor.patch.0`: Klicky 0.7.0 becomes package
+1.7.0.0. This supports pre-1.0 application releases and keeps upgrades monotonic
+when Klicky reaches 1.0. The app's displayed/CLI version remains 0.7.0. An explicit
 package version must also increase from the previous Store submission. Keep the
 identity stable across upgrades.
 
@@ -48,7 +48,7 @@ revision/tree against the tag, then runs MakeAppx validation and a payload
 round-trip without rebuilding the release binaries:
 
 ```bash
-gh workflow run windows-store.yml --ref master -f tag=v0.6.1
+gh workflow run windows-store.yml --ref master -f tag=v0.7.0
 ```
 
 Download the `klicky-store-VERSION` artifact from the completed run. It contains

@@ -248,12 +248,12 @@ systemctl --user enable --now klicky.service</code></pre>
               additionally handles key/checksum verification.
             </p>
             <pre><code># Ubuntu / compatible Debian
-curl -fL --retry 2 -o klicky.deb https://klicky.muneer320.tech/pool/main/k/klicky/klicky_0.6.1-1_amd64.deb
+curl -fL --retry 2 -o klicky.deb https://klicky.muneer320.tech/pool/main/k/klicky/klicky_0.7.0-1_amd64.deb
 sudo apt install ./klicky.deb
 systemctl --user enable --now klicky.service
 
 # Arch / Omarchy
-curl -fL --retry 2 -o klicky.pkg.tar.zst https://github.com/Muneer320/klicky/releases/download/v0.6.1/klicky-0.6.1-1-x86_64.pkg.tar.zst
+curl -fL --retry 2 -o klicky.pkg.tar.zst https://github.com/Muneer320/klicky/releases/download/v0.7.0/klicky-0.7.0-1-x86_64.pkg.tar.zst
 sudo pacman -U ./klicky.pkg.tar.zst
 systemctl --user enable --now klicky.service</code></pre>
           </details>
@@ -410,12 +410,12 @@ klicky service start</code></pre>
           <p>
             Download the
             <a
-              href="https://github.com/Muneer320/klicky/releases/download/v0.6.1/klicky-0.6.1-windows-x64-setup.exe"
+              href="https://github.com/Muneer320/klicky/releases/download/v0.7.0/klicky-0.7.0-windows-x64-setup.exe"
               >setup EXE</a
             >
             or
             <a
-              href="https://github.com/Muneer320/klicky/releases/download/v0.6.1/klicky-0.6.1-windows-x64.zip"
+              href="https://github.com/Muneer320/klicky/releases/download/v0.7.0/klicky-0.7.0-windows-x64.zip"
               >portable ZIP</a
             >. For portable use, extract everything into a stable folder and
             open <code>klicky-desktop.exe</code>. Keep both executables, sounds
@@ -486,6 +486,14 @@ klicky volume 0.5</code></pre>
               </thead>
               <tbody>
                 <tr>
+                  <td><code>update --check</code></td>
+                  <td>Check the latest stable release and show the installation channel.</td>
+                </tr>
+                <tr>
+                  <td><code>update</code></td>
+                  <td>Explain and confirm the supported installer or package-manager handoff.</td>
+                </tr>
+                <tr>
                   <td><code>list</code></td>
                   <td>List bundled/system and user packs.</td>
                 </tr>
@@ -538,6 +546,14 @@ klicky volume 0.5</code></pre>
               </tbody>
             </table>
           </div>
+          <p>
+            Update checks are available from v0.7.0 and run only when requested.
+            Source, portable and unrecognized copies receive manual guidance;
+            Store and package-manager availability can lag behind GitHub.
+            On v0.6.1 or earlier, update once through the original installer or manager.
+            The Windows tray also offers <strong>Check for updates</strong>.
+            <a href="https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#centralized-update-command">Update routes and behavior</a>.
+          </p>
           <h3>Windows additions</h3>
           <p>
             <code>retry-audio</code> and read-only <code>diagnostics</code>

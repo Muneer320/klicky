@@ -6,6 +6,20 @@ The project follows [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+## 0.7.0 - 2026-11-21
+
+### Added
+
+- Explicit `klicky update --check` and confirmed `klicky update` handoffs that keep recognized installations under their existing installer or package manager
+- Windows tray update checks with silent notifications and installation-channel guidance
+
+### Changed
+
+- Preserve running/paused choices during update handoffs and keep stopped copies stopped
+- Add curl to Linux package dependencies for explicit HTTPS update checks; normal playback stays offline
+- Add a documentation index, consolidate artwork/release instructions and refresh installation and privacy guidance
+- Refresh compatible Rust dependencies, GitHub Actions and Swift CodeQL coverage
+
 ## 0.6.1 - 2026-11-16
 
 ### Fixed

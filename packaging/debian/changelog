@@ -1,3 +1,11 @@
+klicky (0.7.0-1) unstable; urgency=medium
+
+  * Add explicit channel-aware CLI updates and a Windows tray update check.
+  * Preserve playback choices through installer and package-manager handoffs.
+  * Declare curl for Linux update checks and reorganize public documentation.
+
+ -- Muneer Alam <muneer.alam320@gmail.com>  Sat, 21 Nov 2026 00:00:00 +0530
+
 klicky (0.6.1-1) unstable; urgency=medium
 
   * Remove native Klicky Bar and legacy entries during full uninstallation.
