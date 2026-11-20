@@ -8,6 +8,10 @@ The project follows [Semantic Versioning](https://semver.org/).
 
 ## 0.7.0 - 2026-11-21
 
+### Fixed
+
+- Wait for Windows uninstaller log cleanup before purging settings and installer data
+
 ### Added
 
 - Explicit `klicky update --check` and confirmed `klicky update` handoffs that keep recognized installations under their existing installer or package manager

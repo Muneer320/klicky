@@ -116,6 +116,30 @@ param([switch]$Purge)
                 $purgePaths += $data
             }
         }
+        # Cleanup may outlive the launcher, including on a later purge-only retry.
+        $logsDirectory = Join-Path $local 'KlickyInstaller/logs'
+        $logs = @()
+        if (Test-Path -LiteralPath $logsDirectory -PathType Container) {
+            $logs = @(Get-ChildItem -LiteralPath $logsDirectory -Filter 'uninstall-*.log' -File)
+        }
+        $deadline = [DateTime]::UtcNow.AddSeconds(10)
+        foreach ($pendingLog in $logs) {
+            while (Test-Path -LiteralPath $pendingLog.FullName -PathType Leaf) {
+                try {
+                    $lease = [IO.File]::Open($pendingLog.FullName, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+                    $lease.Dispose()
+                    break
+                }
+                catch [IO.IOException] {
+                    $code = $_.Exception.HResult -band 0xffff
+                    if ($code -notin @(32, 33)) { throw }
+                    if ([DateTime]::UtcNow -ge $deadline) {
+                        throw 'The uninstaller is still finishing. Settings were kept; wait a moment and retry with -Purge.'
+                    }
+                    Start-Sleep -Milliseconds 200
+                }
+            }
+        }
         foreach ($data in $purgePaths) {
             if ($PSCmdlet.ShouldProcess($data, 'Delete settings, custom sounds and installer data')) {
                 Remove-Item -LiteralPath $data -Recurse -Force
