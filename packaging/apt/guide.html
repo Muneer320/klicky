@@ -498,6 +498,14 @@ klicky volume 0.5</code></pre>
                   <td>Set a finite value from 0.0 (mute) to 1.0.</td>
                 </tr>
                 <tr>
+                  <td><code>pause</code></td>
+                  <td>Silence playback without stopping the engine.</td>
+                </tr>
+                <tr>
+                  <td><code>resume</code></td>
+                  <td>Resume playback without replaying paused keypresses.</td>
+                </tr>
+                <tr>
                   <td><code>status</code></td>
                   <td>Show settings and responsive live state.</td>
                 </tr>
@@ -532,8 +540,8 @@ klicky volume 0.5</code></pre>
           </div>
           <h3>Windows additions</h3>
           <p>
-            <code>pause</code>, <code>resume</code>,
-            <code>retry-audio</code> and read-only <code>diagnostics</code>.
+            <code>retry-audio</code> and read-only <code>diagnostics</code>
+            are Windows-only commands.
             <code>service start --paused</code> affects a newly launched
             instance. Foreground <code>start</code> also takes
             <code>--paused</code>, <code>--seconds N</code> (1–3600) and
@@ -543,8 +551,7 @@ klicky volume 0.5</code></pre>
           <p>
             <code>start --benchmark</code> prints mapped key names and internal
             timing. Use only for controlled tests, never while typing sensitive
-            information. Windows-only pause/seconds/diagnostics commands do not
-            exist on Unix.
+            information.
           </p>
           <p>
             A successful live pack/volume command confirms the change was
