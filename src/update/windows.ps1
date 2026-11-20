@@ -13,7 +13,12 @@ try {
     }
     if ($Channel -eq 'Standalone') {
         $installer = Invoke-RestMethod 'https://klicky.muneer320.tech/install.ps1' -TimeoutSec 30
-        & ([scriptblock]::Create($installer)) -Update
+        $bootstrap = [scriptblock]::Create($installer)
+        $parameters = @($bootstrap.Ast.ParamBlock.Parameters | ForEach-Object { $_.Name.VariablePath.UserPath })
+        if ($parameters -notcontains 'Update') {
+            throw 'The downloaded installer does not support update mode; no installer was run. Retry after the website deployment.'
+        }
+        & $bootstrap -Update
     }
     else {
         $receipt = @(& $Cli service prepare-update)

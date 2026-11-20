@@ -26,7 +26,7 @@ impl Route {
         match self {
             Self::Store => "Microsoft Store (Store manages the offered version)",
             Self::Standalone => "Windows standalone installer",
-            Self::Scoop => "Scoop",
+            Self::Scoop => "Scoop (per-user)",
             Self::Homebrew => "Homebrew",
             Self::Apt => "APT",
             Self::Pacman => "pacman",
@@ -136,7 +136,7 @@ pub fn check() -> Result<Check> {
             RELEASE_API,
         ])
         .output()
-        .context("run curl for the explicit update check")?;
+        .context("could not run curl for the update check; install curl or use your package manager directly")?;
     if !output.status.success() {
         bail!(
             "Update check failed; nothing was changed. {}",
@@ -195,15 +195,24 @@ pub fn run(check_only: bool, yes: bool) -> Result<()> {
 
 #[cfg(target_os = "windows")]
 fn detect(exe: &Path) -> Result<Route> {
+    let scoop = std::env::var_os("SCOOP")
+        .map(std::path::PathBuf::from)
+        .or_else(|| dirs::home_dir().map(|p| p.join("scoop")));
     windows_route(
         exe,
         dirs::data_local_dir().as_deref(),
+        scoop.as_deref(),
         crate::windows::package::current()?,
     )
 }
 
 #[cfg(target_os = "windows")]
-fn windows_route(exe: &Path, local: Option<&Path>, packaged: bool) -> Result<Route> {
+fn windows_route(
+    exe: &Path,
+    local: Option<&Path>,
+    scoop: Option<&Path>,
+    packaged: bool,
+) -> Result<Route> {
     if packaged {
         return Ok(Route::Store);
     }
@@ -218,13 +227,20 @@ fn windows_route(exe: &Path, local: Option<&Path>, packaged: bool) -> Result<Rou
     }
     // Resolve the real keg directory, not the shim on PATH. Scoop retains both
     // manifests beside the installed binary; a portable ZIP has neither.
-    if parent.parent().is_some_and(|p| {
-        p.file_name()
-            .is_some_and(|n| n.eq_ignore_ascii_case("klicky"))
-    }) && parent.parent().and_then(Path::parent).is_some_and(|p| {
-        p.file_name()
-            .is_some_and(|n| n.eq_ignore_ascii_case("apps"))
-    }) && parent.join("manifest.json").is_file()
+    // Global/custom unknown roots need explicit manager guidance, not a local
+    // scoop update that could target a different installation.
+    if scoop
+        .and_then(|p| p.canonicalize().ok())
+        .is_some_and(|root| parent.ancestors().nth(3) == Some(root.as_path()))
+        && parent.parent().is_some_and(|p| {
+            p.file_name()
+                .is_some_and(|n| n.eq_ignore_ascii_case("klicky"))
+        })
+        && parent.parent().and_then(Path::parent).is_some_and(|p| {
+            p.file_name()
+                .is_some_and(|n| n.eq_ignore_ascii_case("apps"))
+        })
+        && parent.join("manifest.json").is_file()
         && parent.join("install.json").is_file()
     {
         return Ok(Route::Scoop);

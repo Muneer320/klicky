@@ -17,11 +17,11 @@ klicky update
 
 - **Microsoft Store:** opens Store's Downloads and updates page. Store controls which version is available.
 - **Windows standalone installer:** opens an update terminal and the official installer wizard. Existing settings and custom packs remain.
-- **Scoop:** opens a terminal, stops a running copy, refreshes Scoop and updates Klicky. A running/paused copy is restarted in its previous playback state; a stopped copy stays stopped.
+- **Scoop (per-user):** opens a terminal, stops a running copy, refreshes Scoop and updates Klicky. A running/paused copy is restarted in its previous playback state; a stopped copy stays stopped.
 - **Homebrew:** updates the tap and formula. A previously running engine and menu helper are restarted; the engine's paused state is restored. Login-startup preferences are not enabled by the updater.
 - **APT:** refreshes repository metadata and upgrades the installed `klicky` package. It may request `sudo` approval.
 - **pacman:** offers a full `pacman -Syu` system upgrade, rather than a partial upgrade. Review pacman's transaction before accepting it.
-- **Source, portable or unknown copies:** shows manual guidance instead of guessing an installation method or replacing files.
+- **Source, portable, global Scoop or unknown copies:** shows manual guidance instead of guessing an installation method or replacing files.
 
 Package-manager versions can arrive later than the GitHub release. A successful check is not proof that your manager already offers that version, and a Windows terminal handoff is not confirmation that installation completed. Use `klicky --version` in a new terminal afterward. The standalone Windows CLI currently requires its full path unless you have added it to PATH.
 
