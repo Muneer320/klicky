@@ -14,7 +14,7 @@ Klicky v0.5.0 does **not** provide these Unix control APIs. The plugin is publis
 
 ## Installation
 
-After the compatible engine and plugin repository are published, install Klicky first using its [Linux installation guide](https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#linux). If using the one-line installer, pass `--no-omarchy-toggle` to skip the older bar toggle.
+Install Klicky first using its [Linux installation guide](https://github.com/Muneer320/klicky/blob/master/docs/INSTALLATION.md#linux). If using the one-line installer, pass `--no-omarchy-toggle` to skip the older bar toggle.
 
 If the older toggle is already installed, back up `~/.config/omarchy/shell.json`, then remove only entries with `"id": "klicky"` from its `bar.layout` sections. Keep the other widgets and engine settings. Do not run the full Klicky uninstaller to replace a bar control.
 
@@ -44,9 +44,9 @@ Removal keeps Klicky itself, its service and your sound settings. See [Klicky's 
 
 Pause preserves the running engine; Stop engine shuts it down. Start at login changes only the user service's login setting and does not start or stop playback. Volume and pack changes apply through Klicky's CLI. Settings refresh from the engine after each command; unavailable or incompatible engines disable controls instead of displaying saved preferences as live state.
 
-Audio uses Klicky's current system-default output. Device selection is a separate planned feature; this widget never changes the system-wide audio device.
+Source builds after v0.7.0 add **Audio output**, **Retry audio** and **Refresh outputs** with the matching running engine. Follow the system default or pin a listed PulseAudio sink, including on PipeWire-Pulse. Labels can repeat; entries remain separate and selection uses durable sink IDs. A missing selected output stays selected and silent, and Retry never clears manual Pause. Reconnect the device or choose another output. Older engines retain the basic playback controls; audio actions require valid live state and advertised capabilities. ALSA-only playback cannot enumerate or select outputs. This widget never changes the system-wide audio device, card profiles or ports.
 
-The widget launches no shell command strings, captures no keyboard events and makes no network requests. Commands run asynchronously with deadlines. Status refreshes every ten seconds, or every two seconds while the popup is open.
+The widget launches no shell command strings, captures no keyboard events and makes no network requests. Commands run asynchronously with deadlines. Status refreshes every ten seconds, or every two seconds while the popup is open. Audio queries have a five-second deadline and capped responses; output lists are cached until an explicit refresh or a state change. Actions invalidate older audio responses. Reopening the popup refreshes the list, and metadata failures do not overwrite playback settings.
 
 Placement uses the native `omarchy bar move` command, then saves the choice with `omarchy bar set`. A bounded helper completes both steps even when moving recreates the widget. The setup prompt returns only if its saved `placement` setting is removed. The included English catalog falls back to English for other Omarchy languages; additional translations can be added under `i18n/`.
 
@@ -88,7 +88,7 @@ The widget runs `klicky` from the shell's own PATH by default. If a source insta
 
 Use your actual home path; `~` and environment variables are not expanded. This setting changes only the CLI used by Klicky Bar. The user service must separately start the same engine version.
 
-Disable the legacy toggle first if it is already installed; keep the backed-up layout for restoration. Check mouse and keyboard operation, both pause states, pack changes, 0%/10%/100% volume, login setting, stopped-engine recovery, outside-click/Escape dismissal, and your usual theme and display scaling. Confirm normal typing remains immediate and consistent through laptop speakers. Check service autostart again after a real login. Container tests cannot establish these desktop/audio results.
+Disable the legacy toggle first if it is already installed; keep the backed-up layout for restoration. Check mouse and keyboard operation, both pause states, pack changes, 0%/10%/100% volume, login setting, stopped-engine recovery, outside-click/Escape dismissal, and your usual theme and display scaling. For audio controls, test remembered output/default selection, duplicate labels, missing/reconnected devices, Retry and sleep/wake while paused, and an older/incompatible CLI. Verify no other application's routing changes. Confirm normal and fast typing remain immediate and consistent through laptop speakers. Check service autostart again after a real login. Container tests cannot establish these desktop/audio results.
 
 Remove only the development widget with:
 
@@ -98,4 +98,4 @@ omarchy plugin remove io.github.muneer320.klicky-bar
 
 This uses Omarchy's own confirmation/removal flow and preserves the engine and sound settings. Restore the legacy layout if needed.
 
-The existing legacy Omarchy toggle remains available through `scripts/install-omarchy-toggle.sh`. Do not install both widgets as a migration shortcut. Native-plugin installation and removal instructions will accompany the qualified release; removing a bar widget must preserve the engine, configuration and other bar modules.
+The existing legacy Omarchy toggle remains available through `scripts/install-omarchy-toggle.sh`. Use one integration at a time; removing a bar widget preserves the engine, configuration and other bar modules.

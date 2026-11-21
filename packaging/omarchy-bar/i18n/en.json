@@ -5,6 +5,7 @@
   "status.stopped": "Stopped",
   "status.updating": "Updating…",
   "status.unavailable": "Check engine",
+  "status.audio-unavailable": "Audio unavailable",
   "setup.title": "Make room for Klicky",
   "setup.detail": "Pick a spot in your bar. You can move it later.",
   "placement.title": "Move in bar",
@@ -26,5 +27,17 @@
   "refresh": "Refresh status",
   "startup.title": "Start at login",
   "startup.detail": "Launch Klicky when you sign in.",
-  "audio.detail": "Using your system audio output"
+  "audio.title": "Audio output",
+  "audio.follow": "Follow system default",
+  "audio.choose": "Choose an available output",
+  "audio.start": "Start the engine to choose an audio output.",
+  "audio.unknown": "Audio controls are unavailable. Try Refresh or update the engine.",
+  "audio.state.available": "Audio output ready",
+  "audio.state.unavailable": "Selected output is unavailable. It stays selected until it returns or you choose another.",
+  "audio.state.initializing": "Opening audio output…",
+  "audio.state.recovering": "Reconnecting audio output…",
+  "audio.state.inactive": "Audio output is inactive",
+  "audio.retry": "Retry audio",
+  "audio.refresh": "Refresh outputs",
+  "audio.detail": "Output selection affects Klicky only. Retry keeps Pause set."
 }

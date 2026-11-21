@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell.Io
+import "Audio.js" as Audio
 
 Item {
   id: root
@@ -18,14 +19,26 @@ Item {
   readonly property bool busy: action.running
   property int epoch: 0
   property int statusEpoch: 0
+  property bool audioKnown: false
+  property var audioState: null
+  property var audioList: null
+  property string audioError: ""
+  property int audioEpoch: 0
+  property string audioKind: "status"
+  property bool audioOverflow: false
+  property bool forceOutputs: true
+  readonly property bool audioUnavailable: audioKnown && audioState.availability !== "available"
 
   onExecutableChanged: {
     epoch += 1
     known = false
+    clearAudio()
     Qt.callLater(root.refresh)
   }
+  onPanelOpenChanged: if (panelOpen) { forceOutputs = true; refresh() }
 
-  function refresh() {
+  function refresh(force) {
+    if (force === true) { forceOutputs = true; actionError = "" }
     if (status.running || action.running) return
     statusEpoch = epoch
     status.command = bounded(["status", "--json"], "20s")
@@ -40,6 +53,7 @@ Item {
     if (statusEpoch !== epoch || action.running) return
     known = false
     if (code !== 0) {
+      clearAudio()
       error = "Cannot read Klicky status. Check that a compatible Klicky engine is installed."
       return
     }
@@ -54,6 +68,7 @@ Item {
         throw new Error("Unsupported status")
       }
       if (value.process_exists && !value.running) {
+        clearAudio()
         error = "Klicky is starting or unresponsive. Refresh before changing playback."
         return
       }
@@ -65,7 +80,10 @@ Item {
       packs = value.packs
       known = true
       error = ""
+      if (running) refreshAudio()
+      else clearAudio()
     } catch (_) {
+      clearAudio()
       error = "Klicky Bar needs status --json schema 1. Update the Klicky engine."
     }
   }
@@ -73,11 +91,82 @@ Item {
   function execute(args) {
     if (busy || !known) return false
     epoch += 1
+    if (audioQuery.running) audioQuery.running = false
+    clearAudio()
     actionError = ""
     known = false
     action.command = bounded(args, "30s")
     action.running = true
     return true
+  }
+
+  function clearAudio() {
+    audioKnown = false
+    audioState = null
+    audioList = null
+    audioError = ""
+    forceOutputs = true
+  }
+
+  function refreshAudio() {
+    if (!known || !running || action.running || audioQuery.running) return
+    audioEpoch = epoch
+    audioKind = "status"
+    audioOverflow = false
+    audioQuery.command = bounded(["audio", "status"], "5s")
+    audioQuery.running = true
+  }
+
+  function acceptAudio(text, code) {
+    if (audioEpoch !== epoch || action.running || !known || !running) return
+    if (code !== 0 || audioOverflow) {
+      if (audioKind === "status") { audioKnown = false; audioState = null }
+      audioList = null
+      audioError = "Audio controls could not refresh. Update the engine or try Refresh."
+      return
+    }
+    try {
+      if (audioKind === "status") {
+        const next = Audio.status(text)
+        const changed = !audioState || JSON.stringify(next) !== JSON.stringify(audioState)
+        audioState = next
+        audioKnown = true
+        audioError = ""
+        if (next.can_enumerate && (forceOutputs || changed || !audioList)) {
+          forceOutputs = false
+          audioKind = "outputs"
+          audioOverflow = false
+          audioQuery.command = bounded(["audio", "outputs"], "5s")
+          audioQuery.running = true
+        } else if (!next.can_enumerate) audioList = null
+      } else {
+        audioList = Audio.outputs(text)
+        audioError = ""
+      }
+    } catch (_) {
+      if (audioKind === "status") { audioKnown = false; audioState = null }
+      audioList = null
+      audioError = "Audio controls need a compatible engine and valid audio status."
+    }
+  }
+
+  function chooseAudio(value) {
+    if (!known || !running || !audioKnown) return false
+    const args = Audio.command(value, audioState, audioList)
+    return args !== null && execute(args)
+  }
+
+  function retryAudio() {
+    return known && running && audioKnown && audioState.can_retry && execute(["audio", "retry"])
+  }
+
+  function boundAudioOutput(text) {
+    if (audioQuery.running && !audioOverflow && Audio.bytes(text) > 32768) {
+      audioOverflow = true
+      // Terminate timeout, which forwards termination to its child. Its
+      // kill-after deadline bounds a CLI that ignores termination.
+      audioQuery.running = false
+    }
   }
 
   Component.onCompleted: refresh()
@@ -88,6 +177,15 @@ Item {
     onTriggered: root.refresh()
   }
   Timer { id: afterAction; interval: 50; onTriggered: root.refresh() }
+  Process {
+    id: audioQuery
+    stdout: StdioCollector { id: audioOutput; waitForEnd: false; onTextChanged: root.boundAudioOutput(text) }
+    stderr: StdioCollector { waitForEnd: false; onTextChanged: root.boundAudioOutput(text) }
+    onExited: function(code) {
+      root.acceptAudio(audioOutput.text, code)
+      if (root.audioEpoch !== root.epoch) Qt.callLater(root.refreshAudio)
+    }
+  }
   Process {
     id: status
     stdout: StdioCollector { id: statusOutput }

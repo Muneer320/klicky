@@ -10,7 +10,7 @@
   "entryPoints": {"barWidget": "BarWidget.qml"},
   "barWidget": {
     "displayName": "Klicky Bar",
-    "description": "Pause, sound packs, volume and startup controls",
+    "description": "Playback, audio output and startup controls",
     "category": "System",
     "allowMultiple": false
   }
