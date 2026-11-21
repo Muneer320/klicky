@@ -41,11 +41,14 @@ flowchart LR
 | `src/listener/macos.rs` | Standard macOS key capture through `rdev` |
 | `src/media_keys.rs` | Supplementary macOS media-key event tap |
 | `src/soundpack.rs` | OGG decoding, per-key slicing, capped peak normalization, PCM caching |
-| `src/player.rs` | Persistent Rodio mixer, low-latency output configuration, overlapping playback |
+| `src/player.rs` | Shared PCM sources and Linux persistent Rodio output |
+| `src/macos_audio.rs` | macOS output ownership, asynchronous controls, saved Core Audio selection and recovery |
+| `src/macos_audio/devices.rs` | Core Audio UID enumeration and pinned output resolution |
+| `src/native_sink.rs` | Shared Windows/macOS CPAL 0.18.2 renderer retaining the Rodio mixer |
 | `src/windows/runtime.rs` | Bounded Windows coordinator, transactional activation and confirmed component shutdown |
 | `src/windows/input.rs` | Passive Raw Input thread, per-device repeat tracking and bounded event delivery |
 | `src/windows/audio.rs` | Windows output supervision and route recovery |
-| `src/windows/audio/sink.rs` | Windows-only CPAL 0.18.2 output retaining the Rodio mixer |
+| `src/windows/audio/sink.rs` | Windows alias for the shared native renderer |
 | `src/windows/transactions.rs` | Bounded asynchronous preparation, persistence and activation |
 | `src/windows/control.rs` | Typed commands, delivery receipts and verified native process-exit waits |
 | `src/windows/pipe.rs` | Current-logon protected local named-pipe transport |
@@ -105,7 +108,7 @@ No decoding, filesystem access, or device initialization occurs on a keypress.
 
 ## Audio output
 
-On Linux/macOS, Rodio 0.22 owns one `MixerDeviceSink`. Klicky attempts fixed output buffers in this order:
+On Linux, Rodio 0.22 owns one `MixerDeviceSink`. Windows and macOS retain Rodio's PCM conversion and mixer with a native CPAL 0.18.2 output. Klicky attempts fixed output buffers in this order:
 
 ```text
 256 frames -> 512 frames -> 1024 frames -> device fallback
@@ -115,7 +118,11 @@ Smaller buffers reduce control latency but are not supported equally by every ba
 
 Every keypress creates a lightweight source cursor over an `Arc<Vec<i16>>`. Samples convert to `f32` as the mixer consumes them. Multiple key sounds can overlap naturally.
 
-Windows keeps the Rodio mixer but uses a Windows-only CPAL 0.18.2 renderer and a bounded voice pool. Endpoint-role notifications, stream errors and callback heartbeats drive recovery. Playback follows the default multimedia output and drops obsolete input during transitions. This adapter leaves the existing Linux/macOS output backend intact. Requested buffer sizes are not measured physical-to-audible latency.
+Windows uses a bounded voice pool. Endpoint-role notifications, stream errors and callback heartbeats drive recovery. Playback follows the default multimedia output or a remembered WASAPI endpoint and drops obsolete input during transitions.
+
+macOS uses enumerated Core Audio devices so explicit choices remain pinned, even if the selected device was initially the default. Its worker owns stream creation/teardown and audio configuration saves. A bounded command queue keeps device work off the input/engine loop. A 250 ms health check observes default-route/configuration changes, stream errors and callback heartbeats; unavailable outputs retry at one-second intervals without fallback. Generation changes cancel old sounds, and the engine discards events predating a route transition. Manual Pause is independent of stream availability. Physical routing, typing feedback and idle resource qualification are required on real Macs; hosted builds alone cannot establish those properties.
+
+The Linux output backend is unchanged. Requested buffer sizes are not measured physical-to-audible latency.
 
 ## Concurrency
 

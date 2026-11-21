@@ -1,8 +1,8 @@
 //! Blocking endpoint queries. Call from a worker or the standalone CLI, never
 //! from the input, render, or tray callbacks.
 use anyhow::{bail, Context, Result};
-use cpal_windows::traits::{DeviceTrait, HostTrait};
-use cpal_windows::{Device, DeviceDescription, DeviceType, InterfaceType};
+use cpal_native::traits::{DeviceTrait, HostTrait};
+use cpal_native::{Device, DeviceDescription, DeviceType, InterfaceType};
 
 use crate::audio::{Backend, OutputDevice, OutputList, OutputPreference};
 
@@ -41,7 +41,7 @@ pub fn name(device: &Device) -> Option<String> {
 }
 
 fn endpoint_id(device: &Device) -> Result<String> {
-    let cpal_windows::platform::DeviceInner::Wasapi(native) = device.as_inner();
+    let cpal_native::platform::DeviceInner::Wasapi(native) = device.as_inner();
     let native = native.immdevice().context("audio endpoint disappeared")?;
     unsafe {
         let id = native.GetId()?;
@@ -52,7 +52,7 @@ fn endpoint_id(device: &Device) -> Result<String> {
 }
 
 pub fn find_output(id: &str) -> Result<Device> {
-    for device in cpal_windows::default_host().output_devices()? {
+    for device in cpal_native::default_host().output_devices()? {
         if endpoint_id(&device).ok().as_deref() == Some(id) {
             return Ok(device);
         }
@@ -74,7 +74,7 @@ pub fn validate_selection(preference: &OutputPreference) -> Result<()> {
 pub fn enumerate() -> Result<OutputList> {
     let mut devices = Vec::new();
     let mut speakers = Vec::new();
-    for device in cpal_windows::default_host().output_devices()? {
+    for device in cpal_native::default_host().output_devices()? {
         let Ok(id) = endpoint_id(&device) else {
             continue;
         };
