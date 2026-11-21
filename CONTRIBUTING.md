@@ -114,6 +114,8 @@ For manual validation, record the macOS version, CPU architecture, audio hardwar
 - Use keyboard navigation and VoiceOver in light and dark appearance. Check labels, submenus, disabled Pause/Resume actions, and pack/volume checkmarks.
 - Pause while typing, then resume. Confirm sound stops without changing the daemon PID or replaying old input. Check that mute and pause remain separate.
 - Set a non-preset CLI volume such as `0.73`, switch packs from the menu and CLI, and refresh after adding or removing a custom pack. Check the current selections.
+- In Audio Output, select a device (including one currently serving as the system default), then Follow System Default. Check policy checkmarks and live availability. Duplicate names must remain independently selectable by stable UID. Reopen the menu after CLI changes or device changes.
+- While paused, disconnect/reconnect the selected device and sleep/wake. Check that it stays paused and Retry Audio never resumes it. With an older or failing audio backend, playback/service controls and Quit must remain usable; refresh must not leave controls stuck disabled.
 - Try an invalid pack, unavailable CLI, and stalled command. Confirm errors remain visible, the last working pack remains selected, and the menu and Quit stay responsive.
 - Toggle login startup while paused. Confirm the PID and pause state stay unchanged. Test service start/stop separately and confirm quitting the menu helper leaves the daemon running.
 - Check source/Homebrew CLI and icon overrides, upgrades, and removal. Record Intel and Apple Silicon results separately.
