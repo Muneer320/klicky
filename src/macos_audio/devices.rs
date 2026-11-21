@@ -18,7 +18,8 @@ pub(super) fn describe(device: &Device) -> Result<OutputDevice> {
     let name = device
         .description()
         .ok()
-        .map(|description| description.name().to_owned());
+        .map(|description| description.name().to_owned())
+        .filter(|name| !name.is_empty() && name.len() <= 2048);
     let output = OutputDevice {
         backend: Backend::CoreAudio,
         id,
