@@ -10,6 +10,8 @@ mod engine;
 mod ipc;
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 mod lifecycle;
+#[cfg(target_os = "linux")]
+mod linux_audio;
 mod listener;
 #[cfg(target_os = "macos")]
 mod media_keys;

@@ -207,17 +207,17 @@ Leave off `--purge` to keep settings and custom packs, then install the package.
 
 ### Linux from source
 
-Use this on Fedora, older distributions, other architectures, or when developing Klicky. Install Rust 1.87+, Git and your distribution's ALSA development package:
+Use this on Fedora, older distributions, other architectures, or when developing Klicky. Install Rust 1.87+, Git and your distribution's ALSA and PulseAudio client development packages:
 
 ```bash
 # Ubuntu / Debian
-sudo apt install git pkg-config libasound2-dev
+sudo apt install git pkg-config libasound2-dev libpulse-dev
 
 # Arch / Omarchy
-sudo pacman -S --needed git alsa-lib pkgconf
+sudo pacman -S --needed git alsa-lib libpulse pkgconf
 
 # Fedora
-sudo dnf install git alsa-lib-devel pkgconf-pkg-config
+sudo dnf install git alsa-lib-devel pulseaudio-libs-devel pkgconf-pkg-config
 ```
 
 Use only your distribution's command. Then:

@@ -52,6 +52,19 @@ Set playback volume between 0.0 and 1.0.
 The confirmation and text status print that value. Quiet settings stay visible,
 and the endpoints stay 0.0 and 1.0.
 .TP
+.B audio status|outputs|follow-default|retry
+Query the confirmed audio state, list desktop outputs, restore system-default
+routing, or retry the requested output without clearing manual Pause.
+Linux desktop selection uses the PulseAudio protocol, including on PipeWire.
+.TP
+.BI "audio select --backend pulse-audio --id " SINK_ID
+Remember one Linux desktop sink for Klicky alone. Copy its ID from audio outputs;
+display names can repeat. A missing remembered sink stays selected and silent
+until it returns. Native PipeWire node IDs and raw ALSA selection are unsupported.
+An initially absent local desktop server can use ALSA system-default playback,
+without enumeration or selection. No fallback occurs around a missing selected
+output, a failed previously connected server, or an explicit PULSE_SERVER.
+.TP
 .BI service " enable|disable|start|stop|status"
 Manage automatic startup and the background user service. Enable starts Klicky now
 and at future logins. Start and stop only affect the current session.
@@ -112,9 +125,9 @@ pending retries while retaining the login property list. Disable also removes
 the login configuration. A readiness timeout does not cancel a queued retry.
 This policy requires validation with a real launchd session in addition to unit tests.
 .PP
-With a running daemon, sound-control commands report delivery rather than confirmed
-pack loading or configuration persistence. Inspect daemon output or service logs
-if a switch fails or a setting does not survive restart.
+With a running daemon, successful pack and volume commands confirm loading,
+persistence and activation. Output-selection commands confirm the requested
+policy; use audio status to check the asynchronously opened output.
 .SH SECURITY
 Klicky receives raw global key-down events, including events generated while entering sensitive text.
 Normal mode does not store, transmit, or log typed input.

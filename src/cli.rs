@@ -115,6 +115,23 @@ fn cmd_audio(action: crate::audio::AudioCommand) -> Result<()> {
     action.validate()?;
     match ipc::audio_command(action.clone()) {
         Ok(state) => println!("{}", serde_json::to_string_pretty(&state)?),
+        #[cfg(target_os = "linux")]
+        Err(error) if ipc::is_daemon_unavailable(&error)
+            && matches!(action, crate::audio::AudioCommand::Outputs | crate::audio::AudioCommand::Select { .. }) => {
+            if action == crate::audio::AudioCommand::Outputs {
+                println!("{}", serde_json::to_string_pretty(&crate::linux_audio::outputs()?)?);
+            } else {
+                let directory = config::ensure_runtime_dir()?;
+                let _owner = lifecycle::Owner::acquire(&directory)?
+                    .context("Klicky may be starting; no offline change was saved")?;
+                let preference = crate::linux_audio::validate_selection(&action)?
+                    .context("no output preference was supplied")?;
+                let mut cfg = config::Config::load()?;
+                cfg.audio_output = preference;
+                cfg.save()?;
+                println!("Audio output saved for next start");
+            }
+        }
         Err(error)
             if ipc::is_daemon_unavailable(&error)
                 && action == crate::audio::AudioCommand::FollowDefault =>
