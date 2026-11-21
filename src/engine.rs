@@ -6,7 +6,9 @@ use anyhow::{bail, Context, Result};
 #[cfg(target_os = "macos")]
 use crate::media_keys;
 use crate::playback::{is_function_key, key_playback_volume};
-use crate::{config, ipc, lifecycle, listener, player, soundpack};
+#[cfg(not(target_os = "macos"))]
+use crate::player;
+use crate::{config, ipc, lifecycle, listener, soundpack};
 
 /// Run the foreground sound engine under exclusive instance ownership.
 ///
@@ -25,6 +27,7 @@ pub fn run(benchmark: bool) -> Result<()> {
     };
 
     let mut cfg = config::Config::load()?;
+    #[cfg(not(target_os = "macos"))]
     cfg.audio_output.require_system_default()?;
     let sound_roots = config::sound_roots();
     if config::resolve_sound_pack(&cfg.sound_pack, &sound_roots).is_none() {
@@ -52,7 +55,10 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
     let pack_path = config::resolve_sound_pack(&cfg.sound_pack, &sound_roots)
         .with_context(|| format!("Sound pack '{}' not found", cfg.sound_pack))?;
     let mut pack = soundpack::SoundPack::load(&pack_path)?;
+    #[cfg(not(target_os = "macos"))]
     let mut player = player::Player::new()?;
+    #[cfg(target_os = "macos")]
+    let mut player = crate::macos_audio::Player::with_config(&cfg)?;
     player.set_volume(cfg.volume);
 
     // IPC channel
@@ -82,14 +88,68 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
     );
 
     let mut playback = PlaybackControl::default();
+    #[cfg(target_os = "macos")]
+    let mut audio_pending: Option<(
+        ipc::Request,
+        mpsc::Receiver<std::result::Result<crate::macos_audio::Reply, String>>,
+    )> = None;
 
     // Main event loop
     loop {
+        #[cfg(target_os = "macos")]
+        {
+            refresh_audio(&mut player, &mut playback);
+            if let Some((_, response)) = &audio_pending {
+                match response.try_recv() {
+                    Ok(result) => {
+                        refresh_audio(&mut player, &mut playback);
+                        let (mut request, _) = audio_pending.take().expect("pending audio request");
+                        let response = match result {
+                            Ok(crate::macos_audio::Reply::Outputs(list)) => request.outputs(list),
+                            Ok(crate::macos_audio::Reply::Changed(next)) => {
+                                cfg = next;
+                                request.audio(player.status(playback.paused))
+                            }
+                            Ok(crate::macos_audio::Reply::Retrying) => {
+                                request.audio(player.status(playback.paused))
+                            }
+                            Err(error) => request.reject(error),
+                        };
+                        if let Err(error) = response {
+                            eprintln!("Failed to respond to audio request: {error:#}");
+                        }
+                    }
+                    Err(mpsc::TryRecvError::Disconnected) => {
+                        let (mut request, _) = audio_pending.take().expect("pending audio request");
+                        let _ = request.reject("Core Audio worker stopped");
+                    }
+                    Err(mpsc::TryRecvError::Empty) => (),
+                }
+            }
+        }
         if let Ok(error) = listener_error_rx.try_recv() {
             return Err(error.context("key listener stopped"));
         }
         // Check for IPC commands (non-blocking)
         while let Ok(mut request) = ipc_rx.try_recv() {
+            #[cfg(target_os = "macos")]
+            if audio_pending.is_some()
+                && matches!(
+                    request.command,
+                    ipc::Command::Switch { .. }
+                        | ipc::Command::Volume { .. }
+                        | ipc::Command::Audio {
+                            command: crate::audio::AudioCommand::Outputs
+                                | crate::audio::AudioCommand::Select { .. }
+                                | crate::audio::AudioCommand::FollowDefault
+                                | crate::audio::AudioCommand::Retry
+                        }
+                )
+            {
+                let _ = request
+                    .reject("audio settings change is still in progress; retry after it completes");
+                continue;
+            }
             match request.command.clone() {
                 ipc::Command::Stop => {
                     let _ = request.acknowledge();
@@ -148,8 +208,24 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
                     });
                 }
                 ipc::Command::Audio { command } => {
-                    use crate::audio::{AudioCommand, AudioStatus, Availability};
-                    let result = command.validate().and_then(|_| match command {
+                    #[cfg(target_os = "macos")]
+                    {
+                        if command == crate::audio::AudioCommand::Status {
+                            refresh_audio(&mut player, &mut playback);
+                            let _ = request.audio(player.status(playback.paused));
+                        } else {
+                            match player.submit(command, &cfg) {
+                                Ok(response) => audio_pending = Some((request, response)),
+                                Err(error) => {
+                                    let _ = request.reject(format!("{error:#}"));
+                                }
+                            }
+                        }
+                    }
+                    #[cfg(not(target_os = "macos"))]
+                    {
+                        use crate::audio::{AudioCommand, AudioStatus, Availability};
+                        let result = command.validate().and_then(|_| match command {
                         AudioCommand::Status => Ok(()),
                         AudioCommand::FollowDefault => {
                             let mut next = cfg.clone();
@@ -161,21 +237,22 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
                         AudioCommand::Retry => anyhow::bail!("audio retry is not supported by this adapter yet; stop and start the service"),
                         _ => Err(crate::audio::unsupported_selection()),
                     });
-                    match result {
-                        Ok(()) => {
-                            let _ = request.audio(AudioStatus {
-                                schema_version: 1,
-                                requested: Some(cfg.audio_output.clone()),
-                                active: None,
-                                availability: Availability::Available,
-                                manual_paused: playback.paused,
-                                can_select: false,
-                                can_enumerate: false,
-                                can_retry: false,
-                            });
-                        }
-                        Err(error) => {
-                            let _ = request.reject(format!("{error:#}"));
+                        match result {
+                            Ok(()) => {
+                                let _ = request.audio(AudioStatus {
+                                    schema_version: 1,
+                                    requested: Some(cfg.audio_output.clone()),
+                                    active: None,
+                                    availability: Availability::Available,
+                                    manual_paused: playback.paused,
+                                    can_select: false,
+                                    can_enumerate: false,
+                                    can_retry: false,
+                                });
+                            }
+                            Err(error) => {
+                                let _ = request.reject(format!("{error:#}"));
+                            }
                         }
                     }
                 }
@@ -221,6 +298,13 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
 
         // Small sleep to avoid busy-spinning
         thread::sleep(std::time::Duration::from_micros(500));
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn refresh_audio(player: &mut crate::macos_audio::Player, playback: &mut PlaybackControl) {
+    if player.poll() {
+        playback.accept_events_since = std::time::Instant::now();
     }
 }
 
