@@ -306,6 +306,7 @@ fn run(shared: Arc<Shared>, changes: Receiver<()>, mailbox: &Mailbox) -> Result<
                             current.render.valid.store(true, Ordering::Release);
                             mailbox.publish(Update::Ready(Output {
                                 description: current.sink.description().to_owned(),
+                                id: String::from_utf16_lossy(&current.id),
                                 mixer: current.sink.mixer().clone(),
                                 render: Arc::clone(&current.render),
                             }));

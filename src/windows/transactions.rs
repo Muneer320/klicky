@@ -19,6 +19,7 @@ pub enum Change {
     Bootstrap,
     Switch(String),
     Volume(f32),
+    FollowDefault,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -342,6 +343,13 @@ fn prepare(paths: &Paths, store: &ConfigStore, job: &Job) -> Result<Prepared> {
                 config,
                 pack: Some(pack),
             })
+        }
+        Change::FollowDefault => {
+            let config = persist(&mut |config| {
+                config.audio_output = Default::default();
+                Ok(())
+            })?;
+            Ok(Prepared { config, pack: None })
         }
         Change::Volume(level) => {
             let config = persist(&mut |config| {

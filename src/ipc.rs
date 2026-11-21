@@ -18,6 +18,7 @@ pub const COMMAND_TIMEOUT: Duration = Duration::from_secs(3);
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Command {
     Stop,
+    Audio { command: crate::audio::AudioCommand },
     Switch { pack: String },
     Volume { level: f32 },
     Status,
@@ -45,6 +46,8 @@ struct Response {
     error: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     playback: Option<PlaybackState>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    audio: Option<crate::audio::AudioStatus>,
 }
 
 impl Request {
@@ -64,6 +67,21 @@ impl Request {
         self.respond_with_state(None, Some(state))
     }
 
+    pub fn audio(&mut self, state: crate::audio::AudioStatus) -> Result<()> {
+        state.validate()?;
+        writeln!(
+            self.stream,
+            "{}",
+            serde_json::to_string(&Response {
+                pid: std::process::id() as i32,
+                error: None,
+                playback: None,
+                audio: Some(state),
+            })?
+        )?;
+        Ok(())
+    }
+
     fn respond_with_state(
         &mut self,
         error: Option<String>,
@@ -73,6 +91,7 @@ impl Request {
             pid: std::process::id() as i32,
             error,
             playback,
+            audio: None,
         })?;
         writeln!(self.stream, "{response}")?;
         Ok(())
@@ -244,6 +263,25 @@ pub fn playback_status() -> Result<PlaybackState> {
     response
         .playback
         .context("daemon does not support structured playback status")
+}
+
+pub fn audio_command(command: crate::audio::AudioCommand) -> Result<crate::audio::AudioStatus> {
+    command.validate()?;
+    let response = request_response(
+        &config::socket_path(),
+        &Command::Audio { command },
+        Instant::now() + COMMAND_TIMEOUT,
+    )?;
+    if crate::lifecycle::read_pid(&config::runtime_dir())? != Some(response.pid)
+        || !crate::lifecycle::process_exists(response.pid)
+    {
+        bail!("audio response does not match the live daemon");
+    }
+    let state = response
+        .audio
+        .context("daemon does not support audio controls; upgrade the engine")?;
+    state.validate()?;
+    Ok(state)
 }
 
 fn request_response(path: &Path, command: &Command, deadline: Instant) -> Result<Response> {

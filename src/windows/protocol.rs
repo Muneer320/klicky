@@ -18,6 +18,9 @@ const MAX_ERROR_BYTES: usize = 512;
 pub enum Command {
     // Empty struct variants enforce unknown-field rejection in Serde's tagged form.
     Stop {},
+    Audio {
+        command: crate::audio::AudioCommand,
+    },
     /// Installer-only stop with an atomic account of the temporary user pause.
     PrepareUpdate {},
     Switch {
@@ -67,6 +70,9 @@ impl Request {
     pub(super) fn validate(&self) -> Result<(), ProtocolError> {
         validate_header(self.protocol, self.request_id)?;
         match &self.command {
+            Command::Audio { command } => command
+                .validate()
+                .map_err(|_| ProtocolError::InvalidPayload("invalid audio request")),
             Command::Switch { pack } => validate_pack(pack),
             Command::Volume { level } => validate_volume(*level),
             _ => Ok(()),
@@ -160,6 +166,9 @@ pub enum ErrorCode {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Outcome {
+    Audio {
+        audio: crate::audio::AudioStatus,
+    },
     Success {
         snapshot: Snapshot,
     },
@@ -230,6 +239,10 @@ impl Response {
                     "unexpected diagnostics response",
                 ));
             }
+            (Command::Audio { .. }, Outcome::Audio { .. } | Outcome::Failure { .. }) => {}
+            (Command::Audio { .. }, _) | (_, Outcome::Audio { .. }) => {
+                return Err(ProtocolError::InvalidPayload("unexpected audio response"))
+            }
             _ => {}
         }
         Ok(())
@@ -239,6 +252,9 @@ impl Response {
         validate_header(self.protocol, self.request_id)?;
         self.instance.validate()?;
         match &self.outcome {
+            Outcome::Audio { audio } => audio
+                .validate()
+                .map_err(|_| ProtocolError::InvalidPayload("invalid audio state")),
             Outcome::UpdatePrepared { .. } => Ok(()),
             Outcome::Success { snapshot } | Outcome::Diagnostics { snapshot, .. } => {
                 validate_pack(&snapshot.sound_pack)?;

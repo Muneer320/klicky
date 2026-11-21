@@ -62,6 +62,24 @@ On Linux and macOS, the `volume` confirmation and the text `status` volume field
 
 Service commands manage systemd user units on Linux, LaunchAgents on macOS and a per-user desktop app on Windows. Store installations use a Windows startup task; standalone installations use an owned Startup shortcut. They do not install an elevated Windows service. Windows can independently disable or defer login startup.
 
+## Audio-output controls
+
+`klicky audio status` prints the running engine's confirmed audio state as JSON. It reports the requested policy, active endpoint when identifiable, output availability, manual pause and supported operations. It never substitutes saved settings for a live response. Existing `status`, `status --json` and Windows diagnostics retain their formats.
+
+| Command | Behavior |
+|---|---|
+| `audio status` | Query audio state without opening a new stream or changing settings. |
+| `audio follow-default` | Save system-default output policy, preserving pack, volume, pause and startup. Works offline for the next start too. |
+| `audio retry` | Request recovery on Windows; check status afterward for actual availability. Does not resume a manually paused session. |
+| `audio outputs` | Enumerate outputs when the platform adapter advertises `can_enumerate`. |
+| `audio select --backend BACKEND --id ID` | Request a backend-scoped opaque device ID when `can_select` is true. |
+
+The shared interface currently supports system-default playback. Explicit selection and enumeration are not enabled yet: both return an error without saving or changing the current route. Unix retry also returns an unsupported-operation error; stop/start the service to reopen its output. Helpers must inspect capabilities instead of assuming every platform offers every action.
+
+Audio JSON schema version 1 contains `requested` (`mode: system_default` or `mode: device` with `backend` and `id`), `active`, `availability`, `manual_paused`, `can_select`, `can_enumerate` and `can_retry`. Availability is `available`, `unavailable`, `recovering` or `inactive`; it is independent of manual pause. `active` is null when no endpoint can be confirmed, including Unix backends that cannot identify their desktop-server route. An open Unix stream is not a measured end-to-end audio-health check. Windows reports its confirmed WASAPI endpoint ID; its optional display name is currently null.
+
+IDs are opaque, backend-scoped and case-sensitive. Never select by enumeration index or display name: names can repeat. Unsupported, invalid or failed requests must not trigger a fallback to another device. Requests use the existing bounded control transport; there is no background enumeration or polling added by these commands. An older engine cannot serve the new audio commands and needs an upgrade.
+
 ## Linux/macOS helper controls
 
 `status --json` emits schema version 1 with `running`, `process_exists`, `paused`, `sound_pack`, `volume`, `packs` and `autostart`. A responsive daemon supplies the live playback fields; when stopped, pack and volume come from saved preferences and `paused` is false. A live process that does not answer is reported as `running: false, process_exists: true`. Invalid or unsupported live responses fail rather than being replaced with saved preferences. IPC requests have a three-second deadline.

@@ -1,5 +1,6 @@
 //! Shared sound/input types and platform application entrypoints for Klicky.
 
+pub mod audio;
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 mod cli;
 mod config;

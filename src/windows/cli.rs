@@ -20,6 +20,11 @@ struct Cli {
 }
 #[derive(Subcommand)]
 enum Commands {
+    /// Query or control this app's audio output
+    Audio {
+        #[command(subcommand)]
+        action: crate::audio::AudioCommand,
+    },
     /// Check for a stable release or open the supported update route
     Update {
         /// Only check; do not open an installer or package manager
@@ -95,6 +100,7 @@ enum ServiceAction {
 
 pub fn run() -> Result<()> {
     match Cli::parse().command {
+        Commands::Audio { action } => audio(action),
         Commands::Update { check, yes } => crate::update::run(check, yes),
         Commands::Start {
             benchmark,
@@ -162,6 +168,31 @@ pub fn run() -> Result<()> {
         Commands::Resume => live(Command::Pause { paused: false }),
         Commands::RetryAudio => live(Command::RetryAudio {}),
         Commands::Service { action } => service(action),
+    }
+}
+
+fn audio(action: crate::audio::AudioCommand) -> Result<()> {
+    action.validate()?;
+    match Client::current()?.command(
+        Command::Audio {
+            command: action.clone(),
+        },
+        deadline(),
+    ) {
+        Ok(reply) => print_outcome(reply.response.outcome),
+        Err(ControlError::Absent) if action == crate::audio::AudioCommand::FollowDefault => {
+            let paths = Paths::discover()?;
+            let _owner = InstanceOwner::try_acquire(&paths)?
+                .context("Klicky may be starting; no offline change was saved")?;
+            ConfigStore::new(paths).update(|config| {
+                config.audio_output = Default::default();
+                Ok(())
+            })?;
+            println!("System-default output saved for next start");
+            Ok(())
+        }
+        Err(error) => Err(error)
+            .context("Audio request not confirmed; no offline preference change was saved. Older engines need an upgrade for audio controls"),
     }
 }
 
@@ -284,6 +315,10 @@ fn change(command: Command) -> Result<()> {
 }
 fn print_outcome(outcome: Outcome) -> Result<()> {
     match outcome {
+        Outcome::Audio { audio } => {
+            println!("{}", serde_json::to_string_pretty(&audio)?);
+            Ok(())
+        }
         Outcome::Success { snapshot } => {
             print_snapshot(&snapshot);
             Ok(())

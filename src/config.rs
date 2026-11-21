@@ -9,10 +9,15 @@ pub use unix::{
     sound_roots,
 };
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Config {
     pub sound_pack: String,
     pub volume: f32,
+    #[serde(
+        default,
+        skip_serializing_if = "crate::audio::OutputPreference::is_default"
+    )]
+    pub audio_output: crate::audio::OutputPreference,
 }
 
 impl Default for Config {
@@ -20,6 +25,7 @@ impl Default for Config {
         Config {
             sound_pack: "eg-oreo".to_string(),
             volume: 0.8,
+            audio_output: Default::default(),
         }
     }
 }
@@ -29,6 +35,6 @@ impl Config {
         if !self.volume.is_finite() || !(0.0..=1.0).contains(&self.volume) {
             bail!("configured volume must be between 0.0 and 1.0");
         }
-        Ok(())
+        self.audio_output.validate()
     }
 }

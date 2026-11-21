@@ -25,6 +25,7 @@ pub fn run(benchmark: bool) -> Result<()> {
     };
 
     let mut cfg = config::Config::load()?;
+    cfg.audio_output.require_system_default()?;
     let sound_roots = config::sound_roots();
     if config::resolve_sound_pack(&cfg.sound_pack, &sound_roots).is_none() {
         eprintln!(
@@ -146,6 +147,38 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
                         paused: playback.paused,
                     });
                 }
+                ipc::Command::Audio { command } => {
+                    use crate::audio::{AudioCommand, AudioStatus, Availability};
+                    let result = command.validate().and_then(|_| match command {
+                        AudioCommand::Status => Ok(()),
+                        AudioCommand::FollowDefault => {
+                            let mut next = cfg.clone();
+                            next.audio_output = Default::default();
+                            next.save()?;
+                            cfg = next;
+                            Ok(())
+                        }
+                        AudioCommand::Retry => anyhow::bail!("audio retry is not supported by this adapter yet; stop and start the service"),
+                        _ => Err(crate::audio::unsupported_selection()),
+                    });
+                    match result {
+                        Ok(()) => {
+                            let _ = request.audio(AudioStatus {
+                                schema_version: 1,
+                                requested: cfg.audio_output.clone(),
+                                active: None,
+                                availability: Availability::Available,
+                                manual_paused: playback.paused,
+                                can_select: false,
+                                can_enumerate: false,
+                                can_retry: false,
+                            });
+                        }
+                        Err(error) => {
+                            let _ = request.reject(format!("{error:#}"));
+                        }
+                    }
+                }
                 ipc::Command::Status => {
                     let _ = request.acknowledge();
                 }
@@ -249,6 +282,7 @@ fn switch_pack(
     let next = config::Config {
         sound_pack: name.to_string(),
         volume: config.volume,
+        audio_output: config.audio_output.clone(),
     };
     persist(&next)?;
     *config = next;
@@ -267,6 +301,7 @@ fn set_config_volume(
     let next = config::Config {
         sound_pack: config.sound_pack.clone(),
         volume: level,
+        audio_output: config.audio_output.clone(),
     };
     save(&next)?;
     *config = next;
@@ -314,6 +349,7 @@ mod tests {
         let mut config = config::Config {
             sound_pack: "eg-oreo".to_string(),
             volume: 0.5,
+            audio_output: Default::default(),
         };
         let mut pack = soundpack::SoundPack::load(&roots[0].join("eg-oreo"))?;
         let old_channels = pack.channels;
@@ -349,6 +385,7 @@ mod tests {
         let mut config = config::Config {
             sound_pack: "eg-oreo".to_string(),
             volume: 0.5,
+            audio_output: Default::default(),
         };
         let mut pack = soundpack::SoundPack::load(&roots[0].join("eg-oreo"))?;
         let mut persisted_name = None;
@@ -374,6 +411,7 @@ mod tests {
         let mut config = config::Config {
             sound_pack: "eg-oreo".to_string(),
             volume: 0.5,
+            audio_output: Default::default(),
         };
         let result = set_config_volume(&mut config, 0.8, |_| {
             anyhow::bail!("simulated read-only config")

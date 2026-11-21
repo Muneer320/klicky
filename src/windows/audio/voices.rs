@@ -12,6 +12,7 @@ pub const MAX_VOICES: usize = 64;
 
 pub struct Output {
     pub description: String,
+    pub id: String,
     pub(super) mixer: Mixer,
     pub(super) render: Arc<Render>,
 }

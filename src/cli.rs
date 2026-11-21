@@ -16,6 +16,11 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Query or control this app's audio output
+    Audio {
+        #[command(subcommand)]
+        action: crate::audio::AudioCommand,
+    },
     /// Check for a stable release or open the supported update route
     Update {
         /// Only check; do not open an installer or package manager
@@ -85,6 +90,7 @@ pub fn run() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
+        Commands::Audio { action } => cmd_audio(action)?,
         Commands::Update { check, yes } => crate::update::run(check, yes)?,
         Commands::Start { benchmark } => engine::run(benchmark)?,
         Commands::Stop => service::stop()?,
@@ -102,6 +108,30 @@ pub fn run() -> Result<()> {
         Commands::Service { action } => service::run(action)?,
     }
 
+    Ok(())
+}
+
+fn cmd_audio(action: crate::audio::AudioCommand) -> Result<()> {
+    action.validate()?;
+    match ipc::audio_command(action.clone()) {
+        Ok(state) => println!("{}", serde_json::to_string_pretty(&state)?),
+        Err(error)
+            if ipc::is_daemon_unavailable(&error)
+                && action == crate::audio::AudioCommand::FollowDefault =>
+        {
+            let directory = config::ensure_runtime_dir()?;
+            let _owner = lifecycle::Owner::acquire(&directory)?
+                .context("Klicky may be starting; no offline change was saved")?;
+            let mut cfg = config::Config::load()?;
+            cfg.audio_output = Default::default();
+            cfg.save()?;
+            println!("System-default output saved for next start");
+        }
+        Err(error) => {
+            return Err(error)
+                .context("Audio request not confirmed; no offline preference change was saved. Older engines need an upgrade for audio controls")
+        }
+    }
     Ok(())
 }
 

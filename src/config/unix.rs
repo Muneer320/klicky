@@ -207,6 +207,7 @@ mod tests {
         let config = Config {
             sound_pack: "cherrymx-blue-abs".to_string(),
             volume: 0.4,
+            audio_output: Default::default(),
         };
 
         config.save_to(&path).unwrap();
@@ -281,6 +282,7 @@ mod tests {
             let config = Config {
                 sound_pack: "eg-oreo".to_string(),
                 volume,
+                audio_output: Default::default(),
             };
             config.save_to(&path).unwrap();
             assert_eq!(Config::load_from(&path).unwrap().volume, volume);

@@ -6,7 +6,7 @@ For everyday changes, use the Windows tray, macOS menu helper or CLI. The macOS 
 
 ## Settings
 
-`config.toml` has two fields. Defaults:
+Existing configurations need no changes. The everyday defaults are:
 
 ```toml
 sound_pack = "eg-oreo"
@@ -18,7 +18,20 @@ volume = 0.8
 | `sound_pack` | Pack directory name | Selects the OGG/JSON pack; default `eg-oreo`. |
 | `volume` | Finite number, `0.0`–`1.0` | Playback level; zero mutes. |
 
-Pause is a session control, not a third configuration field. Startup is managed through the operating system's service/desktop controls.
+Pause is a session control and is not persisted in configuration. Startup is managed through the operating system's service/desktop controls.
+
+## Audio-output preference
+
+An optional `[audio_output]` table stores the routing policy. Omitting it means system default and keeps existing configuration files compatible:
+
+```toml
+[audio_output]
+mode = "system_default"
+```
+
+The shared schema also accepts `mode = "device"` with a `backend` (`wasapi`, `core_audio`, `pipe_wire`, `pulse_audio` or `alsa`) and an opaque `id`. Device-selection adapters are not enabled yet, so do not add a device preference manually: the engine refuses to activate it rather than playing through an unintended output. Use `klicky audio follow-default` to recover without losing the other settings. Unsupported device-selection commands leave the saved configuration unchanged.
+
+Backend IDs are case-sensitive values, not device names or indexes. Pack/volume saves retain the output preference; an invalid preference fails validation instead of being silently erased. [Audio commands and structured status](CLI.md#audio-output-controls) describe capabilities and recovery.
 
 ## File locations
 
