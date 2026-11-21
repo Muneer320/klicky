@@ -165,7 +165,7 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
                         Ok(()) => {
                             let _ = request.audio(AudioStatus {
                                 schema_version: 1,
-                                requested: cfg.audio_output.clone(),
+                                requested: Some(cfg.audio_output.clone()),
                                 active: None,
                                 availability: Availability::Available,
                                 manual_paused: playback.paused,

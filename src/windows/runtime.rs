@@ -258,6 +258,7 @@ struct State {
     packs: Option<Worker>,
     active: Option<Active>,
     config: Config,
+    config_loaded: bool,
     pack: Option<SoundPack>,
     paused: bool,
     recovering: bool,
@@ -296,6 +297,7 @@ impl State {
             packs: None,
             active: None,
             config: Config::default(),
+            config_loaded: false,
             pack: None,
             recovering: false,
             desktop_epoch: 0,
@@ -542,6 +544,7 @@ impl State {
                 && Instant::now() < active.deadline;
             match completion.result {
                 Ok(mut prepared) if activate => {
+                    self.config_loaded = true;
                     if let Err(error) = prepared.config.audio_output.require_system_default() {
                         self.config = prepared.config;
                         self.clear_output();
@@ -680,13 +683,12 @@ impl State {
     }
     fn audio_status(&self) -> crate::audio::AudioStatus {
         use crate::audio::{AudioStatus, Availability, Backend, OutputDevice};
-        let output = self
-            .output
-            .as_ref()
-            .filter(|output| self.config.audio_output.is_default() && output.is_available());
+        let output = self.output.as_ref().filter(|output| {
+            self.config_loaded && self.config.audio_output.is_default() && output.is_available()
+        });
         AudioStatus {
             schema_version: 1,
-            requested: self.config.audio_output.clone(),
+            requested: self.config_loaded.then(|| self.config.audio_output.clone()),
             active: output.map(|output| OutputDevice {
                 backend: Backend::Wasapi,
                 id: output.id.clone(),
@@ -697,6 +699,8 @@ impl State {
             } else if self.stopping.is_some() || !self.shared.desktop_active.load(Ordering::Acquire)
             {
                 Availability::Inactive
+            } else if !self.config_loaded && self.startup_error.is_none() {
+                Availability::Initializing
             } else if self.recovering {
                 Availability::Recovering
             } else {

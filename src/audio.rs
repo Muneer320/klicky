@@ -61,6 +61,7 @@ pub struct OutputDevice {
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum Availability {
+    Initializing,
     Available,
     Unavailable,
     Recovering,
@@ -71,7 +72,7 @@ pub enum Availability {
 #[serde(deny_unknown_fields)]
 pub struct AudioStatus {
     pub schema_version: u32,
-    pub requested: OutputPreference,
+    pub requested: Option<OutputPreference>,
     /// None when inactive, unavailable, or the backend cannot identify its route.
     pub active: Option<OutputDevice>,
     pub availability: Availability,
@@ -83,7 +84,9 @@ pub struct AudioStatus {
 
 impl AudioStatus {
     pub fn validate(&self) -> Result<()> {
-        self.requested.validate()?;
+        if let Some(requested) = &self.requested {
+            requested.validate()?;
+        }
         if self.schema_version != 1 {
             bail!("unsupported audio status schema");
         }
@@ -93,7 +96,10 @@ impl AudioStatus {
                 id: device.id.clone(),
             }
             .validate()?;
-            if let OutputPreference::Device { backend, id } = &self.requested {
+            if self.requested.is_none() {
+                bail!("active output requires confirmed preferences");
+            }
+            if let Some(OutputPreference::Device { backend, id }) = &self.requested {
                 if *backend != device.backend || *id != device.id {
                     bail!("active output does not match the requested device");
                 }
