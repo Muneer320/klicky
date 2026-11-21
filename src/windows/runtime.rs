@@ -580,7 +580,14 @@ impl State {
                         Change::FollowDefault => {
                             self.config.audio_output = prepared.config.audio_output;
                             if self.pack.is_none() {
-                                let _ = self.retry();
+                                if let Err(error) = self.retry() {
+                                    let message = format!("System-default preference saved, but recovery could not start: {error:#}");
+                                    self.last_error = Some(message.clone());
+                                    if let Some(pending) = active.pending {
+                                        pending.respond(failure(ErrorCode::Unavailable, &message));
+                                    }
+                                    return;
+                                }
                             }
                         }
                         Change::Volume(_) => {
@@ -907,7 +914,11 @@ impl State {
     }
 
     fn retry(&mut self) -> Result<()> {
-        if !self.input_ready {
+        // Input initialization may still be pending. Recovery can load the pack
+        // and reopen audio now; sync_capture waits for actual input readiness.
+        if !self.input_ready
+            && (self.fault.is_some() || self.input.as_ref().is_none_or(Input::has_exited))
+        {
             bail!("keyboard input is unavailable; quit and restart Klicky");
         }
         self.last_error = None;
