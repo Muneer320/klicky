@@ -72,7 +72,7 @@ The audio command group and Windows output picker are available in source builds
 |---|---|
 | `audio status` | Query audio state without opening a new stream or changing settings. |
 | `audio follow-default` | Save system-default output policy, preserving pack, volume, pause and startup. Works offline for the next start too. |
-| `audio retry` | Request recovery on Windows; check status afterward for actual availability. Does not resume a manually paused session. |
+| `audio retry` | Request recovery on Windows or Linux; check status afterward for actual availability. Does not resume a manually paused session. |
 | `audio outputs` | Enumerate outputs when the platform adapter advertises `can_enumerate`. |
 | `audio select --backend BACKEND --id ID` | Request a backend-scoped opaque device ID when `can_select` is true. |
 
@@ -80,11 +80,23 @@ Windows supports remembered WASAPI output selection. `audio outputs` returns JSO
 
 Selection confirms the saved/requested policy, while the audio worker opens the stream asynchronously. Check `audio status` for the confirmed active endpoint. If a remembered device disappears, Klicky waits silently for that exact ID and reconnects when it returns. It never falls back to another output, and reconnection never clears manual Pause. A new unavailable/invalid selection is rejected without replacing the preference. On a timeout, check status before retrying because the persistence outcome may be uncertain.
 
-Linux/macOS currently support system-default playback; selection, enumeration and retry return unsupported-operation errors without changing preferences. Stop/start the Unix service to reopen its output. Helpers must inspect capabilities instead of assuming every platform offers every action.
+On Linux, PipeWire's PulseAudio server and PulseAudio support remembered output selection through the same commands:
+
+```sh
+klicky audio outputs
+klicky audio select --backend pulse-audio --id 'SINK_ID'
+klicky audio status
+```
+
+Copy the sink's `id` from the list, including on PipeWire. The saved backend is `pulse_audio`; `pulse-audio` is its CLI spelling. Sink names are used instead of temporary numeric indexes or display names. Selection affects only Klicky, leaving other applications and the system default alone. System-default mode follows changes to the desktop server's default sink. The Linux adapter does not guess which device is the laptop speaker.
+
+If no local PulseAudio-compatible server exists at first startup, Linux retains ALSA system-default playback. This fallback cannot enumerate or select desktop outputs and reports no active device ID. It is not used when a remembered output disappears or a previously connected server fails. `audio retry` probes the server again and otherwise reopens the ALSA default. A configured `PULSE_SERVER` is respected without falling back around a connection failure. Native PipeWire node IDs and raw ALSA device selection are not supported.
+
+macOS currently supports system-default playback; selection, enumeration and retry return unsupported-operation errors without changing preferences. Stop/start its service to reopen the output. Helpers must inspect capabilities instead of assuming every platform offers every action.
 
 Audio JSON schema version 1 contains `requested` (`mode: system_default` or `mode: device` with `backend` and `id`), `active`, `availability`, `manual_paused`, `can_select`, `can_enumerate` and `can_retry`. `requested` is null while preferences have not yet loaded. Availability is `initializing`, `available`, `unavailable`, `recovering` or `inactive`; it is independent of manual pause. `active` is null when no endpoint can be confirmed, including Unix backends that cannot identify their desktop-server route. An open Unix stream is not a measured end-to-end audio-health check. Windows reports the confirmed WASAPI endpoint ID and its display name when available.
 
-IDs are opaque, backend-scoped and case-sensitive. Never select by enumeration index or display name: names can repeat. Unsupported, invalid or failed requests must not trigger a fallback to another device. Requests use the existing bounded control transport; there is no background enumeration or polling added by these commands. An older engine cannot serve the new audio commands and needs an upgrade.
+IDs are opaque, backend-scoped and case-sensitive. Never select by enumeration index or display name: names can repeat. Unsupported, invalid or failed requests must not trigger a fallback to another device. Requests use the existing bounded control transport. Linux supervises its connection and route on a separate audio worker; status queries read the cached state. An older engine cannot serve the new audio commands and needs an upgrade.
 
 ## Linux/macOS helper controls
 

@@ -123,7 +123,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Install Linux dependencies
         if: matrix.os == 'ubuntu-latest' && needs.scope.outputs.native == 'true'
-        run: sudo apt-get install -y libasound2-dev
+        run: sudo apt-get install -y libasound2-dev libpulse-dev
       - name: Install Rust components
         if: matrix.os == 'ubuntu-latest' || needs.scope.outputs.native == 'true'
         run: rustup component add clippy rustfmt

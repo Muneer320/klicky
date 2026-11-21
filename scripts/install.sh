@@ -112,18 +112,18 @@ start_macos() {
 build_source() {
   if [[ $platform == Darwin ]]; then
     prepare_macos
-  elif ! command -v cc >/dev/null 2>&1 || ! command -v pkg-config >/dev/null 2>&1 || ! pkg-config --exists alsa; then
+  elif ! command -v cc >/dev/null 2>&1 || ! command -v pkg-config >/dev/null 2>&1 || ! pkg-config --exists alsa libpulse; then
     need sudo
-    printf 'Installing the compiler and ALSA development dependencies for this source build.\n'
+    printf 'Installing the compiler and audio development dependencies for this source build.\n'
     if command -v apt-get >/dev/null 2>&1; then
       sudo apt-get update
-      sudo apt-get install -y build-essential pkg-config libasound2-dev
+      sudo apt-get install -y build-essential pkg-config libasound2-dev libpulse-dev
     elif command -v pacman >/dev/null 2>&1; then
-      sudo pacman -S --needed --noconfirm base-devel pkgconf alsa-lib
+      sudo pacman -S --needed --noconfirm base-devel pkgconf alsa-lib libpulse
     elif command -v dnf >/dev/null 2>&1; then
-      sudo dnf install -y gcc pkgconf-pkg-config alsa-lib-devel
+      sudo dnf install -y gcc pkgconf-pkg-config alsa-lib-devel pulseaudio-libs-devel
     else
-      die 'Install your compiler, pkg-config and ALSA development headers, then rerun setup.'
+      die 'Install your compiler, pkg-config, ALSA and PulseAudio development headers, then rerun setup.'
     fi
   fi
   prepare_rust

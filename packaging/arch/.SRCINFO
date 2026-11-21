@@ -8,6 +8,7 @@ pkgbase = klicky
 	makedepends = cargo
 	makedepends = git
 	depends = alsa-lib
+	depends = libpulse
 	depends = curl
 	depends = gcc-libs
 	depends = glibc

@@ -29,7 +29,9 @@ An optional `[audio_output]` table stores the routing policy. Omitting it means 
 mode = "system_default"
 ```
 
-The shared schema also accepts `mode = "device"` with a `backend` (`wasapi`, `core_audio`, `pipe_wire`, `pulse_audio` or `alsa`) and an opaque `id`. Windows supports `wasapi` selection through the tray or `audio select`. Linux/macOS still require system default and reject explicit preferences rather than playing through an unintended output. Use `klicky audio follow-default` to recover without losing the other settings. Use `audio outputs` to obtain the ID rather than guessing it. A missing remembered Windows output is retained and retried; a new unavailable selection is rejected. Driver reinstallations or re-pairing may change IDs, requiring you to select the output again.
+In source builds after v0.7.0, Windows supports `mode = "device"` with `backend = "wasapi"`; Linux supports `backend = "pulse_audio"` with either PulseAudio or PipeWire's PulseAudio server. The opaque `id` comes from `klicky audio outputs`. Use the CLI to select it rather than guessing or editing a running engine's configuration. Other schema backends (`core_audio`, `pipe_wire`, `alsa`) are reserved and rejected by these adapters. macOS still requires system default.
+
+A missing remembered output is retained and retried without playing through a different device. A new unavailable selection is rejected without changing the saved preference. `klicky audio follow-default` restores system routing while retaining pack and volume. Driver reinstallations, re-pairing or renamed Linux sinks can change IDs, requiring a new selection. Linux's ALSA-only fallback supports system default, not remembered device selection. See the [CLI routing guide](CLI.md#audio-output-controls) for the fallback boundaries.
 
 Backend IDs are case-sensitive values, not device names or indexes. Pack/volume saves retain the output preference; an invalid preference fails validation instead of being silently erased. [Audio commands and structured status](CLI.md#audio-output-controls) describe capabilities and recovery.
 

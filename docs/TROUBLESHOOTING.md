@@ -125,6 +125,10 @@ journalctl --user -u klicky.service -n 50 --no-pager
 
 For input permission problems, confirm the keyboard-only udev rule was installed, then log out and back in to refresh access. Newly connected keyboards may need `systemctl --user restart klicky.service` because the Unix listener discovers devices at startup. For audio problems, check the selected pack, volume and your ALSA/PipeWire output.
 
+Source builds after v0.7.0 expose `klicky audio status` and `klicky audio outputs` for PulseAudio and PipeWire-Pulse. A disconnected remembered output stays selected and silent. Reconnect it, choose another listed sink with `audio select --backend pulse-audio --id 'SINK_ID'`, or use `audio follow-default`. `audio retry` reopens the requested route without clearing Pause. If your audio server restarts, Klicky retries its connection automatically; check status before resuming. A renamed sink needs to be selected again. Output selection does not change a card's profile or port; configure those through your desktop audio settings.
+
+On ALSA-only systems, only default-output playback is supported. This fallback is used only if the local desktop server was absent at startup, not as a substitute for a missing remembered device. If the desktop server starts later, `audio retry` can adopt it. Source builds need the `libpulse` development package as well as ALSA headers; the client library does not require running a separate PulseAudio daemon on PipeWire desktops.
+
 </details>
 
 <details>

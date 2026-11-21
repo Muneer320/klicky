@@ -17,9 +17,12 @@ flowchart LR
     S --> PCM[Prepared PCM]
     PCM --> U
     PCM --> C
-    U --> R[Rodio persistent output]
+    U --> R[Rodio mixer]
+    R --> LP[Linux Pulse protocol or ALSA output]
+    R --> MA[macOS Rodio device]
     C --> A[Rodio mixer / Windows CPAL renderer]
-    R --> O[Speakers or headphones]
+    LP --> O[Speakers or headphones]
+    MA --> O
     A --> O
 ```
 
@@ -42,6 +45,8 @@ flowchart LR
 | `src/media_keys.rs` | Supplementary macOS media-key event tap |
 | `src/soundpack.rs` | OGG decoding, per-key slicing, capped peak normalization, PCM caching |
 | `src/player.rs` | Persistent Rodio mixer, low-latency output configuration, overlapping playback |
+| `src/linux_audio.rs` | Linux routing owner, saved selections, recovery and default-only ALSA fallback |
+| `src/linux_audio/pulse.rs` | Native PulseAudio protocol client, also used with PipeWire-Pulse |
 | `src/windows/runtime.rs` | Bounded Windows coordinator, transactional activation and confirmed component shutdown |
 | `src/windows/input.rs` | Passive Raw Input thread, per-device repeat tracking and bounded event delivery |
 | `src/windows/audio.rs` | Windows output supervision and route recovery |
@@ -105,7 +110,7 @@ No decoding, filesystem access, or device initialization occurs on a keypress.
 
 ## Audio output
 
-On Linux/macOS, Rodio 0.22 owns one `MixerDeviceSink`. Klicky attempts fixed output buffers in this order:
+On macOS and the Linux ALSA-only fallback, Rodio 0.22 owns one `MixerDeviceSink`. Klicky attempts fixed output buffers in this order:
 
 ```text
 256 frames -> 512 frames -> 1024 frames -> device fallback
@@ -114,6 +119,12 @@ On Linux/macOS, Rodio 0.22 owns one `MixerDeviceSink`. Klicky attempts fixed out
 Smaller buffers reduce control latency but are not supported equally by every backend. The fallback sequence preserves startup reliability without silently choosing a large default first.
 
 Every keypress creates a lightweight source cursor over an `Arc<Vec<i16>>`. Samples convert to `f32` as the mixer consumes them. Multiple key sounds can overlap naturally.
+
+Linux desktop playback uses `libpulse` directly with PulseAudio or PipeWire's PulseAudio server. The existing Rodio mixer feeds a per-application stream; no shell commands, global defaults, card profiles or ports are changed. Stable sink names identify remembered outputs. An explicit stream cannot be moved to another sink by server fallback policy. System-default mode resolves the server's current default and reopens when it changes.
+
+A dedicated owner performs enumeration, settings persistence, stream setup and recovery. The daemon receives a cached mixer/status through a mailbox and discards input from before a route transition. Route generations cancel old voices; separate voice generations clear playback on Pause without making the current route obsolete. Pack/volume writes wait for pending routing changes so they cannot overwrite the newly saved selection.
+
+The native threaded-mainloop lock guards Pulse objects, operations and destruction. Its write callback only pulls prepared PCM into a bounded server buffer. Routing checks run every 250 ms and a bounded server-response probe runs once per second; failed connections retry once per second. Stream-write requests are not hardware-render heartbeats. The stream requests a 256-frame target, with a 128-frame minimum request, but the server negotiates actual buffering. These values do not establish audible latency. A first-start absent local server can use the original ALSA default; after a server has connected, failures stay silent and retry instead of switching stacks.
 
 Windows keeps the Rodio mixer but uses a Windows-only CPAL 0.18.2 renderer and a bounded voice pool. Endpoint-role notifications, stream errors and callback heartbeats drive recovery. Playback follows the default multimedia output and drops obsolete input during transitions. This adapter leaves the existing Linux/macOS output backend intact. Requested buffer sizes are not measured physical-to-audible latency.
 
@@ -183,7 +194,7 @@ Windows EXE/ZIP installations store configuration/custom packs under `%LOCALAPPD
 ## Known constraints
 
 - Linux input devices are discovered at daemon startup. A newly added keyboard requires a daemon restart, while a lost reader causes a systemd-managed process to restart and rediscover devices.
-- Linux/macOS physical audio-device replacement and suspend/resume need additional runtime testing after the Rodio 0.22 migration. Windows implements recovery, with its hardware matrix still under qualification.
+- Linux desktop routing has separate server/stream supervision; macOS retains its existing Rodio output. Physical device, suspend/resume and audible-latency qualification remain separate from virtual-server and build checks.
 - Benchmark mode measures input callback to mixer dispatch, not microphone-observed audible latency.
 - Windows support targets Windows 11 x64 interactive desktops. Windows 10, ARM64, remote sessions and secure desktops are outside the supported desktop scope. See the [measurement guide](BENCHMARKS.md) for the distinction between internal timing and audible latency.
 

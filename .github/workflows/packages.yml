@@ -30,7 +30,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libasound2-dev lintian
+          sudo apt-get install -y libasound2-dev libpulse-dev lintian
           cargo install cargo-deb --version 3.8.0 --locked
       - name: Build package
         run: cargo deb
@@ -96,7 +96,7 @@ jobs:
           SCOPE_RESULT: ${{ needs.scope.result }}
         run: test "$SCOPE_RESULT" = success
       - name: Install dependencies
-        run: pacman -Syu --noconfirm base-devel git rust alsa-lib systemd namcap python
+        run: pacman -Syu --noconfirm base-devel git rust alsa-lib libpulse systemd namcap python
       - uses: actions/checkout@v7
       - name: Prepare unprivileged builder
         run: |
