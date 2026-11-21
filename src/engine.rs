@@ -98,12 +98,11 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
     loop {
         #[cfg(target_os = "macos")]
         {
-            if player.poll() {
-                playback.accept_events_since = std::time::Instant::now();
-            }
+            refresh_audio(&mut player, &mut playback);
             if let Some((_, response)) = &audio_pending {
                 match response.try_recv() {
                     Ok(result) => {
+                        refresh_audio(&mut player, &mut playback);
                         let (mut request, _) = audio_pending.take().expect("pending audio request");
                         let response = match result {
                             Ok(crate::macos_audio::Reply::Outputs(list)) => request.outputs(list),
@@ -212,6 +211,7 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
                     #[cfg(target_os = "macos")]
                     {
                         if command == crate::audio::AudioCommand::Status {
+                            refresh_audio(&mut player, &mut playback);
                             let _ = request.audio(player.status(playback.paused));
                         } else {
                             match player.submit(command, &cfg) {
@@ -298,6 +298,13 @@ fn run_daemon(mut cfg: config::Config, benchmark: bool) -> Result<()> {
 
         // Small sleep to avoid busy-spinning
         thread::sleep(std::time::Duration::from_micros(500));
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn refresh_audio(player: &mut crate::macos_audio::Player, playback: &mut PlaybackControl) {
+    if player.poll() {
+        playback.accept_events_since = std::time::Instant::now();
     }
 }
 

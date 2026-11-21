@@ -38,14 +38,14 @@ struct State {
 struct Shared {
     stop: AtomicBool,
     changed: AtomicBool,
-    generation: Arc<AtomicU64>,
+    route_epoch: Arc<AtomicU64>,
     state: Mutex<State>,
 }
 impl Shared {
     fn publish(&self, state: &State) {
         if let Ok(mut latest) = self.state.lock() {
             *latest = state.clone();
-            latest.epoch = self.generation.load(Ordering::Acquire);
+            latest.epoch = self.route_epoch.load(Ordering::Acquire);
             self.changed.store(true, Ordering::Release);
         }
     }
@@ -64,6 +64,7 @@ struct Job {
 
 pub(crate) struct Player {
     shared: Arc<Shared>,
+    voices: Arc<AtomicU64>,
     jobs: SyncSender<Job>,
     done: Receiver<()>,
     state: State,
@@ -82,7 +83,7 @@ impl Player {
         let shared = Arc::new(Shared {
             stop: AtomicBool::new(false),
             changed: AtomicBool::new(false),
-            generation: Arc::new(AtomicU64::new(0)),
+            route_epoch: Arc::new(AtomicU64::new(0)),
             state: Mutex::new(state.clone()),
         });
         let (jobs, receive) = mpsc::sync_channel(1);
@@ -96,7 +97,7 @@ impl Player {
                     run(&owner, receive, initial)
                 }));
                 if result.is_err() {
-                    owner.generation.fetch_add(1, Ordering::AcqRel);
+                    owner.route_epoch.fetch_add(1, Ordering::AcqRel);
                     if let Ok(mut state) = owner.state.lock() {
                         state.active = None;
                         state.mixer = None;
@@ -109,6 +110,7 @@ impl Player {
             })?;
         Ok(Self {
             shared,
+            voices: Arc::new(AtomicU64::new(0)),
             jobs,
             done,
             state,
@@ -126,8 +128,7 @@ impl Player {
         true
     }
 
-    pub(crate) fn status(&mut self, paused: bool) -> AudioStatus {
-        self.poll();
+    pub(crate) fn status(&self, paused: bool) -> AudioStatus {
         AudioStatus {
             schema_version: 1,
             requested: Some(self.state.preference.clone()),
@@ -173,11 +174,22 @@ impl Player {
         let Some(mut source) = PcmSource::new(samples, channels, rate) else {
             return;
         };
-        source.cancel_with(Arc::clone(&self.shared.generation), self.state.epoch);
-        mixer.add(source.amplify(volume));
+        source.cancel_with(
+            Arc::clone(&self.voices),
+            self.voices.load(Ordering::Acquire),
+        );
+        mixer.add(
+            RouteSource {
+                source,
+                route_epoch: Arc::clone(&self.shared.route_epoch),
+                expected: self.state.epoch,
+                until_check: 0,
+            }
+            .amplify(volume),
+        );
     }
     pub fn clear(&mut self) {
-        self.state.epoch = self.shared.generation.fetch_add(1, Ordering::AcqRel) + 1;
+        self.voices.fetch_add(1, Ordering::AcqRel);
     }
     pub fn set_volume(&mut self, volume: f32) {
         self.volume = volume.clamp(0.0, 1.0);
@@ -236,8 +248,12 @@ fn open(preference: &OutputPreference) -> Result<Stream> {
         .chain(Some(BufferSize::Default))
     {
         let errors = Arc::clone(&failed);
-        match Sink::open(&device, buffer, move |_| {
-            errors.store(true, Ordering::Release);
+        match Sink::open(&device, buffer, move |error| {
+            // A Core Audio processor-overload notification leaves the stream
+            // running. Heartbeat supervision still catches an actual stall.
+            if error.kind() != cpal_native::ErrorKind::Xrun {
+                errors.store(true, Ordering::Release);
+            }
         }) {
             Ok(sink) => {
                 eprintln!("[klicky] audio output: {}", sink.description());
@@ -267,7 +283,7 @@ fn open(preference: &OutputPreference) -> Result<Stream> {
 }
 
 fn invalidate(shared: &Shared, state: &mut State) {
-    shared.generation.fetch_add(1, Ordering::AcqRel);
+    shared.route_epoch.fetch_add(1, Ordering::AcqRel);
     state.active = None;
     state.mixer = None;
     state.availability = Availability::Recovering;
@@ -384,6 +400,41 @@ fn run(shared: &Shared, jobs: Receiver<Job>, mut state: State) {
         }
     }
     invalidate(shared, &mut state);
+}
+
+struct RouteSource {
+    source: PcmSource,
+    route_epoch: Arc<AtomicU64>,
+    expected: u64,
+    until_check: u8,
+}
+impl Iterator for RouteSource {
+    type Item = f32;
+    fn next(&mut self) -> Option<f32> {
+        if self.until_check == 0 {
+            if self.route_epoch.load(Ordering::Acquire) != self.expected {
+                return None;
+            }
+            self.until_check = 127;
+        } else {
+            self.until_check -= 1;
+        }
+        self.source.next()
+    }
+}
+impl Source for RouteSource {
+    fn channels(&self) -> NonZeroU16 {
+        self.source.channels()
+    }
+    fn sample_rate(&self) -> NonZeroU32 {
+        self.source.sample_rate()
+    }
+    fn current_span_len(&self) -> Option<usize> {
+        self.source.current_span_len()
+    }
+    fn total_duration(&self) -> Option<Duration> {
+        self.source.total_duration()
+    }
 }
 
 struct Heartbeat {
