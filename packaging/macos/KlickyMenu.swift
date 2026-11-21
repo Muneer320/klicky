@@ -295,6 +295,7 @@ final class KlickyMenu: NSObject, NSApplicationDelegate, NSMenuDelegate {
         add("Resume", action: #selector(performAction(_:)), arguments: ["resume"], enabled: running && paused)
 
         let volume = NSMenu(title: "Volume")
+        volume.autoenablesItems = false
         add("Volume", enabled: state != nil)
         menu.items.last?.submenu = volume
         // Include non-preset CLI values so the current volume always has a mark.
@@ -309,6 +310,7 @@ final class KlickyMenu: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 checked: state.map { abs($0.volume - level) < 0.00001 } ?? false, to: volume)
         }
         let packs = NSMenu(title: "Sound Pack")
+        packs.autoenablesItems = false
         add("Sound Pack", enabled: state != nil)
         menu.items.last?.submenu = packs
         for pack in state?.packs ?? [] {
@@ -322,6 +324,7 @@ final class KlickyMenu: NSObject, NSApplicationDelegate, NSMenuDelegate {
         packs.addItem(.separator())
         add("Refresh Sound Packs", action: #selector(refreshAction), to: packs)
         let audioMenu = NSMenu(title: "Audio Output")
+        audioMenu.autoenablesItems = false
         add("Audio Output", enabled: running)
         menu.items.last?.submenu = audioMenu
         if let audio = audio, running {
@@ -402,7 +405,7 @@ final class KlickyMenu: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     }
                 } catch { nextAudioError = error.localizedDescription }
             }
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self, nextState, nextAudio, nextOutputs, nextAudioError, actionError, refreshError] in
                 guard let self = self else { return }
                 let oldState = self.state
                 let oldError = self.lastError
