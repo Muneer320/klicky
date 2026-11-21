@@ -4,7 +4,7 @@ use anyhow::{bail, Result};
 use clap::{Subcommand, ValueEnum};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, ValueEnum)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, ValueEnum)]
 #[serde(rename_all = "snake_case")]
 pub enum Backend {
     Wasapi,
@@ -56,6 +56,52 @@ pub struct OutputDevice {
     pub backend: Backend,
     pub id: String,
     pub name: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct OutputList {
+    pub schema_version: u32,
+    pub devices: Vec<OutputDevice>,
+    pub default_id: Option<String>,
+    pub suggested_speakers_id: Option<String>,
+}
+
+impl OutputList {
+    pub fn validate(&self) -> Result<()> {
+        if self.schema_version != 1 || self.devices.len() > 64 {
+            bail!("unsupported or oversized audio-output list");
+        }
+        let mut seen = std::collections::HashSet::new();
+        for device in &self.devices {
+            OutputPreference::Device {
+                backend: device.backend,
+                id: device.id.clone(),
+            }
+            .validate()?;
+            if !seen.insert((device.backend, &device.id))
+                || device
+                    .name
+                    .as_ref()
+                    .is_some_and(|name| name.is_empty() || name.len() > 2048)
+            {
+                bail!("invalid or duplicate audio-output identity");
+            }
+        }
+        for id in [&self.default_id, &self.suggested_speakers_id]
+            .into_iter()
+            .flatten()
+        {
+            if !self.devices.iter().any(|device| device.id == *id) {
+                bail!("audio-output hint is not in the device list");
+            }
+        }
+        // Leave room for the authenticated transport's response envelope.
+        if serde_json::to_vec(self)?.len() > 12 * 1024 {
+            bail!("audio-output list exceeds the control response size limit");
+        }
+        Ok(())
+    }
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]

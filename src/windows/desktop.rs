@@ -44,6 +44,9 @@ const LOGIN_CHECK: u32 = 8;
 const LOGIN_SETTINGS: u32 = 9;
 const CHECK_UPDATES: u32 = 10;
 const OPEN_UPDATE: u32 = 11;
+const REFRESH_OUTPUTS: u32 = 12;
+const FOLLOW_DEFAULT: u32 = 13;
+const OUTPUT_BASE: u32 = 2000;
 
 /// Run in the interactive user's process. Capture starts only after WTS verification.
 pub fn run(options: Options) -> Result<()> {
@@ -197,6 +200,8 @@ struct Pending {
     reply: Receiver<Outcome>,
     deadline: Instant,
     mutation: bool,
+    output_query: bool,
+    audio_control: bool,
 }
 
 struct State {
@@ -208,6 +213,10 @@ struct State {
     startup_error: Option<String>,
     view: View,
     packs: Vec<String>,
+    outputs: Option<crate::audio::OutputList>,
+    outputs_error: Option<String>,
+    outputs_loading: bool,
+    outputs_requested: bool,
     packs_error: Option<String>,
     operation_error: Option<String>,
     pending: Vec<Pending>,
@@ -294,6 +303,10 @@ fn run_ui(paths: Paths, controller: Controller) -> Result<()> {
         startup_error: None,
         view: controller.take_view()?,
         packs: Vec::new(),
+        outputs: None,
+        outputs_error: None,
+        outputs_loading: false,
+        outputs_requested: false,
         packs_error: None,
         operation_error: None,
         pending: Vec::new(),
@@ -557,7 +570,38 @@ fn update_view(hwnd: HWND) -> Result<()> {
     if changed {
         update_icon(hwnd)?;
     }
+    let preload = {
+        let state = state_ref(hwnd).borrow();
+        !state.outputs_requested
+            && !state.view.busy
+            && state.view.audio.requested.is_some()
+            && !state.view.finished
+    };
+    if preload {
+        refresh_outputs(hwnd);
+    }
     Ok(())
+}
+
+fn refresh_outputs(hwnd: HWND) {
+    let allowed = {
+        let state = state_ref(hwnd).borrow();
+        !state.outputs_loading
+            && !state.view.busy
+            && !state.view.finished
+            && state.view.snapshot.state != EngineState::Stopping
+    };
+    if allowed {
+        state_ref(hwnd).borrow_mut().outputs_requested = true;
+        if let Err(error) = submit(
+            hwnd,
+            Command::Audio {
+                command: crate::audio::AudioCommand::Outputs,
+            },
+        ) {
+            state_ref(hwnd).borrow_mut().outputs_error = Some(format!("{error:#}"));
+        }
+    }
 }
 
 fn take_metadata(hwnd: HWND) -> Result<()> {
@@ -624,32 +668,43 @@ fn poll_replies(hwnd: HWND) {
     let empty = {
         let mut state = state_ref(hwnd).borrow_mut();
         let mut error = None;
-        state
-            .pending
-            .retain(|pending| match pending.reply.try_recv() {
-                Ok(Outcome::Success { .. }) => false,
-                Ok(Outcome::UpdatePrepared { .. }) => {
-                    error = Some("Unexpected installer preparation response".into());
-                    false
+        let mut output_error = None;
+        let mut outputs = None;
+        state.pending.retain(|pending| {
+            let failure = match pending.reply.try_recv() {
+                Ok(Outcome::Success { .. }) if !pending.audio_control && !pending.output_query => {
+                    return false
                 }
-                Ok(Outcome::Audio { .. }) | Ok(Outcome::Diagnostics { .. }) => {
-                    error = Some("Unexpected diagnostics response".into());
-                    false
+                Ok(Outcome::Audio { .. }) if pending.audio_control => return false,
+                Ok(Outcome::Outputs { outputs: list }) if pending.output_query => {
+                    outputs = Some(list);
+                    return false;
                 }
-                Ok(Outcome::Failure { message, .. }) => {
-                    error = Some(message);
-                    false
+                Ok(Outcome::Failure { message, .. }) => message,
+                Ok(_) => "Unexpected command response".into(),
+                Err(TryRecvError::Empty) if Instant::now() < pending.deadline => return true,
+                Err(TryRecvError::Empty) => {
+                    "Command confirmation timed out; outcome is unknown".into()
                 }
                 Err(TryRecvError::Disconnected) => {
-                    error = Some("Command receipt disconnected; outcome is unknown".into());
-                    false
+                    "Command receipt disconnected; outcome is unknown".into()
                 }
-                Err(TryRecvError::Empty) if Instant::now() >= pending.deadline => {
-                    error = Some("Command confirmation timed out; outcome is unknown".into());
-                    false
-                }
-                Err(TryRecvError::Empty) => true,
-            });
+            };
+            if pending.output_query {
+                output_error = Some(failure);
+            } else {
+                error = Some(failure);
+            }
+            false
+        });
+        state.outputs_loading = state.pending.iter().any(|pending| pending.output_query);
+        if let Some(outputs) = outputs {
+            state.outputs = Some(outputs);
+            state.outputs_error = None;
+        }
+        if output_error.is_some() {
+            state.outputs_error = output_error;
+        }
         if error.is_some() {
             state.operation_error = error;
         }
@@ -771,6 +826,8 @@ impl Drop for Menu {
 }
 
 fn show_menu(hwnd: HWND) -> Result<()> {
+    update_view(hwnd)?;
+    refresh_outputs(hwnd);
     // Snapshot and release every Rust borrow before TrackPopupMenuEx's nested loop.
     let (view, packs, error, busy, menu_open, refreshing, login_status, login_busy) = {
         let state = state_ref(hwnd).borrow();
@@ -810,6 +867,88 @@ fn show_menu(hwnd: HWND) -> Result<()> {
     } else {
         MF_ENABLED
     };
+    let (outputs, outputs_loading, outputs_error) = {
+        let state = state_ref(hwnd).borrow();
+        (
+            state.outputs.clone(),
+            state.outputs_loading,
+            state.outputs_error.clone(),
+        )
+    };
+    let output_menu = Menu::new()?;
+    output_menu.item(
+        FOLLOW_DEFAULT,
+        "Follow system default",
+        if matches!(
+            view.audio.requested,
+            Some(crate::audio::OutputPreference::SystemDefault)
+        ) {
+            MF_CHECKED
+        } else {
+            MF_UNCHECKED
+        },
+    )?;
+    let devices = outputs
+        .as_ref()
+        .map_or(&[][..], |list| list.devices.as_slice());
+    for (index, device) in devices.iter().enumerate() {
+        let name = device.name.as_deref().unwrap_or("Audio output");
+        let duplicates = devices
+            .iter()
+            .filter(|other| other.name == device.name)
+            .count()
+            > 1;
+        let mut text = menu_text(name).replace('&', "&&");
+        if duplicates {
+            text.push_str(&format!(" ({})", index + 1));
+        }
+        if outputs
+            .as_ref()
+            .and_then(|list| list.suggested_speakers_id.as_ref())
+            == Some(&device.id)
+        {
+            text.push_str(" (suggested speakers)");
+        }
+        let checked = matches!(&view.audio.requested, Some(crate::audio::OutputPreference::Device { backend: crate::audio::Backend::Wasapi, id }) if *id == device.id);
+        output_menu.item(
+            OUTPUT_BASE + index as u32,
+            &text,
+            if checked { MF_CHECKED } else { MF_UNCHECKED },
+        )?;
+    }
+    if matches!(&view.audio.requested, Some(crate::audio::OutputPreference::Device { id, .. }) if !devices.iter().any(|device| device.id == *id))
+    {
+        output_menu.item(0, "Selected device is unavailable", MF_GRAYED | MF_CHECKED)?;
+    }
+    if let Some(active) = &view.audio.active {
+        output_menu.item(
+            0,
+            &format!(
+                "Output: {}",
+                menu_text(active.name.as_deref().unwrap_or(&active.id)).replace('&', "&&")
+            ),
+            MF_GRAYED,
+        )?;
+    } else {
+        output_menu.item(0, "No confirmed active output", MF_GRAYED)?;
+    }
+    if let Some(error) = outputs_error {
+        output_menu.item(0, &menu_text(&error).replace('&', "&&"), MF_GRAYED)?;
+    }
+    output_menu.item(
+        REFRESH_OUTPUTS,
+        if outputs_loading {
+            "Checking outputs..."
+        } else {
+            "Refresh outputs"
+        },
+        if outputs_loading {
+            MF_GRAYED
+        } else {
+            MF_ENABLED
+        },
+    )?;
+    menu.submenu("Audio output", output_menu, disabled)?;
     let pack_menu = Menu::new()?;
     for (index, name) in packs.iter().enumerate() {
         let checked = if same_name(name, &view.snapshot.sound_pack)? {
@@ -999,6 +1138,10 @@ fn show_menu(hwnd: HWND) -> Result<()> {
         let _ = PostMessageW(Some(hwnd), WM_NULL, WPARAM(0), LPARAM(0));
     }
     state_ref(hwnd).borrow_mut().menu_open = false;
+    if selected == REFRESH_OUTPUTS {
+        refresh_outputs(hwnd);
+        return Ok(());
+    }
     if selected == CHECK_UPDATES {
         let mut state = state_ref(hwnd).borrow_mut();
         state.worker.work.try_send(Work::CheckRelease)?;
@@ -1051,6 +1194,20 @@ fn show_menu(hwnd: HWND) -> Result<()> {
         id if (VOLUME_BASE..=VOLUME_BASE + 10).contains(&id) => Command::Volume {
             level: (id - VOLUME_BASE) as f32 / 10.0,
         },
+        FOLLOW_DEFAULT => Command::Audio {
+            command: crate::audio::AudioCommand::FollowDefault,
+        },
+        id if (OUTPUT_BASE..OUTPUT_BASE + 64).contains(&id) => {
+            let device = devices
+                .get((id - OUTPUT_BASE) as usize)
+                .context("Unknown output menu item")?;
+            Command::Audio {
+                command: crate::audio::AudioCommand::Select {
+                    backend: device.backend,
+                    id: device.id.clone(),
+                },
+            }
+        }
         id if id >= PACK_BASE => {
             let pack = packs
                 .get((id - PACK_BASE) as usize)
@@ -1063,7 +1220,22 @@ fn show_menu(hwnd: HWND) -> Result<()> {
 }
 
 fn submit(hwnd: HWND, command: Command) -> Result<()> {
-    let mutation = matches!(command, Command::Switch { .. } | Command::Volume { .. });
+    let mutation = matches!(
+        command,
+        Command::Switch { .. }
+            | Command::Volume { .. }
+            | Command::Audio {
+                command: crate::audio::AudioCommand::Select { .. }
+                    | crate::audio::AudioCommand::FollowDefault
+            }
+    );
+    let output_query = matches!(
+        command,
+        Command::Audio {
+            command: crate::audio::AudioCommand::Outputs
+        }
+    );
+    let audio_control = matches!(command, Command::Audio { .. }) && !output_query;
     let mut state = state_ref(hwnd).borrow_mut();
     if state.pending.len() == 4 {
         bail!("Tray command queue is busy");
@@ -1076,8 +1248,15 @@ fn submit(hwnd: HWND, command: Command) -> Result<()> {
         reply,
         deadline,
         mutation,
+        output_query,
+        audio_control,
     });
-    state.operation_error = None;
+    if output_query {
+        state.outputs_loading = true;
+        state.outputs_error = None;
+    } else {
+        state.operation_error = None;
+    }
     drop(state);
     // A low-frequency timer exists only during user-requested command receipts.
     // It also runs inside the menu's nested loop; no permanent GUI polling.

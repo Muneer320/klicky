@@ -20,7 +20,7 @@ use super::pipe::PipePool;
 use super::protocol::{
     Command, DiagnosticCounters, EngineState, ErrorCode, InputDiagnostics, Outcome, Snapshot,
 };
-use super::transactions::{Change, Phase, Ticket, Worker};
+use super::transactions::{Change, Phase, Prepared, Ticket, Worker};
 use super::{InstanceOwner, Paths};
 use crate::{Config, SoundPack};
 
@@ -51,6 +51,7 @@ pub struct Diagnostics {
 #[derive(Clone, Debug, PartialEq)]
 pub struct View {
     pub snapshot: Snapshot,
+    pub audio: crate::audio::AudioStatus,
     /// User pause intent, independent of session gating or audio availability.
     pub paused: bool,
     pub busy: bool,
@@ -124,6 +125,16 @@ impl Host {
         let config = Config::default();
         let shared = Arc::new(Shared {
             view: Mutex::new(View {
+                audio: crate::audio::AudioStatus {
+                    schema_version: 1,
+                    requested: None,
+                    active: None,
+                    availability: crate::audio::Availability::Initializing,
+                    manual_paused: options.paused,
+                    can_select: true,
+                    can_enumerate: true,
+                    can_retry: true,
+                },
                 snapshot: Snapshot {
                     state: EngineState::Starting,
                     sound_pack: config.sound_pack,
@@ -350,7 +361,6 @@ impl State {
         self.input_status = input.status();
         self.input = Some(input);
         let audio = Supervisor::spawn()?;
-        audio.set_active(self.shared.desktop_active.load(Ordering::Acquire));
         self.audio = Some(audio);
         self.packs = Some(Worker::spawn(self.paths.clone())?);
         self.submit(Change::Bootstrap, None, Instant::now() + BOOT_LIMIT)?;
@@ -543,15 +553,24 @@ impl State {
                 && !active.ticket.is_cancelled()
                 && Instant::now() < active.deadline;
             match completion.result {
-                Ok(mut prepared) if activate => {
+                Ok(Prepared::Outputs(outputs)) => {
+                    if let Some(pending) = active.pending {
+                        pending.respond(if activate {
+                            Outcome::Outputs { outputs }
+                        } else {
+                            failure(ErrorCode::Timeout, "Output query expired")
+                        });
+                    }
+                }
+                Ok(Prepared::Playback { config, mut pack }) if activate => {
                     self.config_loaded = true;
-                    if let Err(error) = prepared.config.audio_output.require_system_default() {
-                        self.config = prepared.config;
+                    if let Err(error) = audio::devices::validate_preference(&config.audio_output) {
+                        self.config = config;
                         self.clear_output();
                         if let Some(pack) = self.pack.take() {
                             self.retire_pack(pack);
                         }
-                        if let Some(pack) = prepared.pack.take() {
+                        if let Some(pack) = pack.take() {
                             self.retire_pack(pack);
                         }
                         self.startup_error = Some(format!("{error:#}"));
@@ -568,8 +587,8 @@ impl State {
                             if let Some(old) = self.pack.take() {
                                 self.retire_pack(old);
                             }
-                            self.config = prepared.config;
-                            self.pack = prepared.pack;
+                            self.config = config;
+                            self.pack = pack;
                             self.startup_error = None;
                             if let Some(input) = &self.input {
                                 if let Err(error) = input.discard_pending() {
@@ -577,11 +596,11 @@ impl State {
                                 }
                             }
                         }
-                        Change::FollowDefault => {
-                            self.config.audio_output = prepared.config.audio_output;
+                        Change::Output(_) => {
+                            self.config.audio_output = config.audio_output;
                             if self.pack.is_none() {
                                 if let Err(error) = self.retry() {
-                                    let message = format!("System-default preference saved, but recovery could not start: {error:#}");
+                                    let message = format!("Output preference saved, but recovery could not start: {error:#}");
                                     self.last_error = Some(message.clone());
                                     if let Some(pending) = active.pending {
                                         pending.respond(failure(ErrorCode::Unavailable, &message));
@@ -590,12 +609,24 @@ impl State {
                                 }
                             }
                         }
+                        Change::Outputs => unreachable!("output-only completion handled above"),
                         Change::Volume(_) => {
-                            self.config.volume = prepared.config.volume;
-                            if let Some(pack) = prepared.pack.take() {
+                            self.config.volume = config.volume;
+                            if let Some(pack) = pack.take() {
                                 self.retire_pack(pack);
                             }
                         }
+                    }
+                    if let Err(error) = self.apply_output_preference() {
+                        self.clear_output();
+                        self.fault = Some(format!("{error:#}"));
+                        if let Some(pending) = active.pending {
+                            pending.respond(failure(
+                                ErrorCode::Unavailable,
+                                &format!("Preference saved but audio activation failed: {error:#}"),
+                            ));
+                        }
+                        return;
                     }
                     self.last_error = None;
                     if let Some(pending) = active.pending {
@@ -607,8 +638,8 @@ impl State {
                         pending.respond(outcome);
                     }
                 }
-                Ok(mut prepared) => {
-                    if let Some(pack) = prepared.pack.take() {
+                Ok(Prepared::Playback { mut pack, .. }) => {
+                    if let Some(pack) = pack.take() {
                         self.retire_pack(pack);
                     }
                     let message = "Change persisted for next start; cancellation, Stop or expiry prevented active playback";
@@ -622,15 +653,19 @@ impl State {
                 }
                 Err(error) => {
                     let message = format!("{error:#}");
-                    self.last_error = Some(message.clone());
-                    if self.pack.is_none() && self.stopping.is_none() {
-                        self.startup_error = Some(message.clone());
+                    if !matches!(completion.change, Change::Outputs) {
+                        self.last_error = Some(message.clone());
+                        if self.pack.is_none() && self.stopping.is_none() {
+                            self.startup_error = Some(message.clone());
+                        }
                     }
                     if let Some(pending) = active.pending {
                         let code = if !activate {
                             ErrorCode::Timeout
                         } else if completion.phase == Phase::Persisting {
                             ErrorCode::PersistenceFailure
+                        } else if matches!(pending.request.command, Command::Audio { .. }) {
+                            ErrorCode::Unavailable
                         } else {
                             ErrorCode::InvalidPack
                         };
@@ -656,7 +691,7 @@ impl State {
             }
             if let Some(audio) = &self.audio {
                 let active = self.shared.desktop_active.load(Ordering::Acquire);
-                audio.set_active(active);
+                audio.set_active(active && self.config_loaded);
                 if active {
                     audio.retry();
                 }
@@ -691,7 +726,9 @@ impl State {
     fn audio_status(&self) -> crate::audio::AudioStatus {
         use crate::audio::{AudioStatus, Availability, Backend, OutputDevice};
         let output = self.output.as_ref().filter(|output| {
-            self.config_loaded && self.config.audio_output.is_default() && output.is_available()
+            self.config_loaded
+                && audio::devices::matches(&self.config.audio_output, &output.id)
+                && output.is_available()
         });
         AudioStatus {
             schema_version: 1,
@@ -699,7 +736,7 @@ impl State {
             active: output.map(|output| OutputDevice {
                 backend: Backend::Wasapi,
                 id: output.id.clone(),
-                name: None,
+                name: output.name.clone(),
             }),
             availability: if output.is_some() {
                 Availability::Available
@@ -714,8 +751,8 @@ impl State {
                 Availability::Unavailable
             },
             manual_paused: self.paused,
-            can_select: false,
-            can_enumerate: false,
+            can_select: true,
+            can_enumerate: true,
             can_retry: true,
         }
     }
@@ -816,7 +853,7 @@ impl State {
                     AudioCommand::FollowDefault => {
                         let deadline = pending.deadline;
                         if let Err(error) =
-                            self.submit(Change::FollowDefault, Some(pending), deadline)
+                            self.submit(Change::Output(Default::default()), Some(pending), deadline)
                         {
                             self.last_error = Some(format!("{error:#}"));
                         }
@@ -829,11 +866,20 @@ impl State {
                             pending.respond(failure(ErrorCode::Unavailable, &format!("{error:#}")));
                         }
                     },
-                    _ => {
-                        pending.respond(failure(
-                            ErrorCode::Unavailable,
-                            &crate::audio::unsupported_selection().to_string(),
-                        ));
+                    AudioCommand::Select { backend, id } => {
+                        let preference = crate::audio::OutputPreference::Device { backend, id };
+                        let deadline = pending.deadline;
+                        if let Err(error) =
+                            self.submit(Change::Output(preference), Some(pending), deadline)
+                        {
+                            self.last_error = Some(format!("{error:#}"));
+                        }
+                    }
+                    AudioCommand::Outputs => {
+                        let deadline = pending.deadline;
+                        if let Err(error) = self.submit(Change::Outputs, Some(pending), deadline) {
+                            self.last_error = Some(format!("{error:#}"));
+                        }
                     }
                 }
             }
@@ -937,13 +983,33 @@ impl State {
             self.audio = Some(Supervisor::spawn()?);
         }
         let audio = self.audio.as_ref().context("audio owner unavailable")?;
-        audio.set_active(self.shared.desktop_active.load(Ordering::Acquire));
+        audio.set_preference(&self.config.audio_output)?;
+        audio.set_active(self.config_loaded && self.shared.desktop_active.load(Ordering::Acquire));
         audio.retry();
         self.clear_output();
         self.recovering = true;
         if self.pack.is_none() && self.active.is_none() {
             self.startup_error = None;
             self.submit(Change::Bootstrap, None, Instant::now() + BOOT_LIMIT)?;
+        }
+        Ok(())
+    }
+
+    fn apply_output_preference(&mut self) -> Result<()> {
+        let changed = {
+            let audio = self.audio.as_ref().context("audio owner unavailable")?;
+            let changed = audio.set_preference(&self.config.audio_output)?;
+            audio.set_active(
+                self.config_loaded && self.shared.desktop_active.load(Ordering::Acquire),
+            );
+            changed
+        };
+        if changed {
+            self.clear_output();
+            self.recovering = true;
+            if let Some(input) = &self.input {
+                input.discard_pending()?;
+            }
         }
         Ok(())
     }
@@ -1116,6 +1182,7 @@ impl State {
         self.dirty = false;
         let view = View {
             snapshot: self.snapshot(),
+            audio: self.audio_status(),
             paused: self.paused,
             busy: self.active.is_some() || self.packs.as_ref().is_some_and(Worker::is_busy),
             last_error: self

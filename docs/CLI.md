@@ -64,6 +64,8 @@ Service commands manage systemd user units on Linux, LaunchAgents on macOS and a
 
 ## Audio-output controls
 
+The audio command group and Windows output picker are available in source builds after v0.7.0.
+
 `klicky audio status` prints the running engine's confirmed audio state as JSON. It reports the requested policy, active endpoint when identifiable, output availability, manual pause and supported operations. It never substitutes saved settings for a live response. Existing `status`, `status --json` and Windows diagnostics retain their formats.
 
 | Command | Behavior |
@@ -74,9 +76,13 @@ Service commands manage systemd user units on Linux, LaunchAgents on macOS and a
 | `audio outputs` | Enumerate outputs when the platform adapter advertises `can_enumerate`. |
 | `audio select --backend BACKEND --id ID` | Request a backend-scoped opaque device ID when `can_select` is true. |
 
-The shared interface currently supports system-default playback. Explicit selection and enumeration are not enabled yet: both return an error without saving or changing the current route. Unix retry also returns an unsupported-operation error; stop/start the service to reopen its output. Helpers must inspect capabilities instead of assuming every platform offers every action.
+Windows supports remembered WASAPI output selection. `audio outputs` returns JSON with `devices`, the current `default_id` when available, and a conservative `suggested_speakers_id` when driver metadata identifies one. Copy an ID into `audio select --backend wasapi --id "ID"`; selection also works while stopped and applies at the next start. Choosing an output affects Klicky alone. `audio follow-default` restores normal Windows routing.
 
-Audio JSON schema version 1 contains `requested` (`mode: system_default` or `mode: device` with `backend` and `id`), `active`, `availability`, `manual_paused`, `can_select`, `can_enumerate` and `can_retry`. `requested` is null while preferences have not yet loaded. Availability is `initializing`, `available`, `unavailable`, `recovering` or `inactive`; it is independent of manual pause. `active` is null when no endpoint can be confirmed, including Unix backends that cannot identify their desktop-server route. An open Unix stream is not a measured end-to-end audio-health check. Windows reports its confirmed WASAPI endpoint ID; its optional display name is currently null.
+Selection confirms the saved/requested policy, while the audio worker opens the stream asynchronously. Check `audio status` for the confirmed active endpoint. If a remembered device disappears, Klicky waits silently for that exact ID and reconnects when it returns. It never falls back to another output, and reconnection never clears manual Pause. A new unavailable/invalid selection is rejected without replacing the preference. On a timeout, check status before retrying because the persistence outcome may be uncertain.
+
+Linux/macOS currently support system-default playback; selection, enumeration and retry return unsupported-operation errors without changing preferences. Stop/start the Unix service to reopen its output. Helpers must inspect capabilities instead of assuming every platform offers every action.
+
+Audio JSON schema version 1 contains `requested` (`mode: system_default` or `mode: device` with `backend` and `id`), `active`, `availability`, `manual_paused`, `can_select`, `can_enumerate` and `can_retry`. `requested` is null while preferences have not yet loaded. Availability is `initializing`, `available`, `unavailable`, `recovering` or `inactive`; it is independent of manual pause. `active` is null when no endpoint can be confirmed, including Unix backends that cannot identify their desktop-server route. An open Unix stream is not a measured end-to-end audio-health check. Windows reports the confirmed WASAPI endpoint ID and its display name when available.
 
 IDs are opaque, backend-scoped and case-sensitive. Never select by enumeration index or display name: names can repeat. Unsupported, invalid or failed requests must not trigger a fallback to another device. Requests use the existing bounded control transport; there is no background enumeration or polling added by these commands. An older engine cannot serve the new audio commands and needs an upgrade.
 
@@ -92,7 +98,7 @@ Pause is independent of volume and login startup, and resets on a daemon restart
 
 | Command | What it does |
 |---|---|
-| `retry-audio` | Reopen the default multimedia output. |
+| `retry-audio` | Reopen the requested output, preserving its selection and manual pause. |
 | `diagnostics` | Read aggregate input/playback counters. No typed text or microphone recording. |
 | `service start --paused` | Launch a new background desktop instance paused. Does not pause an existing one. |
 

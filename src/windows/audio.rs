@@ -1,4 +1,5 @@
 //! Windows stream ownership and recovery stay off engine/input/GUI callbacks.
+pub mod devices;
 mod notifications;
 mod sink;
 mod voices;
@@ -12,8 +13,7 @@ use std::time::{Duration, Instant};
 use ::windows::Win32::Foundation::{HANDLE, WAIT_FAILED, WAIT_OBJECT_0, WAIT_TIMEOUT};
 use ::windows::Win32::System::Threading::WaitForSingleObject;
 use anyhow::{bail, Context, Result};
-use cpal_windows::traits::HostTrait;
-use cpal_windows::{BufferSize, DeviceId, HostId};
+use cpal_windows::BufferSize;
 use crossbeam_channel::{bounded, Receiver, Sender};
 use sink::Sink;
 
@@ -51,6 +51,7 @@ struct Shared {
     retry: AtomicBool,
     route_dirty: AtomicBool,
     device_id: Mutex<Vec<u16>>,
+    preference: Mutex<crate::audio::OutputPreference>,
     changed: Sender<()>,
 }
 impl Shared {
@@ -96,6 +97,7 @@ impl Supervisor {
             retry: AtomicBool::new(false),
             route_dirty: AtomicBool::new(false),
             device_id: Mutex::new(Vec::new()),
+            preference: Mutex::new(Default::default()),
             changed,
         });
         let mailbox = Arc::new(Mailbox {
@@ -147,6 +149,22 @@ impl Supervisor {
         self.shared.retry.store(true, Ordering::Release);
         self.shared.wake();
     }
+    pub fn set_preference(&self, preference: &crate::audio::OutputPreference) -> Result<bool> {
+        devices::validate_preference(preference)?;
+        let mut current = self
+            .shared
+            .preference
+            .lock()
+            .map_err(|_| anyhow::anyhow!("audio preference lock poisoned"))?;
+        if *current != *preference {
+            *current = preference.clone();
+            self.shared.epoch.fetch_add(1, Ordering::AcqRel);
+            drop(current);
+            self.shared.wake();
+            return Ok(true);
+        }
+        Ok(false)
+    }
     pub fn request_stop(&self) {
         self.shared.stop.store(true, Ordering::Release);
         self.shared.wake();
@@ -194,6 +212,7 @@ struct Playing {
     last_heartbeat: u64,
     pulse_at: Instant,
     announced: bool,
+    name: Option<String>,
 }
 impl Drop for Playing {
     fn drop(&mut self) {
@@ -202,13 +221,18 @@ impl Drop for Playing {
 }
 
 fn open(shared: &Arc<Shared>, notifications: &notifications::Notifications) -> Result<Playing> {
-    let id = notifications.default_id()?;
+    let (preference, epoch) = {
+        let preference = shared
+            .preference
+            .lock()
+            .map_err(|_| anyhow::anyhow!("audio preference lock poisoned"))?;
+        (preference.clone(), shared.epoch.load(Ordering::Acquire))
+    };
+    let id = notifications.resolve(&preference)?;
     // Select the observed multimedia endpoint explicitly so playback and
     // notifications cannot diverge when Windows default roles differ.
-    let device_id = DeviceId::new(HostId::Wasapi, String::from_utf16(&id)?);
-    let device = cpal_windows::default_host()
-        .device_by_id(&device_id)
-        .context("default multimedia audio endpoint is unavailable")?;
+    let device = devices::find_output(&String::from_utf16(&id)?)?;
+    let name = devices::name(&device);
     let mut last_error = None;
     for buffer in crate::player::BUFFER_SIZES
         .into_iter()
@@ -220,7 +244,7 @@ fn open(shared: &Arc<Shared>, notifications: &notifications::Notifications) -> R
         }
         let render = Arc::new(Render {
             shared: Arc::clone(shared),
-            epoch: shared.epoch.load(Ordering::Acquire),
+            epoch,
             valid: AtomicBool::new(false),
             enabled: AtomicBool::new(false),
             failed: AtomicBool::new(false),
@@ -236,8 +260,9 @@ fn open(shared: &Arc<Shared>, notifications: &notifications::Notifications) -> R
         });
         match opened {
             Ok(sink) => {
-                if notifications.default_id()? != id {
-                    bail!("default audio changed during initialization");
+                if notifications.resolve(&preference)? != id || !voices::shared_live(shared, epoch)
+                {
+                    bail!("audio selection changed during initialization");
                 }
                 sink.mixer().add(voices::Heartbeat {
                     render: Arc::clone(&render),
@@ -256,6 +281,7 @@ fn open(shared: &Arc<Shared>, notifications: &notifications::Notifications) -> R
                     last_heartbeat: 0,
                     pulse_at: Instant::now(),
                     announced: false,
+                    name: name.clone(),
                 });
             }
             Err(error) => last_error = Some(error),
@@ -292,8 +318,15 @@ fn run(shared: Arc<Shared>, changes: Receiver<()>, mailbox: &Mailbox) -> Result<
             if let Some(current) = playing.as_mut() {
                 if retry || !voices::shared_live(&shared, current.render.epoch) {
                     reason = Some("audio retry requested");
-                } else if dirty && notifications.default_id().ok().as_ref() != Some(&current.id) {
-                    reason = Some("default audio endpoint changed");
+                } else if dirty && {
+                    let preference = shared
+                        .preference
+                        .lock()
+                        .map_err(|_| anyhow::anyhow!("audio preference lock poisoned"))?
+                        .clone();
+                    notifications.resolve(&preference).ok().as_ref() != Some(&current.id)
+                } {
+                    reason = Some("requested audio endpoint changed or became unavailable");
                 } else if current.render.failed.load(Ordering::Acquire) {
                     reason = Some("audio stream reported an error");
                     backoff = true;
@@ -307,6 +340,7 @@ fn run(shared: Arc<Shared>, changes: Receiver<()>, mailbox: &Mailbox) -> Result<
                             mailbox.publish(Update::Ready(Output {
                                 description: current.sink.description().to_owned(),
                                 id: String::from_utf16_lossy(&current.id),
+                                name: current.name.clone(),
                                 mixer: current.sink.mixer().clone(),
                                 render: Arc::clone(&current.render),
                             }));

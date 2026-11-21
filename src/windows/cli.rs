@@ -173,6 +173,12 @@ pub fn run() -> Result<()> {
 
 fn audio(action: crate::audio::AudioCommand) -> Result<()> {
     action.validate()?;
+    if let crate::audio::AudioCommand::Select { backend, id } = &action {
+        super::audio::devices::validate_preference(&crate::audio::OutputPreference::Device {
+            backend: *backend,
+            id: id.clone(),
+        })?;
+    }
     match Client::current()?.command(
         Command::Audio {
             command: action.clone(),
@@ -180,6 +186,20 @@ fn audio(action: crate::audio::AudioCommand) -> Result<()> {
         deadline(),
     ) {
         Ok(reply) => print_outcome(reply.response.outcome),
+        Err(ControlError::Absent) if action == crate::audio::AudioCommand::Outputs => {
+            println!("{}", serde_json::to_string_pretty(&super::audio::devices::enumerate()?)?);
+            Ok(())
+        }
+        Err(ControlError::Absent) if matches!(action, crate::audio::AudioCommand::Select { .. }) => {
+            let crate::audio::AudioCommand::Select { backend, id } = action else { unreachable!() };
+            let preference = crate::audio::OutputPreference::Device { backend, id };
+            let paths = Paths::discover()?;
+            let _owner = InstanceOwner::try_acquire(&paths)?.context("Klicky may be starting; no offline change was saved")?;
+            super::audio::devices::validate_selection(&preference)?;
+            ConfigStore::new(paths).update(|config| { config.audio_output = preference; Ok(()) })?;
+            println!("Audio output saved for next start");
+            Ok(())
+        }
         Err(ControlError::Absent) if action == crate::audio::AudioCommand::FollowDefault => {
             let paths = Paths::discover()?;
             let _owner = InstanceOwner::try_acquire(&paths)?
@@ -315,6 +335,10 @@ fn change(command: Command) -> Result<()> {
 }
 fn print_outcome(outcome: Outcome) -> Result<()> {
     match outcome {
+        Outcome::Outputs { outputs } => {
+            println!("{}", serde_json::to_string_pretty(&outputs)?);
+            Ok(())
+        }
         Outcome::Audio { audio } => {
             println!("{}", serde_json::to_string_pretty(&audio)?);
             Ok(())

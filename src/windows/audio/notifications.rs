@@ -1,11 +1,11 @@
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
-use ::windows::core::{implement, PCWSTR};
+use ::windows::core::{implement, Interface, PCWSTR};
 use ::windows::Win32::Foundation::PROPERTYKEY;
 use ::windows::Win32::Media::Audio::*;
 use ::windows::Win32::System::Com::*;
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 
 use super::Shared;
 
@@ -119,6 +119,27 @@ impl Notifications {
             Ok(value)
         }
     }
+    pub fn resolve(&self, preference: &crate::audio::OutputPreference) -> Result<Vec<u16>> {
+        match preference {
+            crate::audio::OutputPreference::SystemDefault => self.default_id(),
+            crate::audio::OutputPreference::Device { id, .. } => unsafe {
+                let wide: Vec<u16> = id.encode_utf16().chain(Some(0)).collect();
+                let device = self.enumerator.GetDevice(PCWSTR(wide.as_ptr()))?;
+                if device.GetState()? != DEVICE_STATE_ACTIVE
+                    || device.cast::<IMMEndpoint>()?.GetDataFlow()? != eRender
+                {
+                    bail!("selected audio output is unavailable");
+                }
+                let resolved = device.GetId()?;
+                let value = resolved.as_wide().to_vec();
+                CoTaskMemFree(Some(resolved.0.cast()));
+                if String::from_utf16(&value)? != *id {
+                    bail!("selected audio endpoint ID is not canonical");
+                }
+                Ok(value)
+            },
+        }
+    }
     pub fn close(&mut self) -> Result<()> {
         if self.registered {
             unsafe {
@@ -139,5 +160,28 @@ impl Drop for Notifications {
             // reference until process exit; explicit close reports the failure.
             std::mem::forget(self.callback.clone());
         }
+    }
+}
+
+pub(super) fn default_endpoint_id() -> Result<Vec<u16>> {
+    unsafe {
+        let initialized = CoInitializeEx(None, COINIT_MULTITHREADED);
+        // CPAL may already own an STA on this querying thread. Reuse it without
+        // balancing a failed CoInitializeEx with CoUninitialize.
+        let _apartment = if initialized.is_ok() {
+            Some(Apartment)
+        } else if initialized == ::windows::Win32::Foundation::RPC_E_CHANGED_MODE {
+            None
+        } else {
+            initialized.ok()?;
+            None
+        };
+        let enumerator: IMMDeviceEnumerator =
+            CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL)?;
+        let device = enumerator.GetDefaultAudioEndpoint(eRender, eMultimedia)?;
+        let id = device.GetId()?;
+        let value = id.as_wide().to_vec();
+        CoTaskMemFree(Some(id.0.cast()));
+        Ok(value)
     }
 }

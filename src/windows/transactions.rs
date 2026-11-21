@@ -19,7 +19,8 @@ pub enum Change {
     Bootstrap,
     Switch(String),
     Volume(f32),
-    FollowDefault,
+    Output(crate::audio::OutputPreference),
+    Outputs,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -50,10 +51,12 @@ impl Ticket {
     }
 }
 
-pub struct Prepared {
-    /// A persisted snapshot, not proof of active playback in any session.
-    pub config: Config,
-    pub pack: Option<SoundPack>,
+pub enum Prepared {
+    Playback {
+        config: Config,
+        pack: Option<SoundPack>,
+    },
+    Outputs(crate::audio::OutputList),
 }
 
 pub struct Completion {
@@ -143,7 +146,7 @@ impl Worker {
                     });
                     let cancelled_or_expired = job.ticket.is_cancelled() || Instant::now() >= job.deadline;
                     if cancelled_or_expired {
-                        if let Ok(prepared) = result.as_mut() { prepared.pack.take(); }
+                        if let Ok(Prepared::Playback { pack, .. }) = result.as_mut() { pack.take(); }
                     }
                     let phase = job.ticket.phase();
                     job.ticket.phase.store(2, Ordering::Release);
@@ -325,7 +328,7 @@ fn prepare(paths: &Paths, store: &ConfigStore, job: &Job) -> Result<Prepared> {
                     Ok(())
                 })?;
             }
-            Ok(Prepared {
+            Ok(Prepared::Playback {
                 config,
                 pack: Some(pack),
             })
@@ -339,24 +342,31 @@ fn prepare(paths: &Paths, store: &ConfigStore, job: &Job) -> Result<Prepared> {
                 config.sound_pack.clone_from(name);
                 Ok(())
             })?;
-            Ok(Prepared {
+            Ok(Prepared::Playback {
                 config,
                 pack: Some(pack),
             })
         }
-        Change::FollowDefault => {
+        Change::Outputs => {
+            let outputs = super::audio::devices::enumerate()?;
+            check()?;
+            Ok(Prepared::Outputs(outputs))
+        }
+        Change::Output(preference) => {
+            super::audio::devices::validate_selection(preference)?;
+            check()?;
             let config = persist(&mut |config| {
-                config.audio_output = Default::default();
+                config.audio_output = preference.clone();
                 Ok(())
             })?;
-            Ok(Prepared { config, pack: None })
+            Ok(Prepared::Playback { config, pack: None })
         }
         Change::Volume(level) => {
             let config = persist(&mut |config| {
                 config.volume = *level;
                 Ok(())
             })?;
-            Ok(Prepared { config, pack: None })
+            Ok(Prepared::Playback { config, pack: None })
         }
     }
 }

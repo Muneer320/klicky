@@ -35,7 +35,9 @@ pub(super) fn start_with_pause(paths: &Paths, paused: bool) -> Result<Snapshot> 
                     Outcome::UpdatePrepared { .. } => {
                         bail!("Unexpected installer preparation response")
                     }
-                    Outcome::Audio { .. } | Outcome::Diagnostics { .. } => {
+                    Outcome::Outputs { .. }
+                    | Outcome::Audio { .. }
+                    | Outcome::Diagnostics { .. } => {
                         bail!("Unexpected query response")
                     }
                 };

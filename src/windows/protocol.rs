@@ -166,6 +166,9 @@ pub enum ErrorCode {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Outcome {
+    Outputs {
+        outputs: crate::audio::OutputList,
+    },
     Audio {
         audio: crate::audio::AudioStatus,
     },
@@ -239,6 +242,23 @@ impl Response {
                     "unexpected diagnostics response",
                 ));
             }
+            (
+                Command::Audio {
+                    command: crate::audio::AudioCommand::Outputs,
+                },
+                Outcome::Outputs { .. } | Outcome::Failure { .. },
+            ) => {}
+            (
+                Command::Audio {
+                    command: crate::audio::AudioCommand::Outputs,
+                },
+                _,
+            )
+            | (_, Outcome::Outputs { .. }) => {
+                return Err(ProtocolError::InvalidPayload(
+                    "unexpected output list response",
+                ))
+            }
             (Command::Audio { .. }, Outcome::Audio { .. } | Outcome::Failure { .. }) => {}
             (Command::Audio { .. }, _) | (_, Outcome::Audio { .. }) => {
                 return Err(ProtocolError::InvalidPayload("unexpected audio response"))
@@ -252,6 +272,9 @@ impl Response {
         validate_header(self.protocol, self.request_id)?;
         self.instance.validate()?;
         match &self.outcome {
+            Outcome::Outputs { outputs } => outputs
+                .validate()
+                .map_err(|_| ProtocolError::InvalidPayload("invalid audio-output list")),
             Outcome::Audio { audio } => audio
                 .validate()
                 .map_err(|_| ProtocolError::InvalidPayload("invalid audio state")),

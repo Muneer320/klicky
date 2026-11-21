@@ -9,7 +9,7 @@ Start with three checks: is Klicky running, is its volume above zero, and is the
 <details>
 <summary><strong>No sound or some typing sounds are missing</strong></summary>
 
-Check the tray state, pack and volume. Choose **Retry audio** after changing output devices. For Microsoft Store or Scoop, run `klicky status` and `klicky diagnostics` in a new terminal. With the standalone installer, use:
+Check the tray state, pack and volume. Check **Audio output** for the selected route. A disconnected remembered device stays selected and silent; reconnect it, select another output, or choose Follow system default. **Retry audio** reopens the requested device without clearing Pause. For Microsoft Store or Scoop, run `klicky status` and `klicky diagnostics` in a new terminal. With the standalone installer, use:
 
 ```powershell
 & "$env:LOCALAPPDATA\Programs\Klicky\klicky.exe" status

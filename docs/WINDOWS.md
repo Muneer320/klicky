@@ -27,7 +27,7 @@ Extract the complete portable ZIP into a stable folder and open `klicky-desktop.
 
 ## Everyday controls
 
-The tray offers packs, volume in 10% steps, Pause/Resume, Retry audio, Refresh sound packs, Check for updates and Quit. Update checks run only when selected and show the installed/latest version; a separate action opens the supported update route. **Start with Windows** manages the Store startup task or the standalone bundle's login shortcut. Windows may independently disable or defer startup; [startup help](https://github.com/Muneer320/klicky/blob/master/docs/TROUBLESHOOTING.md).
+The tray offers packs, volume in 10% steps, Audio output, Pause/Resume, Retry audio, Refresh sound packs, Check for updates and Quit. Update checks run only when selected and show the installed/latest version; a separate action opens the supported update route. **Start with Windows** manages the Store startup task or the standalone bundle's login shortcut. Windows may independently disable or defer startup; [startup help](https://github.com/Muneer320/klicky/blob/master/docs/TROUBLESHOOTING.md).
 
 The Store and Scoop expose `klicky` in a new terminal. The CLI lives at `%LOCALAPPDATA%\Programs\Klicky\klicky.exe` for a standalone installer setup. Run these from a portable folder, use that installed path, or replace `.\klicky.exe` with `klicky` for Store/Scoop:
 
@@ -60,6 +60,25 @@ Enable registers the Store startup task or sibling desktop shortcut and starts t
 
 </details>
 
+## Choose where Klicky plays
+
+The output picker is available in source builds after v0.7.0.
+
+Open **Audio output** in the tray and choose your speakers or headphones. Klicky remembers the choice across restarts, even when Windows changes its default. For example, leave Windows/media on Bluetooth headphones and select laptop speakers for Klicky. Choose **Follow system default** to return to normal routing.
+
+The menu marks the requested choice and shows the confirmed output. **Refresh outputs** updates the list; it may take a moment to return, so reopen the menu after checking. Duplicate names receive display numbers; Klicky remembers endpoint IDs, not those numbers. A speaker suggestion appears only when driver metadata identifies one, and never changes your choice automatically.
+
+If the selected device disconnects, Klicky waits silently and reconnects to the same device when it returns. Pause stays paused during recovery. Choose another device or Follow system default when you want to switch; the app will not unexpectedly send sound through another output. Windows and other apps keep their own routing.
+
+```powershell
+.\klicky.exe audio outputs
+.\klicky.exe audio select --backend wasapi --id 'COPY AN ID FROM THE LIST'
+.\klicky.exe audio status
+.\klicky.exe audio follow-default
+```
+
+Selection saves the requested choice before the background audio worker opens it. `audio status` confirms the active endpoint separately. Some drivers expose speakers and a wired headphone jack as one endpoint; Klicky cannot split hardware that Windows does not expose separately. Bluetooth output itself can still add transport delay. See the [audio command contract](CLI.md#audio-output-controls).
+
 ## Files and custom sounds
 
 Standalone installer, portable and Scoop copies use `%LOCALAPPDATA%\Klicky\config.toml` and `%LOCALAPPDATA%\Klicky\sounds` for custom packs. Custom packs override bundled packs with the same name.
@@ -68,7 +87,7 @@ For a new Store installation, Windows redirects newly created data into `%LOCALA
 
 Bundled sounds resolve beside the executable, not from the current working directory. `KLICKY_SYSTEM_SOUNDS_DIR` can supply an absolute alternate root. Discovery accepts up to 512 directories per root and 512 distinct pack names.
 
-Klicky follows the default multimedia output. Choose Retry audio if an output needs reopening. Playback pauses outside the verified active/unlocked desktop and discards obsolete input on session transitions. Input is passive Raw Input: it does not suppress keys or synthesize text. [Troubleshooting](https://github.com/Muneer320/klicky/blob/master/docs/TROUBLESHOOTING.md)
+Klicky initially follows the default multimedia output. You can choose a remembered output instead; Retry audio reopens the requested device. Playback pauses outside the verified active/unlocked desktop and discards obsolete input on session transitions. Input is passive Raw Input: it does not suppress keys or synthesize text. [Troubleshooting](https://github.com/Muneer320/klicky/blob/master/docs/TROUBLESHOOTING.md)
 
 ## Diagnostics
 

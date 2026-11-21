@@ -29,7 +29,7 @@ An optional `[audio_output]` table stores the routing policy. Omitting it means 
 mode = "system_default"
 ```
 
-The shared schema also accepts `mode = "device"` with a `backend` (`wasapi`, `core_audio`, `pipe_wire`, `pulse_audio` or `alsa`) and an opaque `id`. Device-selection adapters are not enabled yet, so do not add a device preference manually: the engine refuses to activate it rather than playing through an unintended output. Use `klicky audio follow-default` to recover without losing the other settings. Unsupported device-selection commands leave the saved configuration unchanged.
+The shared schema also accepts `mode = "device"` with a `backend` (`wasapi`, `core_audio`, `pipe_wire`, `pulse_audio` or `alsa`) and an opaque `id`. Windows supports `wasapi` selection through the tray or `audio select`. Linux/macOS still require system default and reject explicit preferences rather than playing through an unintended output. Use `klicky audio follow-default` to recover without losing the other settings. Use `audio outputs` to obtain the ID rather than guessing it. A missing remembered Windows output is retained and retried; a new unavailable selection is rejected. Driver reinstallations or re-pairing may change IDs, requiring you to select the output again.
 
 Backend IDs are case-sensitive values, not device names or indexes. Pack/volume saves retain the output preference; an invalid preference fails validation instead of being silently erased. [Audio commands and structured status](CLI.md#audio-output-controls) describe capabilities and recovery.
 
