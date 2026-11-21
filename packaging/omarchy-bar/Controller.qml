@@ -77,7 +77,7 @@ Item {
       autostart = value.autostart
       volume = value.volume
       soundPack = value.sound_pack
-      packs = value.packs
+      if (JSON.stringify(packs) !== JSON.stringify(value.packs)) packs = value.packs
       known = true
       error = ""
       if (running) refreshAudio()
@@ -129,7 +129,7 @@ Item {
       if (audioKind === "status") {
         const next = Audio.status(text)
         const changed = !audioState || JSON.stringify(next) !== JSON.stringify(audioState)
-        audioState = next
+        if (changed) audioState = next
         audioKnown = true
         audioError = ""
         if (next.can_enumerate && (forceOutputs || changed || !audioList)) {
@@ -140,7 +140,8 @@ Item {
           audioQuery.running = true
         } else if (!next.can_enumerate) audioList = null
       } else {
-        audioList = Audio.outputs(text)
+        const nextList = Audio.outputs(text)
+        if (JSON.stringify(nextList) !== JSON.stringify(audioList)) audioList = nextList
         audioError = ""
       }
     } catch (_) {
