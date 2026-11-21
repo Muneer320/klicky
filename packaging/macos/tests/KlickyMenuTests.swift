@@ -103,6 +103,9 @@ let script = """
 #!/bin/sh
 if [ "$1" = status ]; then
     /bin/cat "\(statusFile.path)"
+elif [ "$1" = audio ] && { [ "$2" = status ] || [ "$2" = outputs ]; }; then
+    printf '%s\\n' 'Audio controls are unavailable in this legacy CLI fixture.' >&2
+    exit 2
 else
     printf '%s\\n' "$@" > "\(argumentsFile.path)"
 fi
