@@ -13,7 +13,7 @@ use std::time::{Duration, Instant};
 use ::windows::Win32::Foundation::{HANDLE, WAIT_FAILED, WAIT_OBJECT_0, WAIT_TIMEOUT};
 use ::windows::Win32::System::Threading::WaitForSingleObject;
 use anyhow::{bail, Context, Result};
-use cpal_windows::BufferSize;
+use cpal_native::BufferSize;
 use crossbeam_channel::{bounded, Receiver, Sender};
 use sink::Sink;
 

@@ -12,7 +12,11 @@ mod ipc;
 mod lifecycle;
 mod listener;
 #[cfg(target_os = "macos")]
+mod macos_audio;
+#[cfg(target_os = "macos")]
 mod media_keys;
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+mod native_sink;
 mod playback;
 mod player;
 #[cfg(any(target_os = "linux", target_os = "macos"))]

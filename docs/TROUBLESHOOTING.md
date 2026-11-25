@@ -71,6 +71,15 @@ Older preview uninstallers need `klicky.exe` to stop the app and remove login st
 ## macOS
 
 <details>
+<summary><strong>A selected audio output is unavailable</strong></summary>
+
+In source builds after v0.7.0, `klicky audio status` shows the requested device and confirmed output. If the selected device disconnects, Klicky waits for it rather than unexpectedly playing through speakers. Reconnect it, use `klicky audio retry`, or choose normal system routing with `klicky audio follow-default`. Recovery does not undo Pause; use `klicky resume` when ready.
+
+Use `klicky audio outputs` to list current Core Audio IDs and `klicky audio select --backend core-audio --id "ID"` to choose one. Re-pairing or recreating an aggregate device can change its ID. Some Macs expose wired headphones and speakers as one route, so they cannot always be chosen separately. These controls require no virtual audio driver or additional microphone permission; existing keyboard-access permissions still apply.
+
+</details>
+
+<details>
 <summary><strong>No key sounds</strong></summary>
 
 Allow **`~/.local/bin/klicky`** in **System Settings → Privacy & Security → Accessibility**. Permission for a development copy under `target/release` is separate. After changing permission:
