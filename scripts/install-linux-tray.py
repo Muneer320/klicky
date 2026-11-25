@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Opt-in source installation/removal of the Linux tray helper only."""
 import argparse
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -44,6 +45,11 @@ def desktop_arg(value):
     return '"' + value + '"'
 
 
+def setup_lock_path(paths):
+    # The binary has a fixed HOME path even when XDG homes change.
+    return paths['binary'].with_name('.klicky-tray-install.lock')
+
+
 def locations():
     home = Path.home()
     data = Path(os.environ.get('XDG_DATA_HOME', str(home / '.local/share')))
@@ -59,13 +65,32 @@ def locations():
         'autostart': config / 'autostart' / desktop,
     }
     manifest = folder / 'installation.json'
-    for path in [*paths.values(), manifest]:
+    for path in [*paths.values(), manifest, setup_lock_path(paths)]:
         if any(c in str(path) for c in '\r\n\x00'):
             raise ValueError('Installation paths cannot contain line breaks or NUL')
         for ancestor in [path, *path.parents]:
             if ancestor.is_symlink():
                 raise ValueError(f'Refusing a symlink in installation path: {ancestor}')
     return paths, manifest
+
+
+@contextmanager
+def installation_lock(paths):
+    import fcntl
+    path = setup_lock_path(paths)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # Never unlink this lock: all setup commands must use the same inode,
+    # including after removal and while another process is acquiring it.
+    descriptor = os.open(path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600)
+    with os.fdopen(descriptor, 'rb+') as stream:
+        metadata = os.fstat(stream.fileno())
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != os.getuid():
+            raise ValueError('Tray setup lock must be a regular file owned by the current user')
+        try:
+            fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as error:
+            raise ValueError('Another tray setup command is running; wait for it to finish and retry') from error
+        yield
 
 
 def read_manifest(manifest, paths):
@@ -206,11 +231,13 @@ def main():
     if sys.platform != 'linux':
         parser.error('This installer supports Linux only')
     paths, manifest = locations()
-    previous = read_manifest(manifest, paths)
-    if args.remove:
-        remove(paths, manifest, previous)
-    else:
-        install(args, paths, manifest, previous)
+    with installation_lock(paths):
+        paths, manifest = locations()
+        previous = read_manifest(manifest, paths)
+        if args.remove:
+            remove(paths, manifest, previous)
+        else:
+            install(args, paths, manifest, previous)
 
 
 if __name__ == '__main__':

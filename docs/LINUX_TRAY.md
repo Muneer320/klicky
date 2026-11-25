@@ -52,10 +52,11 @@ The installer owns only these per-user files:
 | `~/.local/bin/klicky-tray` | Helper executable |
 | `$XDG_DATA_HOME/klicky-tray/klicky.png` | Existing Klicky icon |
 | `$XDG_DATA_HOME/klicky-tray/installation.json` | Owned-file hashes |
+| `~/.local/bin/.klicky-tray-install.lock` | Shared setup/removal lock; retained after removal |
 | `$XDG_DATA_HOME/applications/io.github.muneer320.klicky-tray.desktop` | Application launcher |
 | `$XDG_CONFIG_HOME/autostart/io.github.muneer320.klicky-tray.desktop` | Explicitly requested helper startup |
 
-The default XDG data/config homes are `~/.local/share` and `~/.config`. The installer refuses symlink paths and refuses to overwrite unowned or modified files, including a login entry disabled by your desktop. Back up and resolve a modified helper file before reinstalling. A failed installation rolls back its file changes. Engine settings, custom packs and engine startup are outside its ownership.
+The default XDG data/config homes are `~/.local/share` and `~/.config`. Overlapping setup/removal commands fail with guidance to retry after the active command finishes. A persistent lock coordinates ownership checks, builds, replacement, rollback and removal; its empty file remains after removal. The installer refuses symlink paths and refuses to overwrite unowned or modified files, including a login entry disabled by your desktop. Back up and resolve a modified helper file before reinstalling. A failed installation rolls back its file changes. Engine settings, custom packs and engine startup are outside its ownership.
 
 ```sh
 python3 scripts/install-linux-tray.py --remove
