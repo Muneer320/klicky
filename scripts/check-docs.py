@@ -11,7 +11,7 @@ from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parent.parent
 SKIP_PARTS = {".git", "target", "node_modules"}
-MARKDOWN_LINK = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
+MARKDOWN_LINK = re.compile(r"\[[^\]]*\]\((<[^>\n]*>[^)]*|[^)]+)\)")
 
 
 def repository_files(pattern: str):
