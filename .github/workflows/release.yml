@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
   source:
+    if: github.repository == 'Muneer320/klicky'
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.identity.outputs.version }}
@@ -42,15 +43,19 @@ jobs:
           if-no-files-found: error
 
   unix-checks:
+    if: github.repository == 'Muneer320/klicky'
     uses: ./.github/workflows/ci.yml
 
   windows-checks:
+    if: github.repository == 'Muneer320/klicky'
     uses: ./.github/workflows/windows-core.yml
 
   linux-packages:
+    if: github.repository == 'Muneer320/klicky'
     uses: ./.github/workflows/packages.yml
 
   windows-packages:
+    if: github.repository == 'Muneer320/klicky'
     uses: ./.github/workflows/windows-portable.yml
 
   windows-security:

@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   package:
+    if: github.repository == 'Muneer320/klicky'
     runs-on: windows-latest
     timeout-minutes: 15
     defaults:

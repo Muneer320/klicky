@@ -23,6 +23,20 @@ Straightforward bug fixes, documentation corrections, and narrowly scoped tests 
 
 All repository changes must be developed on a feature branch and submitted through a pull request to `master`. Do not commit directly to `master`; wait for the relevant CI and validation checks to pass before merging.
 
+## CherryPick club contributions
+
+Students participating through CherryPick should submit PRs to
+[the club fork](https://github.com/CherryPick-Student-Projects/klicky), so the club
+can track their contributions. Other contributors can continue using this repository.
+The [shared board](https://github.com/users/Muneer320/projects/1) brings work from
+both repositories together. Link the original issue in the club issue and PR;
+keep each discussion on its source item.
+
+Reviewed club changes reach this repository through a separate, manually merged
+integration PR. Only this repository publishes releases and the website. See the
+[cross-repository contribution guide](docs/CLUB_CONTRIBUTIONS.md) for linking work,
+sync PRs and automation setup.
+
 ## Development setup
 
 Use the README's build prerequisites for [Linux](docs/INSTALLATION.md#linux-from-source), [macOS](docs/INSTALLATION.md#macos) or the [Windows guide](docs/WINDOWS.md). Install Rust 1.87 or newer; distribution-provided Rust packages may be older. Windows uses the MSVC toolchain and Windows SDK resource compiler. Building and running the automated tests does not require installing a login service or granting keyboard access.
