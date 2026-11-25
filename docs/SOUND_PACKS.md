@@ -12,12 +12,64 @@ my-pack/
 └── sound.ogg
 ```
 
-Install a pack by copying its directory into the Klicky sound directory:
+Install a pack by copying its directory into your user sound directory, then select it. The steps below use a pack folder named `my-pack` in the current directory.
+
+### Linux
+
+Klicky uses `$XDG_CONFIG_HOME/klicky/sounds`, normally `~/.config/klicky/sounds`:
 
 ```bash
-cp -R my-pack ~/.config/klicky/sounds/
+mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/klicky/sounds"
+cp -R my-pack "${XDG_CONFIG_HOME:-$HOME/.config}/klicky/sounds/"
 klicky switch my-pack
 ```
+
+### macOS
+
+```bash
+mkdir -p "$HOME/Library/Application Support/klicky/sounds"
+cp -R my-pack "$HOME/Library/Application Support/klicky/sounds/"
+klicky switch my-pack
+```
+
+### Windows (PowerShell)
+
+Standalone installer, portable and Scoop copies use `%LOCALAPPDATA%\Klicky\sounds`. The standalone installer puts the CLI at `%LOCALAPPDATA%\Programs\Klicky\klicky.exe`, which works even when `klicky` is not on `PATH`. Scoop exposes `klicky` in a new terminal, and a portable copy runs `.\klicky.exe` from its own folder.
+
+```powershell
+$sounds = Join-Path $env:LOCALAPPDATA 'Klicky\sounds'
+New-Item -ItemType Directory -Force -Path $sounds | Out-Null
+Copy-Item -Recurse -LiteralPath '.\my-pack' -Destination $sounds
+& (Join-Path $env:LOCALAPPDATA 'Programs\Klicky\klicky.exe') switch my-pack
+```
+
+A new Microsoft Store installation keeps custom packs in its [package-private sounds folder](WINDOWS.md#files-and-custom-sounds) instead, and exposes `klicky` in a new terminal:
+
+```powershell
+$sounds = Join-Path $env:LOCALAPPDATA 'Packages\MuneerAlam.Klicky_zj8ab2whxa2g0\LocalCache\Local\Klicky\sounds'
+New-Item -ItemType Directory -Force -Path $sounds | Out-Null
+Copy-Item -Recurse -LiteralPath '.\my-pack' -Destination $sounds
+klicky switch my-pack
+```
+
+Store Reset and uninstall delete this folder, so back up your custom packs first.
+
+### Remove a custom pack
+
+Switch to another pack first, then delete only your pack's folder. `klicky list` shows the available names. Never delete bundled or package-managed packs.
+
+```bash
+klicky switch eg-oreo
+rm -r -- "${XDG_CONFIG_HOME:-$HOME/.config}/klicky/sounds/my-pack"   # Linux
+rm -r -- "$HOME/Library/Application Support/klicky/sounds/my-pack"  # macOS
+```
+
+```powershell
+& (Join-Path $env:LOCALAPPDATA 'Programs\Klicky\klicky.exe') switch eg-oreo
+Remove-Item -Recurse -LiteralPath (Join-Path $env:LOCALAPPDATA 'Klicky\sounds\my-pack')
+```
+
+For a Store installation, use `klicky switch eg-oreo` and the package-private path above. To update a pack, remove the old folder the same way before copying the new one; copying onto an existing folder nests the new copy inside it.
 
 Linux distribution packages can install shared packs under `/usr/share/klicky/sounds`. User packs take precedence over system packs with the same directory name. This allows local customization without modifying package-managed files.
 
