@@ -60,6 +60,20 @@ class MarkdownLinkTests(unittest.TestCase):
             "[Section](#usage)\n[Site](https://example.com/missing.md)")
         self.assertEqual(errors, [])
 
+    def test_angle_enclosed_path_with_spaces_resolves(self):
+        self.write("guide with spaces.md")
+        self.assertEqual(self.errors_for("[Guide](<guide with spaces.md>)"), [])
+        self.assertEqual(self.errors_for("[Guide](<guide with spaces.md#usage>)"), [])
+
+    def test_angle_enclosed_path_with_title_resolves(self):
+        self.write("guide with spaces.md")
+        errors = self.errors_for('[Guide](<guide with spaces.md#usage> "Usage")')
+        self.assertEqual(errors, [])
+
+    def test_missing_angle_enclosed_path_is_reported_in_full(self):
+        errors = self.errors_for("[Gone](<missing guide.md#usage>)")
+        self.assertEqual(errors, ["broken link: README.md -> missing guide.md"])
+
     def test_missing_file_is_still_reported(self):
         errors = self.errors_for("[Gone](gone.md)")
         self.assertEqual(len(errors), 1)

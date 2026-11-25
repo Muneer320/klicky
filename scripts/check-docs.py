@@ -34,11 +34,24 @@ def check_em_dashes(errors: list[str]) -> None:
             errors.append(f"em dash: {path.relative_to(ROOT)}")
 
 
+def link_destination(raw_target: str) -> str:
+    """Return an inline link's destination without its optional title.
+
+    An angle-enclosed destination may contain spaces (CommonMark), so it ends at the closing ``>``.
+    """
+    raw_target = raw_target.strip()
+    if raw_target.startswith("<"):
+        end = raw_target.find(">")
+        if end != -1:
+            return raw_target[1:end]
+    return raw_target.split()[0].strip("<>")
+
+
 def check_markdown_links(errors: list[str]) -> None:
     for path in repository_files("*.md"):
         text = path.read_text(encoding="utf-8")
         for raw_target in MARKDOWN_LINK.findall(text):
-            target = raw_target.split()[0].strip("<>")
+            target = link_destination(raw_target)
             if target.startswith(("http://", "https://", "mailto:", "#")):
                 continue
             target = target.split("#", 1)[0]
