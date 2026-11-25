@@ -16,23 +16,26 @@ pub struct Playback {
 
 impl Playback {
     pub fn parse(text: &str) -> Result<Self> {
-        let value: Self = serde_json::from_str(text)?;
+        let mut value: Self = serde_json::from_str(text)?;
         if value.schema_version != 1
             || !value.volume.is_finite()
             || !(0.0..=1.0).contains(&value.volume)
             || value.running && !value.process_exists
             || value.paused && !value.running
-            || !valid_text(&value.sound_pack, 256)
-            || value.packs.len() > 256
         {
             bail!("Unsupported or invalid CLI status; update Klicky and refresh");
         }
+        // Pack directory names are display metadata, not playback health.
+        // Hide unusable choices without disabling Pause/Resume/Stop, including
+        // when the active name itself cannot be offered safely in the menu.
+        value.packs.retain(|pack| valid_text(pack, 256));
         let mut seen = HashSet::new();
         for pack in &value.packs {
-            if !valid_text(pack, 256) || !seen.insert(pack) {
+            if !seen.insert(pack) {
                 bail!("Invalid sound-pack list");
             }
         }
+        value.packs.truncate(256);
         Ok(value)
     }
 

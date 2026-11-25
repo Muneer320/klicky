@@ -86,6 +86,21 @@ def read_manifest(manifest, paths):
     return files
 
 
+def check_owned(paths, previous):
+    snapshot = {}
+    for name, path in paths.items():
+        if path.exists():
+            if name not in previous or not regular(path):
+                raise ValueError(f'Preserving an unowned or modified file: {path}')
+            data = path.read_bytes()
+            if digest(data) != previous[name]:
+                raise ValueError(f'Preserving an unowned or modified file: {path}')
+            snapshot[name] = (data, stat.S_IMODE(path.stat().st_mode))
+        else:
+            snapshot[name] = None
+    return snapshot
+
+
 def install(args, paths, manifest, previous):
     root = Path(__file__).resolve().parent.parent
     cli = Path(args.cli or shutil.which('klicky') or Path.home() / '.local/bin/klicky').absolute()
@@ -94,17 +109,18 @@ def install(args, paths, manifest, previous):
     if any(c in str(cli) for c in '\r\n\x00'):
         raise ValueError('CLI path cannot contain line breaks or NUL')
     enabled = args.autostart or ('autostart' in previous and not args.no_autostart)
-    planned = {'binary', 'icon', 'desktop'} | ({'autostart'} if enabled else set())
     # Preflight the entire owned set before building or changing any file.
-    for name in paths:
-        path = paths[name]
-        if path.exists() and (name not in previous or not regular(path) or digest(path.read_bytes()) != previous[name]):
-            raise ValueError(f'Preserving an unowned or modified file: {path}')
+    old = check_owned(paths, previous)
+    original_record = manifest.read_bytes() if manifest.exists() else None
     if args.binary:
         binary = Path(args.binary)
     else:
-        subprocess.run(['cargo', 'build', '--release', '--locked', '--manifest-path', str(root / 'packaging/linux-tray/Cargo.toml')], check=True)
-        binary = root / 'packaging/linux-tray/target/release/klicky-tray'
+        build = subprocess.run(['cargo', 'build', '--release', '--locked', '--message-format=json-render-diagnostics', '--manifest-path', str(root / 'packaging/linux-tray/Cargo.toml')], check=True, stdout=subprocess.PIPE, text=True)
+        artifacts = [json.loads(line) for line in build.stdout.splitlines()]
+        executables = [item['executable'] for item in artifacts if item.get('reason') == 'compiler-artifact' and item.get('target', {}).get('name') == 'klicky-tray' and 'bin' in item.get('target', {}).get('kind', []) and item.get('executable')]
+        if len(executables) != 1:
+            raise ValueError('Cargo did not report exactly one tray-helper executable')
+        binary = Path(executables[0])
     # Gio checks Exec's first token before expanding %% field escapes. Use env
     # as the fixed executable so a literal percent in HOME still launches.
     launcher = Path('/usr/bin/env')
@@ -123,7 +139,14 @@ def install(args, paths, manifest, previous):
     }
     if enabled:
         payloads['autostart'] = (entry.replace(f'Exec={command}\n', f'Exec={command} "--wait-for-tray"\n').encode(), 0o644)
-    old = {name: (paths[name].read_bytes(), stat.S_IMODE(paths[name].stat().st_mode)) if paths[name].exists() else None for name in set(previous) | planned}
+    # Cargo can take minutes. A desktop editor or another installer may have
+    # changed the owned set while we built/read payloads. Do not authorize that
+    # edit by using it as a new backup immediately before replacement.
+    locations()  # Recheck symlink ancestors as well as destination contents.
+    if check_owned(paths, previous) != old:
+        raise ValueError('Owned tray files changed during preparation')
+    if (manifest.read_bytes() if manifest.exists() else None) != original_record:
+        raise ValueError('Tray installation record changed during preparation')
     written = []
     try:
         for name, (data, mode) in payloads.items():

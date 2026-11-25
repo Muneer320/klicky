@@ -11,20 +11,20 @@ Use Linux, Rust 1.87 or newer, Python 3, `/usr/bin/env`, an existing Klicky engi
 From a checkout containing this helper, with the engine's [source build prerequisites](INSTALLATION.md) installed:
 
 ```sh
-cargo build --release --locked
-cargo build --release --locked --manifest-path packaging/linux-tray/Cargo.toml
+cargo build --release --locked --target-dir target
 python3 scripts/install-linux-tray.py \
-  --binary packaging/linux-tray/target/release/klicky-tray \
   --cli "$(pwd)/target/release/klicky"
 ```
 
-This uses the updated CLI without replacing an existing engine installation. Keep the checkout and built CLI at that path, or install the updated CLI and pass its absolute installed path. Without `--binary`, the installer builds only the helper with Cargo. Installation starts neither the helper nor playback. Open **Klicky controls** from the application menu to start the helper. A missing/incompatible CLI produces an unavailable state with controls disabled; it does not silently install or start an engine.
+This uses the updated CLI without replacing an existing engine installation. Keep the checkout and built CLI at that path, or install the updated CLI and pass its absolute installed path. The installer builds only the helper and uses Cargo's reported executable path, including configured target directories. For an already built helper, pass `--binary PATH` explicitly. Installation starts neither the helper nor playback. Open **Klicky controls** from the application menu to start the helper. A missing/incompatible CLI produces an unavailable state with controls disabled; it does not silently install or start an engine.
 
 Only one copy of this helper can run per session. On Omarchy, choose either Klicky Bar or this tray helper as your visible controller; stop/disable the other controller using its own setup instructions. The installer does not change another bar's configuration.
 
 ## Controls and confirmed state
 
 The menu shows Running, Paused, Stopped, Starting or unresponsive, or Unavailable. Pause/Resume, volume presets and sound-pack choices refresh from `klicky status --json`; matching actions are disabled. Volume and pack changes use the CLI's existing persistence. A failed or timed-out request displays an error and refreshes rather than claiming success. A timeout can occur after an engine accepted a command, so refresh before retrying.
+
+Unusable sound-pack directory names are omitted from the choices without disabling playback controls. Up to 256 usable choices are shown; names are escaped/truncated for display while commands retain their exact original arguments.
 
 - **Start playback / Stop playback** control the engine.
 - **Start playback at login** changes the engine's startup preference only. Enabling it does not start playback now.
