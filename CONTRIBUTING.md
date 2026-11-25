@@ -108,6 +108,16 @@ Clippy includes compilation checks. Run `cargo build --release` when changing
 build behavior or preparing a package; package CI also builds release binaries.
 For prose-only edits, the documentation check is sufficient locally.
 
+`scripts/check-docs.py` checks the repository's own Markdown and SVG files. It
+has separate regression tests that run the checker against temporary fixtures.
+Run them as well when you change `scripts/check-docs.py`, so a fix for one link
+form doesn't break another:
+
+```bash
+python3 -B -m unittest scripts/test_check_docs.py
+PYTHONUTF8=1 python3 -B scripts/check-docs.py
+```
+
 PR validation runs once per commit, with superseded runs cancelled. Markdown-only
 PRs keep the fast documentation, formatting and script checks, without rebuilding
 native apps and packages. Website changes retain package/APT validation. Unknown
