@@ -44,6 +44,25 @@ fn command_output_with_timeout(program: &str, args: &[&str], timeout: Duration) 
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .process_group(0);
+    #[cfg(target_os = "linux")]
+    {
+        let parent = std::process::id() as libc::pid_t;
+        // A controller can cancel its CLI before our own deadline. systemctl
+        // has a separate process group, so bind this short-lived command to
+        // its supervising CLI as well. This does not affect the systemd-owned
+        // engine or the engine's login-startup preference.
+        unsafe {
+            command.pre_exec(move || {
+                if libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGKILL) != 0 {
+                    return Err(io::Error::last_os_error());
+                }
+                if libc::getppid() != parent {
+                    return Err(io::Error::from_raw_os_error(libc::ESRCH));
+                }
+                Ok(())
+            });
+        }
+    }
     let mut child = command
         .spawn()
         .with_context(|| format!("failed to start {program} {}", args.join(" ")))?;

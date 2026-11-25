@@ -17,6 +17,23 @@ jobs:
   scope:
     uses: ./.github/workflows/ci-scope.yml
 
+  linux-tray:
+    needs: scope
+    if: needs.scope.outputs.native != 'false'
+    name: Optional Linux tray (Rust 1.87)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install helper toolchain
+        run: rustup toolchain install 1.87.0 --profile minimal --component rustfmt --component clippy
+      - name: Check optional helper
+        run: |
+          cargo +1.87.0 fmt --manifest-path packaging/linux-tray/Cargo.toml --check
+          cargo +1.87.0 build --locked --manifest-path packaging/linux-tray/Cargo.toml
+          cargo +1.87.0 clippy --locked --manifest-path packaging/linux-tray/Cargo.toml --all-targets -- -D warnings
+          python3 -m py_compile scripts/install-linux-tray.py
+
   omarchy-plugin:
     needs: scope
     if: needs.scope.outputs.native != 'false'

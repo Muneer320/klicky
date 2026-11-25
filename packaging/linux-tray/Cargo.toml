@@ -1,0 +1,22 @@
+[package]
+name = "klicky-tray"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.87"
+authors = ["Muneer Alam"]
+description = "Optional Linux desktop controls for Klicky"
+license = "MIT"
+publish = false
+
+# Keep desktop dependencies out of the engine's default build.
+[workspace]
+resolver = "3"
+
+[dependencies]
+anyhow = "1"
+ksni = "=0.3.7"
+libc = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "rt", "process", "io-util", "sync", "time", "signal"] }
+zbus = { version = "5", default-features = false, features = ["tokio"] }

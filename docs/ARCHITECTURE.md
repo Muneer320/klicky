@@ -4,6 +4,8 @@ Klicky uses one resident process per user session. Linux/macOS retain their Unix
 
 ## Explicit updates
 
+The optional [Linux tray helper](LINUX_TRAY.md) is a separate Rust crate in `packaging/linux-tray`. It exports StatusNotifierItem/D-BusMenu through `ksni` and invokes the existing CLI asynchronously. It does not own input, audio, engine settings or engine lifetime. The default engine build and dependencies are unchanged.
+
 `src/update.rs` supplies both CLIs and the Windows tray with stable-release checks and installation-channel detection. Checks use a bounded HTTPS curl request only after an explicit action. Windows tray network work runs on the metadata worker, away from input, audio and GUI callbacks. Confirmed updates are handed to the installation owner; source and unknown copies receive manual guidance. The update command never becomes a second package manager.
 
 ## Data flow
