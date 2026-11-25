@@ -34,42 +34,61 @@ klicky switch my-pack
 
 ### Windows (PowerShell)
 
-Standalone installer, portable and Scoop copies use `%LOCALAPPDATA%\Klicky\sounds`. The standalone installer puts the CLI at `%LOCALAPPDATA%\Programs\Klicky\klicky.exe`, which works even when `klicky` is not on `PATH`. Scoop exposes `klicky` in a new terminal, and a portable copy runs `.\klicky.exe` from its own folder.
+Standalone installer, portable and Scoop copies use `%LOCALAPPDATA%\Klicky\sounds`. First set `$klicky` to the CLI for your install method:
+
+```powershell
+$klicky = Join-Path $env:LOCALAPPDATA 'Programs\Klicky\klicky.exe'  # standalone installer (works without PATH)
+# $klicky = 'klicky'                                              # Scoop or Microsoft Store
+# $klicky = '.\klicky.exe'                                        # portable copy, run from its folder
+```
+
+Then copy the pack and select it:
 
 ```powershell
 $sounds = Join-Path $env:LOCALAPPDATA 'Klicky\sounds'
 New-Item -ItemType Directory -Force -Path $sounds | Out-Null
 Copy-Item -Recurse -LiteralPath '.\my-pack' -Destination $sounds
-& (Join-Path $env:LOCALAPPDATA 'Programs\Klicky\klicky.exe') switch my-pack
+& $klicky switch my-pack
 ```
 
-A new Microsoft Store installation keeps custom packs in its [package-private sounds folder](WINDOWS.md#files-and-custom-sounds) instead, and exposes `klicky` in a new terminal:
+A new Microsoft Store installation keeps custom packs in its [package-private sounds folder](WINDOWS.md#files-and-custom-sounds) instead. Use `$klicky = 'klicky'` and this folder:
 
 ```powershell
 $sounds = Join-Path $env:LOCALAPPDATA 'Packages\MuneerAlam.Klicky_zj8ab2whxa2g0\LocalCache\Local\Klicky\sounds'
-New-Item -ItemType Directory -Force -Path $sounds | Out-Null
-Copy-Item -Recurse -LiteralPath '.\my-pack' -Destination $sounds
-klicky switch my-pack
 ```
 
 Store Reset and uninstall delete this folder, so back up your custom packs first.
 
 ### Remove a custom pack
 
-Switch to another pack first, then delete only your pack's folder. `klicky list` shows the available names. Never delete bundled or package-managed packs.
+Switch to another pack first, and delete your pack's folder only if the switch succeeds. `klicky list` shows the available names. Never delete bundled or package-managed packs.
+
+Linux:
 
 ```bash
-klicky switch eg-oreo
-rm -r -- "${XDG_CONFIG_HOME:-$HOME/.config}/klicky/sounds/my-pack"   # Linux
-rm -r -- "$HOME/Library/Application Support/klicky/sounds/my-pack"  # macOS
+klicky switch eg-oreo && rm -r -- "${XDG_CONFIG_HOME:-$HOME/.config}/klicky/sounds/my-pack"
 ```
+
+macOS:
+
+```bash
+klicky switch eg-oreo && rm -r -- "$HOME/Library/Application Support/klicky/sounds/my-pack"
+```
+
+Windows, with `$klicky` and `$sounds` set as above:
 
 ```powershell
-& (Join-Path $env:LOCALAPPDATA 'Programs\Klicky\klicky.exe') switch eg-oreo
-Remove-Item -Recurse -LiteralPath (Join-Path $env:LOCALAPPDATA 'Klicky\sounds\my-pack')
+& $klicky switch eg-oreo
+if ($? -and $LASTEXITCODE -eq 0) {
+    Remove-Item -Recurse -LiteralPath (Join-Path $sounds 'my-pack')
+} else {
+    Write-Warning 'Switch failed; my-pack was not removed.'
+}
 ```
 
-For a Store installation, use `klicky switch eg-oreo` and the package-private path above. To update a pack, remove the old folder the same way before copying the new one; copying onto an existing folder nests the new copy inside it.
+### Update a custom pack
+
+Remove the old copy as above, then copy the new version and switch back to it. Copying again without removing it first behaves differently by platform: on Linux and macOS, `cp -R` merges into the existing folder, overwriting files with the same name and leaving stale ones behind; on Windows, `Copy-Item` reports that the folder already exists.
 
 Linux distribution packages can install shared packs under `/usr/share/klicky/sounds`. User packs take precedence over system packs with the same directory name. This allows local customization without modifying package-managed files.
 
