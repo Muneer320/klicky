@@ -108,9 +108,9 @@ def install(args, paths, manifest, previous):
         raise ValueError('Install the Klicky engine first, or use --cli PATH')
     if any(c in str(cli) for c in '\r\n\x00'):
         raise ValueError('CLI path cannot contain line breaks or NUL')
-    enabled = args.autostart or ('autostart' in previous and not args.no_autostart)
     # Preflight the entire owned set before building or changing any file.
     old = check_owned(paths, previous)
+    enabled = args.autostart or (old['autostart'] is not None and not args.no_autostart)
     original_record = manifest.read_bytes() if manifest.exists() else None
     if args.binary:
         binary = Path(args.binary)

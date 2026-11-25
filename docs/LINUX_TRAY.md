@@ -43,7 +43,7 @@ Helper startup is separate from engine startup and disabled by default:
 python3 scripts/install-linux-tray.py --autostart --cli "$(pwd)/target/release/klicky"
 ```
 
-This explicitly installs a helper-only login entry with `--wait-for-tray`, allowing the desktop tray host to start later. Run the installer with `--no-autostart` to remove its unchanged helper login entry. Ordinary upgrades retain the previous helper-startup choice. Quit the helper before upgrading or removing it, then relaunch it after upgrading.
+This explicitly installs a helper-only login entry with `--wait-for-tray`, allowing the desktop tray host to start later. Run the installer with `--no-autostart` to remove its unchanged helper login entry. Ordinary upgrades retain an existing helper login entry and respect one you deleted; only explicit `--autostart` recreates a missing entry. Quit the helper before upgrading or removing it, then relaunch it after upgrading.
 
 The installer owns only these per-user files:
 
