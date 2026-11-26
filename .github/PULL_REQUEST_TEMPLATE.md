@@ -8,6 +8,11 @@ Describe the problem this change solves.
 
 Explain the implementation and important tradeoffs.
 
+## Related issues
+
+<!-- Link the issue URL. For club contributions, also link the original Klicky issue.
+Use "Related to" for work that is not complete upstream yet. -->
+
 ## Verification
 
 List the commands and hardware checks you ran.

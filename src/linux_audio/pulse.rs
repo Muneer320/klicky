@@ -253,17 +253,25 @@ impl Connection {
     pub fn responsive(&self) -> bool {
         self.server_default().is_ok()
     }
-    fn devices(&self) -> Result<Vec<Device>> {
+    fn query_devices(&self, name: Option<&CStr>) -> Result<Vec<Device>> {
         let mut query = Query::new(&self.mainloop, Devices::default());
         {
             let _lock = self.mainloop.lock();
             self.ready()?;
             let operation = unsafe {
-                pa::pa_context_get_sink_info_list(
-                    self.context.as_ptr(),
-                    Some(sink_info),
-                    query.userdata(),
-                )
+                match name {
+                    Some(name) => pa::pa_context_get_sink_info_by_name(
+                        self.context.as_ptr(),
+                        name.as_ptr(),
+                        Some(sink_info),
+                        query.userdata(),
+                    ),
+                    None => pa::pa_context_get_sink_info_list(
+                        self.context.as_ptr(),
+                        Some(sink_info),
+                        query.userdata(),
+                    ),
+                }
             };
             query.started(operation)?;
         }
@@ -272,9 +280,12 @@ impl Connection {
         // SAFETY: serialized with the callback by the mainloop lock.
         let data = unsafe { &mut *query.data.get() };
         if data.failed {
-            bail!("desktop output enumeration failed or exceeded its limit");
+            bail!("desktop output query failed or exceeded its limit");
         }
-        let devices = std::mem::take(&mut data.devices);
+        Ok(std::mem::take(&mut data.devices))
+    }
+    fn devices(&self) -> Result<Vec<Device>> {
+        let devices = self.query_devices(None)?;
         OutputList {
             schema_version: 1,
             devices: devices.iter().map(|d| d.output.clone()).collect(),
@@ -309,7 +320,16 @@ impl Connection {
             OutputPreference::SystemDefault => self.default_id()?,
             OutputPreference::Device { id, .. } => id.clone(),
         };
-        self.devices()?
+        OutputPreference::Device {
+            backend: Backend::PulseAudio,
+            id: id.clone(),
+        }
+        .validate()?;
+        let name = CString::new(id.as_bytes())?;
+        // Playback needs only this sink, even when the bounded control-plane
+        // enumeration cannot represent all of the server's other outputs.
+        self.query_devices(Some(&name))
+            .context("selected desktop audio output is unavailable")?
             .into_iter()
             .find(|d| d.output.id == id)
             .context("selected desktop audio output is unavailable")

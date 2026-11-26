@@ -20,6 +20,7 @@ Start with the [project overview](../README.md) or the [visual field guide](http
 | Topic | Read |
 |---|---|
 | Local setup, tests and pull requests | [Contributing](../CONTRIBUTING.md) |
+| CherryPick contributions, linked issues and repository sync | [Club contribution guide](CLUB_CONTRIBUTIONS.md) |
 | Components, input and audio flow | [Architecture](ARCHITECTURE.md) |
 | Recorded measurements and how to reproduce them | [Benchmarks](BENCHMARKS.md) |
 | Site changes, media and icon exports | [Website and artwork](WEBSITE.md) |
