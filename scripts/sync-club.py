@@ -22,13 +22,27 @@ def command(*args):
 
 def api(path, data=None):
     args = ["gh", "api", path]
-    if data is None:
-        return json.loads(command(*args))
+    if data is not None:
+        args.extend(["--method", "POST", "--input", "-"])
     result = subprocess.run(
-        [*args, "--method", "POST", "--input", "-"],
-        input=json.dumps(data), text=True, encoding="utf-8", capture_output=True,
-        check=True,
+        args, input=json.dumps(data) if data is not None else None,
+        text=True, encoding="utf-8", capture_output=True,
     )
+    if result.returncode:
+        try:
+            response = json.loads(result.stdout)
+            detail = {key: response[key] for key in ("message", "errors", "status")
+                      if key in response}
+        except (ValueError, TypeError):
+            detail = result.stderr.strip()
+        # Keep errors useful without logging request bodies, headers or tokens.
+        detail = json.dumps(detail, ensure_ascii=True)
+        for variable in ("GH_TOKEN", "GITHUB_TOKEN"):
+            token = os.environ.get(variable)
+            if token:
+                detail = detail.replace(token, "[redacted]")
+        method = "POST" if data is not None else "GET"
+        raise RuntimeError(f"GitHub API {method} {path.split('?')[0]} failed: {detail[:2000]}")
     return json.loads(result.stdout)
 
 
@@ -45,9 +59,11 @@ def sync(repository, dry_run=False):
     base = command("git", "rev-parse", "refs/klicky-sync/base")
     head = command("git", "rev-parse", "refs/klicky-sync/source")
     ahead = int(command("git", "rev-list", "--count", f"{base}..{head}"))
-    incoming = ahead > 0 and command("git", "rev-parse", f"{base}^{{tree}}") != command(
-        "git", "rev-parse", f"{head}^{{tree}}"
-    )
+    head_tree = command("git", "rev-parse", f"{head}^{{tree}}")
+    merge_base = command("git", "merge-base", base, head)
+    incoming = (ahead > 0
+                and head_tree != command("git", "rev-parse", f"{base}^{{tree}}")
+                and head_tree != command("git", "rev-parse", f"{merge_base}^{{tree}}"))
 
     query = urlencode({"state": "all", "base": "master", "head": f"{source_owner}:master",
                        "per_page": 100, "sort": "created", "direction": "desc"})
