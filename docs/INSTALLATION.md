@@ -25,6 +25,8 @@ klicky update
 
 Package-manager versions can arrive later than the GitHub release. A successful check is not proof that your manager already offers that version, and a Windows terminal handoff is not confirmation that installation completed. Use `klicky --version` in a new terminal afterward. The standalone Windows CLI currently requires its full path unless you have added it to PATH.
 
+For the optional Linux source-built tray controller, see [Linux tray controls](LINUX_TRAY.md). It is separate from the engine and is not included in v0.7.0 packages.
+
 ## Windows
 
 **Windows 11 x64.** [Get Klicky from Microsoft Store](https://apps.microsoft.com/detail/9NLVFX7T2X6Q), then open it from Start. Use the tray menu to choose a pack, adjust volume, pause/resume or enable **Start with Windows**. The Store installs the complete app and manages updates.
