@@ -22,12 +22,19 @@ def regular(path):
     return path.exists() and stat.S_ISREG(path.lstat().st_mode)
 
 
-def snapshot(path):
-    if not os.path.lexists(path):
+def snapshot(path, limit=None):
+    try:
+        descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC)
+    except FileNotFoundError:
         return None
-    if not regular(path):
-        raise ValueError(f'Preserving a non-regular file: {path}')
-    return path.read_bytes(), stat.S_IMODE(path.stat().st_mode)
+    with os.fdopen(descriptor, 'rb') as stream:
+        metadata = os.fstat(stream.fileno())
+        if not stat.S_ISREG(metadata.st_mode):
+            raise ValueError(f'Preserving a non-regular file: {path}')
+        data = stream.read() if limit is None else stream.read(limit + 1)
+        if limit is not None and len(data) > limit:
+            raise ValueError(f'Tray file exceeds size limit: {path}')
+        return data, stat.S_IMODE(metadata.st_mode)
 
 
 def same_file(left, right):
@@ -217,13 +224,10 @@ def installation_lock(paths):
 
 
 def read_manifest(manifest, paths):
-    if not manifest.exists():
-        return {}
-    if not regular(manifest):
-        raise ValueError('Tray installation record is not a regular file')
-    if manifest.stat().st_size > 4096:
-        raise ValueError('Tray installation record is too large')
-    record = json.loads(manifest.read_text())
+    original = snapshot(manifest, limit=4096)
+    if original is None:
+        return {}, None
+    record = json.loads(original[0])
     if not isinstance(record, dict):
         raise ValueError('Invalid tray installation record')
     files = record.get('files', {})
@@ -231,7 +235,8 @@ def read_manifest(manifest, paths):
         raise ValueError('Unsupported tray installation record')
     if any(not isinstance(value, str) or len(value) != 64 for value in files.values()):
         raise ValueError('Invalid tray installation hashes')
-    return files
+    # Ownership hashes and the recovery precondition come from the same read.
+    return files, original
 
 
 def check_owned(paths, previous):
@@ -249,7 +254,8 @@ def check_owned(paths, previous):
     return snapshot
 
 
-def install(args, paths, manifest, previous):
+def install(args, paths, manifest, ownership):
+    previous, original_record = ownership
     root = Path(__file__).resolve().parent.parent
     cli = Path(args.cli or shutil.which('klicky') or Path.home() / '.local/bin/klicky').absolute()
     if not cli.is_file() or not os.access(cli, os.X_OK):
@@ -259,7 +265,6 @@ def install(args, paths, manifest, previous):
     # Preflight the entire owned set before building or changing any file.
     old = check_owned(paths, previous)
     enabled = args.autostart or (old['autostart'] is not None and not args.no_autostart)
-    original_record = snapshot(manifest)
     if args.binary:
         binary = Path(args.binary)
     else:
@@ -320,10 +325,12 @@ def install(args, paths, manifest, previous):
     print('Run the helper from the application menu. Use only one desktop controller if Klicky Bar is already enabled.')
 
 
-def remove(paths, manifest, previous):
+def remove(paths, manifest, ownership):
+    previous, original_record = ownership
+    if snapshot(manifest) != original_record:
+        raise ValueError('Tray installation record changed before removal')
     retained = {}
     removals = []
-    original_record = snapshot(manifest)
     for name, expected in previous.items():
         path = paths[name]
         try:
@@ -367,11 +374,11 @@ def main():
     paths, manifest = locations()
     with installation_lock(paths):
         paths, manifest = locations()
-        previous = read_manifest(manifest, paths)
+        ownership = read_manifest(manifest, paths)
         if args.remove:
-            remove(paths, manifest, previous)
+            remove(paths, manifest, ownership)
         else:
-            install(args, paths, manifest, previous)
+            install(args, paths, manifest, ownership)
 
 
 if __name__ == '__main__':
