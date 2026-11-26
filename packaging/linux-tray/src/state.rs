@@ -78,7 +78,10 @@ impl Device {
             self.backend.as_str(),
             "wasapi" | "core_audio" | "pipe_wire" | "pulse_audio" | "alsa"
         ) && valid_text(&self.id, 1024)
-            && self.name.as_ref().is_none_or(|s| valid_text(s, 2048))
+            && self
+                .name
+                .as_ref()
+                .is_none_or(|s| !s.is_empty() && s.len() <= 2048)
     }
 }
 
@@ -130,14 +133,23 @@ pub struct Outputs {
 
 impl Outputs {
     pub fn parse(text: &str) -> Result<Self> {
-        let value: Self = serde_json::from_str(text)?;
+        let mut value: Self = serde_json::from_str(text)?;
         if value.schema_version != 1 || value.devices.len() > 64 {
             bail!("Unsupported or oversized audio-output list");
         }
         let mut seen = HashSet::new();
-        for device in &value.devices {
+        for device in &mut value.devices {
             if !device.valid() || !seen.insert((&device.backend, &device.id)) {
                 bail!("Invalid or duplicate audio-output identity");
+            }
+            // Display metadata follows the engine's bounds, not ID syntax.
+            // Normalize before comparing labels; blank labels use the existing
+            // unnamed-output fallback without dropping valid sink choices.
+            if let Some(name) = &mut device.name {
+                name.retain(|c| !c.is_control());
+                if name.is_empty() {
+                    device.name = None;
+                }
             }
         }
         Ok(value)
