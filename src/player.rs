@@ -26,6 +26,11 @@ pub(crate) struct PcmSource {
 }
 
 impl PcmSource {
+    #[cfg(target_os = "linux")]
+    pub(crate) fn cancel_with(&mut self, generation: Arc<AtomicU64>, expected: u64) {
+        self.cancellation = Some((generation, expected));
+    }
+
     pub(crate) fn new(samples: &Arc<Vec<i16>>, channels: u16, sample_rate: u32) -> Option<Self> {
         Some(Self {
             samples: Arc::clone(samples),
@@ -73,6 +78,14 @@ impl Source for PcmSource {
 }
 
 impl Player {
+    #[cfg(target_os = "linux")]
+    pub(crate) fn output(&self) -> (rodio::mixer::Mixer, NonZeroU16, NonZeroU32) {
+        (
+            self.sink.mixer().clone(),
+            self.sink.config().channel_count(),
+            self.sink.config().sample_rate(),
+        )
+    }
     pub fn new() -> Result<Self> {
         let sink = open_low_latency_sink()?;
         eprintln!("[klicky] audio output: {:?}", sink.config());

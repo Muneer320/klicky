@@ -48,9 +48,27 @@ struct Response {
     playback: Option<PlaybackState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     audio: Option<crate::audio::AudioStatus>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    outputs: Option<crate::audio::OutputList>,
 }
 
 impl Request {
+    #[cfg(target_os = "linux")]
+    pub fn outputs(&mut self, list: crate::audio::OutputList) -> Result<()> {
+        list.validate()?;
+        writeln!(
+            self.stream,
+            "{}",
+            serde_json::to_string(&Response {
+                pid: std::process::id() as i32,
+                error: None,
+                playback: None,
+                audio: None,
+                outputs: Some(list),
+            })?
+        )?;
+        Ok(())
+    }
     pub fn acknowledge(&mut self) -> Result<()> {
         self.respond(None)
     }
@@ -77,6 +95,7 @@ impl Request {
                 error: None,
                 playback: None,
                 audio: Some(state),
+                outputs: None,
             })?
         )?;
         Ok(())
@@ -92,6 +111,7 @@ impl Request {
             error,
             playback,
             audio: None,
+            outputs: None,
         })?;
         writeln!(self.stream, "{response}")?;
         Ok(())
@@ -223,6 +243,10 @@ fn pause(deadline: Instant) -> Result<()> {
 }
 
 fn read_line(stream: &mut UnixStream, deadline: Instant) -> Result<Vec<u8>> {
+    read_line_limit(stream, deadline, 4096)
+}
+
+fn read_line_limit(stream: &mut UnixStream, deadline: Instant, limit: usize) -> Result<Vec<u8>> {
     let mut line = Vec::new();
     loop {
         if Instant::now() >= deadline {
@@ -234,7 +258,7 @@ fn read_line(stream: &mut UnixStream, deadline: Instant) -> Result<Vec<u8>> {
             Ok(_) if byte[0] == b'\n' => return Ok(line),
             Ok(_) => {
                 line.push(byte[0]);
-                if line.len() > 4096 {
+                if line.len() > limit {
                     bail!("IPC message too large");
                 }
             }
@@ -265,8 +289,16 @@ pub fn playback_status() -> Result<PlaybackState> {
         .context("daemon does not support structured playback status")
 }
 
-pub fn audio_command(command: crate::audio::AudioCommand) -> Result<crate::audio::AudioStatus> {
+#[derive(Serialize)]
+#[serde(untagged)]
+pub enum AudioReply {
+    Status(crate::audio::AudioStatus),
+    Outputs(crate::audio::OutputList),
+}
+
+pub fn audio_command(command: crate::audio::AudioCommand) -> Result<AudioReply> {
     command.validate()?;
+    let outputs = command == crate::audio::AudioCommand::Outputs;
     let response = request_response(
         &config::socket_path(),
         &Command::Audio { command },
@@ -277,11 +309,24 @@ pub fn audio_command(command: crate::audio::AudioCommand) -> Result<crate::audio
     {
         bail!("audio response does not match the live daemon");
     }
+    if outputs {
+        if response.audio.is_some() {
+            bail!("unexpected audio status for output-list request");
+        }
+        let list = response
+            .outputs
+            .context("daemon does not support output enumeration")?;
+        list.validate()?;
+        return Ok(AudioReply::Outputs(list));
+    }
+    if response.outputs.is_some() {
+        bail!("unexpected output list for audio-status request");
+    }
     let state = response
         .audio
         .context("daemon does not support audio controls; upgrade the engine")?;
     state.validate()?;
-    Ok(state)
+    Ok(AudioReply::Status(state))
 }
 
 fn request_response(path: &Path, command: &Command, deadline: Instant) -> Result<Response> {
@@ -300,7 +345,8 @@ fn request_response(path: &Path, command: &Command, deadline: Instant) -> Result
             Err(error) => return Err(error.into()),
         }
     }
-    let response: Response = serde_json::from_slice(&read_line(&mut stream, deadline)?)?;
+    let response: Response =
+        serde_json::from_slice(&read_line_limit(&mut stream, deadline, 16 * 1024)?)?;
     if response.pid <= 0 {
         bail!("invalid daemon PID in IPC response");
     }
