@@ -151,7 +151,18 @@ def install(args, paths, manifest, previous):
     launcher = Path('/usr/bin/env')
     if not launcher.is_file():
         raise ValueError('Desktop launchers require /usr/bin/env')
-    command = ' '.join(desktop_arg(arg) for arg in (launcher, '--', paths['binary'], '--cli', cli, '--icon', paths['icon']))
+    # Retain the layout from our unchanged owned launcher on ordinary upgrades.
+    flat_menu = args.flat_menu
+    if flat_menu is None:
+        flat_menu = any(
+            line.startswith(b'Exec=') and line.endswith((b' "--flat-menu"', b' "--flat-menu" "--wait-for-tray"'))
+            for name in ('desktop', 'autostart') if old[name] is not None
+            for line in old[name][0].splitlines()
+        )
+    command_args = [launcher, '--', paths['binary'], '--cli', cli, '--icon', paths['icon']]
+    if flat_menu:
+        command_args.append('--flat-menu')
+    command = ' '.join(desktop_arg(arg) for arg in command_args)
     icon = str(paths['icon']).replace('\\', '\\\\')
     entry = ('[Desktop Entry]\nType=Application\nName=Klicky controls\n'
              'Comment=Control Klicky playback; quitting this helper keeps playback running\n'
@@ -223,6 +234,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--binary', help='Use an already built helper instead of building with Cargo')
     parser.add_argument('--cli', help='Path to the existing Klicky CLI')
+    layout = parser.add_mutually_exclusive_group()
+    layout.add_argument('--flat-menu', dest='flat_menu', action='store_true', help='Use one menu on hosts with clipped submenus')
+    layout.add_argument('--submenus', dest='flat_menu', action='store_false', help='Restore the normal submenu layout')
+    parser.set_defaults(flat_menu=None)
     startup = parser.add_mutually_exclusive_group()
     startup.add_argument('--autostart', action='store_true', help='Explicitly enable helper-only login startup')
     startup.add_argument('--no-autostart', action='store_true', help='Remove owned helper login startup')

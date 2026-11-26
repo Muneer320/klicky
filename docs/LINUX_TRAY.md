@@ -72,4 +72,26 @@ Use `klicky-tray --help` for direct-run options. An absent tray host fails with 
 
 Native desktop, theme, keyboard-accessibility and hardware typing checks must be recorded separately from protocol tests. X11 virtual-display tests do not establish Wayland, GNOME, physical audio routing or input-to-audible latency support. Leave those qualifications visibly unfinished until performed.
 
-Current qualification finding: submenus near the right screen edge clipped in the Plasma 5.27.5 X11/Xvfb test session. Keyboard activation still worked, but complete visual compatibility remains under investigation. This helper remains a development candidate pending that check and physical typing qualification.
+### Hosts with clipped submenus
+
+Plasma 5.27.5 in the X11/Xvfb test session clips a submenu on its first opening
+near the screen edge; reopening it positions the cached contents correctly.
+The desktop renders and positions these menus. For affected hosts, use the
+flat-menu compatibility layout:
+
+```sh
+python3 scripts/install-linux-tray.py --flat-menu --cli "$(pwd)/target/release/klicky"
+```
+
+Quit the helper before upgrading, then reopen **Klicky controls**. Volume, packs,
+supported audio controls and update results appear as labelled sections in one
+native menu. The host may scroll a long menu or wrap it into columns; check
+reachability with your pack/output list and display size. Keyboard navigation
+and checkmarks remain available. Direct runs can use `klicky-tray --flat-menu` too.
+
+Ordinary installer upgrades retain this layout choice, including in the helper
+login entry. Use `--submenus` on a later installer run to restore nested menus.
+This option does not change another desktop controller or the audio engine.
+
+The helper remains a development candidate. Native layout, physical typing/audio
+and session recovery qualification must still be recorded before merging.

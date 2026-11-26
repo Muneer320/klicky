@@ -109,6 +109,7 @@ struct App {
     action_error: String,
     update_text: Option<String>,
     icon: String,
+    flat_menu: bool,
     actions: mpsc::Sender<Action>,
     refresh: Arc<Notify>,
     quit: Arc<Notify>,
@@ -228,6 +229,39 @@ fn info<T>(text: &str) -> MenuItem<T> {
         ..Default::default()
     }
     .into()
+}
+
+// Some native importers size a submenu before its first asynchronous load.
+// A root-only layout lets those hosts position all choices before showing it.
+fn flatten_menu<T>(menu: Vec<MenuItem<T>>, enabled: bool) -> Vec<MenuItem<T>> {
+    let mut flat = Vec::new();
+    for item in menu {
+        match item {
+            MenuItem::SubMenu(group) => {
+                if group.visible {
+                    flat.push(info(&group.label));
+                    flat.extend(flatten_menu(group.submenu, enabled && group.enabled));
+                    flat.push(MenuItem::Separator);
+                }
+            }
+            MenuItem::Standard(mut item) => {
+                item.enabled &= enabled;
+                flat.push(item.into());
+            }
+            MenuItem::Checkmark(mut item) => {
+                item.enabled &= enabled;
+                flat.push(item.into());
+            }
+            MenuItem::RadioGroup(mut group) => {
+                for item in &mut group.options {
+                    item.enabled &= enabled;
+                }
+                flat.push(group.into());
+            }
+            MenuItem::Separator => flat.push(MenuItem::Separator),
+        }
+    }
+    flat
 }
 
 impl ksni::Tray for App {
@@ -405,7 +439,11 @@ impl ksni::Tray for App {
             }
             .into(),
         ]);
-        menu
+        if self.flat_menu {
+            flatten_menu(menu, true)
+        } else {
+            menu
+        }
     }
 }
 
@@ -495,6 +533,7 @@ struct Options {
     icon: String,
     seconds: u64,
     wait: bool,
+    flat_menu: bool,
 }
 
 fn options() -> Result<Option<Options>> {
@@ -511,6 +550,7 @@ fn options() -> Result<Option<Options>> {
     let mut icon = "input-keyboard".to_string();
     let mut seconds = 10;
     let mut wait = false;
+    let mut flat_menu = false;
     let mut args = env::args_os().skip(1);
     while let Some(arg) = args.next() {
         match arg.to_str() {
@@ -538,12 +578,13 @@ fn options() -> Result<Option<Options>> {
                 }
             }
             Some("--wait-for-tray") => wait = true,
+            Some("--flat-menu") => flat_menu = true,
             Some("--version") => {
                 println!("klicky-tray {}", env!("CARGO_PKG_VERSION"));
                 return Ok(None);
             }
             Some("--help") | Some("-h") => {
-                println!("Klicky Linux tray controls\n\nUsage: klicky-tray [--cli PATH] [--icon NAME_OR_PATH] [--refresh-seconds 2..60] [--wait-for-tray]\n\nDefault refresh: 10 seconds. --wait-for-tray waits for desktop tray support at login.\nRequires a graphical session with StatusNotifierItem/D-BusMenu support.\nQuit closes only this helper. Playback and login startup are separate menu controls.");
+                println!("Klicky Linux tray controls\n\nUsage: klicky-tray [--cli PATH] [--icon NAME_OR_PATH] [--refresh-seconds 2..60] [--wait-for-tray] [--flat-menu]\n\nDefault refresh: 10 seconds. --wait-for-tray waits for desktop tray support at login.\n--flat-menu puts all choices in one menu for hosts with clipped submenus.\nRequires a graphical session with StatusNotifierItem/D-BusMenu support.\nQuit closes only this helper. Playback and login startup are separate menu controls.");
                 return Ok(None);
             }
             _ => bail!("Unknown argument: {} (use --help)", arg.to_string_lossy()),
@@ -554,6 +595,7 @@ fn options() -> Result<Option<Options>> {
         icon,
         seconds,
         wait,
+        flat_menu,
     }))
 }
 
@@ -586,6 +628,7 @@ async fn main() -> Result<()> {
         action_error: String::new(),
         update_text: None,
         icon: options.icon,
+        flat_menu: options.flat_menu,
         actions: sender,
         refresh: refresh.clone(),
         quit: quit.clone(),
