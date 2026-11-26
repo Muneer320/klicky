@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import stat
 import subprocess
 import sys
@@ -21,20 +22,142 @@ def regular(path):
     return path.exists() and stat.S_ISREG(path.lstat().st_mode)
 
 
-def atomic(path, data, mode):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = None
+def snapshot(path):
+    if not os.path.lexists(path):
+        return None
+    if not regular(path):
+        raise ValueError(f'Preserving a non-regular file: {path}')
+    return path.read_bytes(), stat.S_IMODE(path.stat().st_mode)
+
+
+def same_file(left, right):
     try:
-        with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as stream:
-            temporary = Path(stream.name)
+        a, b = left.lstat(), right.lstat()
+        return (a.st_dev, a.st_ino) == (b.st_dev, b.st_ino)
+    except FileNotFoundError:
+        return False
+
+
+@contextmanager
+def defer_interrupt():
+    previous = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGINT})
+    try:
+        yield
+    finally:
+        signal.pthread_sigmask(signal.SIG_SETMASK, previous)
+
+
+class FileChange:
+    def __init__(self, path, expected, payload):
+        self.path, self.expected, self.payload = path, expected, payload
+        path.parent.mkdir(parents=True, exist_ok=True)
+        self.directory = Path(tempfile.mkdtemp(prefix='.klicky-tray-', dir=path.parent))
+        self.backup = self.directory / 'previous'
+        self.staged = self.directory / 'new'
+        self.probe = self.directory / 'link-test'
+        self.displaced = self.directory / 'displaced'
+
+    def apply(self):
+        data, mode = self.payload if self.payload is not None else (b'', 0o600)
+        with self.staged.open('xb') as stream:
             stream.write(data)
             stream.flush()
             os.fsync(stream.fileno())
-        temporary.chmod(mode)
-        os.replace(temporary, path)
-    finally:
-        if temporary is not None and temporary.exists():
-            temporary.unlink()
+        self.staged.chmod(mode)
+        # Verify exclusive publication/recovery support before moving an old
+        # file, including removal on an XDG home on another filesystem.
+        os.link(self.staged, self.probe, follow_symlinks=False)
+        self.probe.unlink()
+        if self.expected is not None:
+            # Capture the actual directory entry before inspecting it. A hash
+            # check followed by os.replace would still overwrite a racing edit.
+            os.rename(self.path, self.backup)
+            if snapshot(self.backup) != self.expected:
+                raise ValueError(f'Owned tray file changed during commit: {self.path}')
+        if self.payload is not None:
+            # link never replaces an entry created since capture/preflight.
+            os.link(self.staged, self.path, follow_symlinks=False)
+
+    def validate(self):
+        if self.expected is not None and snapshot(self.backup) != self.expected:
+            raise ValueError(f'Captured tray file changed during commit: {self.path}')
+        if snapshot(self.path) != self.payload or (
+            self.payload is not None and not same_file(self.path, self.staged)
+        ):
+            raise ValueError(f'Tray destination changed during commit: {self.path}')
+
+    def restore(self, source):
+        if os.path.lexists(source):
+            try:
+                os.link(source, self.path, follow_symlinks=False)
+            except OSError:
+                # Never overwrite another editor's replacement during recovery.
+                print(f'Preserved recovery file: {source} (destination: {self.path})', file=sys.stderr)
+
+    def rollback(self):
+        if self.payload is not None and same_file(self.path, self.staged):
+            os.rename(self.path, self.displaced)
+            if same_file(self.displaced, self.staged) and snapshot(self.displaced) == self.payload:
+                self.displaced.unlink()
+            else:
+                self.restore(self.displaced)
+        self.restore(self.backup)
+
+    def cleanup(self, committed):
+        self.staged.unlink(missing_ok=True)
+        self.probe.unlink(missing_ok=True)
+        for saved in (self.backup, self.displaced):
+            if not os.path.lexists(saved):
+                continue
+            if same_file(saved, self.path) or (
+                committed and saved == self.backup and snapshot(saved) == self.expected
+            ):
+                saved.unlink()
+        if not any(self.directory.iterdir()):
+            self.directory.rmdir()
+        else:
+            print(f'Preserved tray recovery files in: {self.directory}', file=sys.stderr)
+
+
+class FileTransaction:
+    def __init__(self):
+        self.changes = []
+        self.unchanged = []
+
+    def replace(self, path, expected, payload):
+        # Journal before the first mutation, including interrupts immediately
+        # after rename/link returns and before Python's next statement runs.
+        with defer_interrupt():
+            change = FileChange(path, expected, payload)
+            self.changes.append(change)
+        change.apply()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, kind, error, traceback):
+        committed = False
+        try:
+            if kind is None:
+                for change in self.changes:
+                    change.validate()
+                for path, expected in self.unchanged:
+                    if snapshot(path) != expected:
+                        raise ValueError(f'Tray destination changed during commit: {path}')
+                committed = True
+        finally:
+            with defer_interrupt():
+                if not committed:
+                    for change in reversed(self.changes):
+                        try:
+                            change.rollback()
+                        except (OSError, ValueError) as recovery_error:
+                            print(f'Tray recovery incomplete: {recovery_error}', file=sys.stderr)
+                for change in self.changes:
+                    try:
+                        change.cleanup(committed)
+                    except (OSError, ValueError) as cleanup_error:
+                        print(f'Preserved tray recovery files in {change.directory}: {cleanup_error}', file=sys.stderr)
 
 
 def desktop_arg(value):
@@ -52,8 +175,8 @@ def setup_lock_path(paths):
 
 def locations():
     home = Path.home()
-    data = Path(os.environ.get('XDG_DATA_HOME', str(home / '.local/share')))
-    config = Path(os.environ.get('XDG_CONFIG_HOME', str(home / '.config')))
+    data = Path(os.environ.get('XDG_DATA_HOME') or home / '.local/share')
+    config = Path(os.environ.get('XDG_CONFIG_HOME') or home / '.config')
     if not data.is_absolute() or not config.is_absolute():
         raise ValueError('XDG_DATA_HOME and XDG_CONFIG_HOME must be absolute paths')
     folder = data / 'klicky-tray'
@@ -136,7 +259,7 @@ def install(args, paths, manifest, previous):
     # Preflight the entire owned set before building or changing any file.
     old = check_owned(paths, previous)
     enabled = args.autostart or (old['autostart'] is not None and not args.no_autostart)
-    original_record = manifest.read_bytes() if manifest.exists() else None
+    original_record = snapshot(manifest)
     if args.binary:
         binary = Path(args.binary)
     else:
@@ -181,30 +304,17 @@ def install(args, paths, manifest, previous):
     locations()  # Recheck symlink ancestors as well as destination contents.
     if check_owned(paths, previous) != old:
         raise ValueError('Owned tray files changed during preparation')
-    if (manifest.read_bytes() if manifest.exists() else None) != original_record:
+    if snapshot(manifest) != original_record:
         raise ValueError('Tray installation record changed during preparation')
-    written = []
-    try:
+    with FileTransaction() as transaction:
+        if old['autostart'] is None and 'autostart' not in payloads:
+            transaction.unchanged.append((paths['autostart'], None))
         for name, (data, mode) in payloads.items():
-            atomic(paths[name], data, mode)
-            written.append(name)
+            transaction.replace(paths[name], old[name], (data, mode))
         if 'autostart' in previous and not enabled and paths['autostart'].exists():
-            paths['autostart'].unlink()
-            written.append('autostart')
+            transaction.replace(paths['autostart'], old['autostart'], None)
         record = {'schema': 1, 'files': {name: digest(data) for name, (data, _) in payloads.items()}}
-        atomic(manifest, (json.dumps(record, indent=2) + '\n').encode(), 0o600)
-    except Exception:
-        for name in reversed(written):
-            path = paths[name]
-            expected = payloads.get(name)
-            if path.exists() and (not regular(path) or expected is None or digest(path.read_bytes()) != digest(expected[0])):
-                print(f'Preserved a concurrently changed file during rollback: {path}', file=sys.stderr)
-                continue
-            if old[name] is None:
-                path.unlink(missing_ok=True)
-            else:
-                atomic(path, *old[name])
-        raise
+        transaction.replace(manifest, original_record, ((json.dumps(record, indent=2) + '\n').encode(), 0o600))
     print(f'Installed helper: {paths["binary"]}')
     print(f'Helper login startup: {"enabled" if enabled else "not enabled"}. No helper or engine was started.')
     print('Run the helper from the application menu. Use only one desktop controller if Klicky Bar is already enabled.')
@@ -212,19 +322,28 @@ def install(args, paths, manifest, previous):
 
 def remove(paths, manifest, previous):
     retained = {}
+    removals = []
+    original_record = snapshot(manifest)
     for name, expected in previous.items():
         path = paths[name]
-        if not path.exists():
+        try:
+            current = snapshot(path)
+        except ValueError:
+            current = False
+        if current is None:
             continue
-        if not regular(path) or digest(path.read_bytes()) != expected:
+        if current is False or digest(current[0]) != expected:
             print(f'Preserved a modified file: {path}', file=sys.stderr)
             retained[name] = expected
         else:
-            path.unlink()
+            removals.append((path, current))
+    with FileTransaction() as transaction:
+        for path, expected in removals:
+            transaction.replace(path, expected, None)
+        record = ((json.dumps({'schema': 1, 'files': retained}, indent=2) + '\n').encode(), 0o600) if retained else None
+        transaction.replace(manifest, original_record, record)
     if retained:
-        atomic(manifest, (json.dumps({'schema': 1, 'files': retained}, indent=2) + '\n').encode(), 0o600)
         raise ValueError('Modified tray files remain. Back them up and resolve them before reinstalling.')
-    manifest.unlink(missing_ok=True)
     if manifest.parent.exists() and not any(manifest.parent.iterdir()):
         manifest.parent.rmdir()
     print('Removed owned tray-helper files only. Engine installation and settings are unchanged.')
