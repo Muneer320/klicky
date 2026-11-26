@@ -54,8 +54,13 @@ job opens a cross-repository PR and never pushes a branch, merges, force-pushes,
 copies tags or publishes anything. The head stays in its source repository so
 unreviewed fork workflows do not gain same-repository access to upstream secrets.
 
-Equal file trees produce no new PR, even when merge commits differ. GitHub keeps
-an existing PR's head current as the source branch advances, including reversions.
+Equal file trees produce no new PR, even when merge commits differ.
+The source must also contain file changes since the common ancestor. A unique
+merge commit with no such changes does not require a proposal, even when the
+destination has moved ahead and the two current file trees differ.
+
+GitHub keeps an existing PR's head current as the source branch advances,
+including reversions.
 Repeated checks reuse that open PR. Closing a sync PR without merging suppresses
 another proposal for the same source revision; later source revisions can be
 proposed. Resolve conflicts through a reviewed change on the source side or a
@@ -111,3 +116,26 @@ An identical pair should report no incoming file changes. The next reviewed
 contribution should open one upstream integration PR; repeated runs must not
 create duplicates. Verify CI actually runs on bot-created PRs and approve pending
 runs through GitHub when required. Do not merge an unchecked PR.
+
+## Diagnose activation failures
+
+Run `python3 scripts/sync-club.py --repository Muneer320/klicky --dry-run` and
+repeat with `--repository CherryPick-Student-Projects/klicky` to inspect both
+directions without creating PRs. These checks fetch Git objects and list PRs;
+they do not prove that the sync App can create a real proposal or trigger CI.
+
+If App token creation reports 404 for the club repository installation, a club
+administrator must approve the App for only that repository. Repository maintain
+access does not replace organization installation approval. Keep the App's
+existing PR-only permissions and the private key in the canonical repository.
+
+The script reports failed API operations with GitHub's message and validation
+details. Check those before retrying: an empty comparison requires no proposal;
+an installation or permission failure requires correcting that setup. Do not
+fall back to a personal token, broaden App permissions, copy incoming workflows
+onto a trusted branch, or enable automatic approval/merging to bypass a failure.
+
+A club administrator must also require the applicable CI checks on the club
+default branch. Keep both tracking issues open until real App-created proposals
+and their CI have been verified in both directions. A no-change result or a local
+test alone does not complete activation.
