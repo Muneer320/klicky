@@ -92,9 +92,9 @@ Ui.BarWidget {
     anchors.fill: parent
     bar: root.bar
     text: "󰌌"
-    active: engineController.known && engineController.running && !engineController.paused
+    active: engineController.known && engineController.running && !engineController.paused && !engineController.audioUnavailable
     dimmed: !active
-    tooltipText: "Klicky Bar · " + (!engineController.known ? "Check engine" : !engineController.running ? "Stopped" : engineController.paused ? "Paused" : "Ready")
+    tooltipText: "Klicky Bar · " + (!engineController.known ? "Check engine" : !engineController.running ? "Stopped" : engineController.paused ? "Paused" : engineController.audioUnavailable ? "Audio unavailable" : "Ready")
     onPressed: function(mouseButton) {
       if (mouseButton === Qt.LeftButton || mouseButton === Qt.RightButton) root.toggle()
     }

@@ -4,6 +4,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Ui as Ui
 import qs.Commons as Commons
+import "Audio.js" as Audio
 
 Ui.Panel {
   id: root
@@ -20,7 +21,22 @@ Ui.Panel {
   readonly property bool canMove: !!hostWidget && !moving && !engine.busy && !volumeEditing
   readonly property color foreground: Commons.Color.popups.text
   readonly property color muted: Qt.darker(foreground, 1.45)
-  readonly property string stateLabel: strings.t(engine.busy ? "status.updating" : !engine.known ? "status.unavailable" : !engine.running ? "status.stopped" : engine.paused ? "status.paused" : "status.ready")
+  readonly property string stateLabel: strings.t(engine.busy ? "status.updating" : !engine.known ? "status.unavailable" : !engine.running ? "status.stopped" : engine.paused ? "status.paused" : engine.audioUnavailable ? "status.audio-unavailable" : "status.ready")
+  readonly property bool canChooseAudio: engine.known && engine.running && engine.audioKnown && !!engine.audioState.requested && engine.audioState.can_select && !engine.busy
+  readonly property var audioOptions: Audio.options(engine.audioState, engine.audioList, strings.t("audio.follow"))
+  readonly property string audioValue: {
+    const value = Audio.selection(engine.audioState)
+    return audioOptions.some(function(option) { return option.value === value }) ? value : strings.t("audio.choose")
+  }
+  readonly property string audioLabel: {
+    const state = engine.audioState
+    if (!state || !state.requested) return ""
+    if (state.active) return state.active.name || state.active.id
+    if (state.requested.mode === "system_default") return strings.t("audio.follow")
+    const devices = engine.audioList ? engine.audioList.devices : []
+    const match = devices.filter(function(device) { return device.id === state.requested.id })
+    return match.length ? match[0].name || match[0].id : state.requested.id
+  }
   readonly property string currentPlacement: {
     const layout = bar && bar.shell ? bar.shell.barConfig.layout || {} : {}
     const sections = { "left": "left", "right": "right", "centerBegin": "clock-left", "centerEnd": "clock-right" }
@@ -33,7 +49,7 @@ Ui.Panel {
   Commons.Translations { id: strings; directory: Qt.resolvedUrl("i18n") }
 
   function reveal(control) {
-    if (!control || !control.activeFocus || packSelect.popupOpen) return
+    if (!control || !control.activeFocus || packSelect.popupOpen || audioSelect.popupOpen) return
     const point = control.mapToItem(layout, 0, 0)
     const viewport = scroll.contentItem as Flickable
     if (!viewport) return
@@ -107,7 +123,7 @@ Ui.Panel {
                 enabled: !root.engine.busy
                 Accessible.name: strings.t("refresh")
                 onActiveFocusChanged: root.reveal(this)
-                onClicked: root.engine.refresh()
+                onClicked: root.engine.refresh(true)
               }
             }
           }
@@ -266,6 +282,62 @@ Ui.Panel {
               focusable: true; enabled: root.canMove
               onActiveFocusChanged: root.reveal(this)
               onClicked: root.placementExpanded = !root.placementExpanded
+            }
+          }
+          Ui.PanelSectionHeader { text: strings.t("audio.title") }
+          PanelText {
+            Layout.fillWidth: true
+            text: !root.engine.known || !root.engine.running ? strings.t("audio.start")
+                : !root.engine.audioKnown ? strings.t("audio.unknown")
+                : strings.t("audio.state." + root.engine.audioState.availability)
+            color: root.muted
+            font.pixelSize: Commons.Style.font.caption
+          }
+          PanelText {
+            Layout.fillWidth: true
+            visible: root.engine.audioKnown && !!root.engine.audioState.requested
+            text: root.audioLabel
+            color: root.muted
+            font.pixelSize: Commons.Style.font.caption
+          }
+          Ui.Dropdown {
+            id: audioSelect
+            objectName: "klickyAudioOutput"
+            Layout.fillWidth: true
+            label: strings.t("audio.title"); showLabel: false
+            options: root.audioOptions
+            enabled: root.canChooseAudio
+            opacity: enabled ? 1 : 0.4
+            Accessible.name: strings.t("audio.title")
+            Binding { target: audioSelect; property: "value"; value: root.audioValue; when: !audioSelect.popupOpen && !root.engine.busy }
+            onChanged: function(value) { root.engine.chooseAudio(value) }
+          }
+          PanelText {
+            Layout.fillWidth: true
+            visible: root.engine.audioError.length > 0
+            text: root.engine.audioError
+            color: Commons.Color.urgent
+            font.pixelSize: Commons.Style.font.caption
+          }
+          RowLayout {
+            Layout.fillWidth: true
+            Ui.Button {
+              objectName: "klickyRetryAudio"
+              text: strings.t("audio.retry")
+              focusable: true; bordered: true
+              enabled: root.engine.known && root.engine.running && root.engine.audioKnown && root.engine.audioState.can_retry && !root.engine.busy
+              opacity: enabled ? 1 : 0.4
+              onActiveFocusChanged: root.reveal(this)
+              onClicked: root.engine.retryAudio()
+            }
+            Ui.Button {
+              objectName: "klickyRefreshAudio"
+              text: strings.t("audio.refresh")
+              focusable: true
+              enabled: root.engine.known && root.engine.running && !root.engine.busy
+              opacity: enabled ? 1 : 0.4
+              onActiveFocusChanged: root.reveal(this)
+              onClicked: root.engine.refresh(true)
             }
           }
           PanelText { Layout.fillWidth: true; text: strings.t("audio.detail"); color: root.muted; font.pixelSize: Commons.Style.font.caption }

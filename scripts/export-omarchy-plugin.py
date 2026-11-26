@@ -9,7 +9,7 @@ import re
 import subprocess
 
 
-FILES = ("manifest.json", "BarWidget.qml", "ControlsPanel.qml", "Controller.qml", "PanelText.qml", "move-placement.sh", "i18n/en.json", "README.md")
+FILES = ("manifest.json", "BarWidget.qml", "ControlsPanel.qml", "Controller.qml", "Audio.js", "PanelText.qml", "move-placement.sh", "i18n/en.json", "README.md")
 
 
 def main():

@@ -27,7 +27,13 @@ omarchy plugin update io.github.muneer320.klicky-bar
 omarchy plugin remove io.github.muneer320.klicky-bar
 ```
 
-Removing the plugin keeps the engine and your sound settings. See [complete uninstallation](INSTALLATION.md#uninstall) to remove Klicky itself. Audio currently follows the system output; per-app output selection remains planned.
+Removing the plugin keeps the engine and your sound settings. See [complete uninstallation](INSTALLATION.md#uninstall) to remove Klicky itself.
+
+### Audio output (source builds after v0.7.0)
+
+With the matching running engine, the popup's **Audio output** selector can follow the system default or remember a PulseAudio/PipeWire-Pulse sink for Klicky alone. Duplicate names get separate entries. A missing remembered output stays selected and silent; choose an available output, reconnect the device, or use **Retry audio**. Retry preserves manual Pause. The bar reports confirmed output unavailability separately from a stopped engine.
+
+**Refresh outputs**, reopening the popup and normal status polling refresh the controls. An older engine or failed audio query disables only audio-specific actions; playback, service and startup controls continue to use their existing structured status. ALSA-only playback has default-only capabilities and no device picker. The [CLI routing guide](CLI.md#audio-output-controls) explains backend IDs and recovery boundaries. The plugin never changes other applications' routing, global card profiles or ports.
 
 See the [plugin reference](../packaging/omarchy-bar/README.md) for the executable override, runtime dependencies and development/export workflow. The main Klicky repository remains the source of truth; the plugin repository contains generated releases.
 
