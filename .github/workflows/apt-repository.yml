@@ -29,7 +29,7 @@ concurrency:
 
 jobs:
   release:
-    if: github.event_name != 'release' || (!github.event.release.prerelease && !github.event.release.draft)
+    if: github.repository == 'Muneer320/klicky' && (github.event_name != 'release' || (!github.event.release.prerelease && !github.event.release.draft))
     runs-on: ubuntu-latest
     permissions:
       contents: read

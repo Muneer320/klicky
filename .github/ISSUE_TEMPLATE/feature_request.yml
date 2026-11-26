@@ -4,6 +4,11 @@ title: "feat: "
 labels:
   - enhancement
 body:
+  - type: input
+    id: related_issue
+    attributes:
+      label: Related issue
+      description: "Optional: link existing work in this repository or the CherryPick fork to avoid duplicate work."
   - type: textarea
     id: problem
     attributes:
